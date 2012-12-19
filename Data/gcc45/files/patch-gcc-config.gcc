@@ -1,0 +1,15 @@
+--- gcc/config.gcc.orig	2011-02-26 19:06:15.000000000 -0600
++++ gcc/config.gcc	2011-03-22 10:45:25.000000000 -0500
+@@ -1944,9 +1944,10 @@
+  	tmake_file="${tmake_file} t-slibgcc-darwin"
+ 	extra_headers=altivec.h
+ 	;;
+-powerpc*-*-freebsd*)
++powerpc-*-freebsd*)
+ 	tm_file="${tm_file} dbxelf.h elfos.h ${fbsd_tm_file} rs6000/sysv4.h rs6000/freebsd.h"
+-	tmake_file="rs6000/t-fprules rs6000/t-fprules-fpbit rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm"
++	tmake_file="rs6000/t-fprules rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm rs6000/t-freebsd"
++	tmake_file="${tmake_file} t-slibgcc-libgcc rs6000/t-fprules-softfp soft-fp/t-softfp"
+ 	extra_options="${extra_options} rs6000/sysv4.opt"
+ 	;;
+ powerpc-*-netbsd*)

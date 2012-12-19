@@ -1,0 +1,9 @@
+# Mount SMB share on Windows host or other server.
+# Use "sudo mount /mount" to connect.
+# //user@host/share     /mount  smbfs   rw,noauto,-u=user,-g=group 0    0
+
+# Mount NFS export on *nix host or other server
+# This will be mounted automatically at boot.  Users must have the
+# same numeric userid on host and client.
+# host:/dir             /mount          nfs     rw,intr,soft    0       0
+
