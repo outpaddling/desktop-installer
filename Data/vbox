@@ -1,0 +1,7 @@
+Section "Monitor"
+        Identifier   "Monitor0"
+        VendorName   "Monitor Vendor"
+        ModelName    "Monitor Model"
+        HorizSync    30-120
+        VertRefresh  50-100
+EndSection

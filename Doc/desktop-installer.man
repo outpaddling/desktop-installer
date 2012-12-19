@@ -1,0 +1,149 @@
+.TH desktop-installer 1
+.SH NAME    \" Section header
+.PP
+desktop-installer \- Quickly configure a FreeBSD desktop system
+
+\" Convention:
+\" Underline anything that is typed verbatim - commands, etc.
+
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+desktop-installer
+.ad
+.fi
+
+.SH "DESCRIPTION"
+
+The
+.B desktop-installer
+script automates the process of configuring a FreeBSD machine as a desktop
+system running KDE, Gnome, LXDE, or XFCE.  Other desktop systems exist and
+support for them may be added in the future.
+
+This is a post-install script, i.e. one that you run AFTER doing a standard
+operating system installation with sysinstall.  ( See details below. )
+
+The desktop configuration process requires installing many ports/packages and
+configuring many different subsystems, which can be a daunting task
+for all but the most seasoned users.
+
+.B Desktop-installer
+installs all the software necessary for the chosen desktop
+as well as common desktop-independent packages such as CUPS, Firefox,
+OpenOffice.org, etc.
+
+It also configures system services and settings to facilitate
+convenient use of CD/DVD drives, USB ports, etc.
+
+.SH "MOTIVATION"
+
+This script is meant to provide a middle-ground between totally manual
+configuration and complete distributions such as DesktopBSD, GhostBSD,
+and PC-BSD.
+
+The post-install script approach has some advantages over complete
+distributions.  The post-install script itself is far easier to maintain and 
+unlike separate distributions, the resulting desktop system is a
+nearly pristine FreeBSD system with minimal differences from the default
+install.  The system can therefore be maintained and upgraded using
+traditional FreeBSD command-line tools (pkg_add, adduser, freebsd-update,
+etc.), or stock tools of the chosen desktop suite.
+
+It also supports all
+platforms that run FreeBSD, whereas distributions are limited to the most
+popular architectures.
+
+.SH "BASIC USE"
+
+To use
+.B desktop-installer:
+
+1. Install a basic FreeBSD system.
+
+The recommended install options are a basic user system including:
+
+.nf
+.na
+All binaries
+Docs in your preferred language(s)
+All source code
+The ports tree
+.ad
+.fi
+
+It is best to use
+.B desktop-installer
+on a pristine FreeBSD installation.
+
+.B Desktop-installer
+can also be used to upgrade all the software on 
+an existing system, but there are more
+possibilities for failure here since it is impossible to predict what
+kinds of system hacks it might encounter.  Also, it's generally
+a good idea to back up your data, wipe your disk clean, and reinstall
+everything every few years, since data on magnetic disks can fade over time
+and read errors will eventually occur.
+
+.B Desktop-installer
+can install software from source or from binary packages (pkg_add -r).
+Binary packages install much faster (seconds per package, vs minutes
+per port built from source).  However, installing from ports allows you
+to have the very latest software, and to control build options.
+
+If you enjoy a simple life, install a -RELEASE version rather
+than -STABLE or -CURRENT, and install the ports tree from sysinstall,
+not using portsnap or cvs.  With a -RELEASE version, ports and packages
+will be installed from a snapshot taken when the release was built.
+This will mean you're not running the very latest of all the ports/packages,
+but the ports and packages will all be compatible with each other.
+
+If you plan to install software from source, you can install the ports
+tree by any means.  Portsnap will install the latest frameworks, whereas
+sysinstall will install a snapshot of the ports tree from the release date.
+
+More adventurous users, and those who want
+to help the FreeBSD project by testing the latest software can
+use -STABLE or -CURRENT, but be prepared to resolve dependency issues.
+
+If you do not choose to install software from source,
+.B desktop-installer
+installs most packages over the network using "pkg_add -r",
+but occasionally using ports where necessary.  (Some software cannot
+be distributed as a binary package for licensing reasons.)
+
+2. Install desktop-installer:
+
+    pkg_add -r desktop-installer
+
+or (if you have a ports tree installed)
+
+    cd /usr/ports/sysutils/desktop-installer
+    make install
+
+or if you want the latest development version of desktop-installer, get the
+latest jb-ports from MASTER_SITES and run
+
+    reinstall-jb-port desktop-installer
+
+3. Run desktop-installer:
+
+a. Run rehash if using a csh-based shell
+
+b. desktop-installer
+
+c. Follow the instructions on your screen.
+
+.SH BUGS
+Too many to document.
+
+.SH "SEE ALSO"
+auto-admin
+
+.SH AUTHOR
+.nf
+.na
+J. Bacon
+Acadix Consulting, LLC
+

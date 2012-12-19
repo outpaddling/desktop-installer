@@ -1,0 +1,75 @@
+#!/bin/sh
+
+
+
+##########################################################################
+#   Add a line to a system file if string is not already present.
+##########################################################################
+
+add_line()
+{
+    if [ $# != 3 ]; then
+	printf "Usage: $0 search-string line file\n"
+	exit 1
+    fi
+    string=$1
+    line=$2
+    file=$3
+    if ! fgrep -q $string $file; then
+	printf "# Added by desktop-installer\n" >> $file
+	printf "$line\n" >> $file
+    fi
+}
+
+hyperthreading()
+{
+    cat << EOM
+    
+    Intel Hyperthreading can cause suspend/resume to fail, among other
+    problems.
+    
+EOM
+    printf "Disable hyperthreading? (y/n) "
+    read resp
+    if [ 0$resp = 0'y' ]; then
+	add_line machdep.hyperthreading 'machdep.hyperthreading_allowed="0"' /boot/loader.conf
+    fi
+}
+
+cat << EOM
+As of October 2011, ACPI features on the ASUS EEEPC are still experimental.
+Are you sure you want to continue? (y/n) 
+EOM
+read resp
+if [ 0$resp != 0y ]; then
+    exit
+fi
+
+# Cut power drain in suspend mode
+# Value is 1 (least aggressive) to 3 (most aggressive)
+add_line acpi_video 'acpi_video_load="YES"' /boot/loader.conf
+add_line do_power_nodriver 'hw.pci.do_power_nodriver=1' /boot/loader.conf
+# Restore video on resume
+add_line reset_video 'hw.acpi.reset_video=1' /etc/sysctl.conf
+add_line sleep_button_state 'hw.acpi.sleep_button_state=S3' /etc/sysctl.conf
+
+# FIXME: Some of this is not related to power
+if fgrep -q '_ASUS_ Notebook' /var/run/dmesg.boot; then
+    # acpi_asus is still in development as of Oct 2011 and does not
+    # work properly on 9.0-BETA3
+    add_line acpi_asus 'acpi_asus_load="YES"' /boot/loader.conf
+    if ! fgrep -q 'hw.acpi.asus.lcd_brightness' /etc/rc.resume; then
+       sed -i 'orig' -E 's|exit 0|# Added by desktop-installer \
+sysctl hw.acpi.asus.lcd_brightness=8 \
+\
+exit 0|g' /etc/rc.resume
+    fi
+    # Not sure if this is necessary
+    # add_line hint.psm.0.flags 'hint.psm.0.flags="0x2000"' /boot/device.hints
+    add_line hw.psm.synaptics_support 'hw.psm.synaptics_support=1' /boot/loader.conf
+    hyperthreading
+else
+    printf "This does not appear to be an ASUS laptop.  Aborting...\n"
+    exit 1
+fi
+

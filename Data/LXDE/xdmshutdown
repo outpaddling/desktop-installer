@@ -1,0 +1,17 @@
+#!/usr/local/bin/wish8.5
+# NT 20 October 2002 - adapted/copied from various similar
+# scripts dragged kicking and screaming from the bowels of the web:)
+# NT 27 January 2003 - added a reboot button
+#
+
+proc shutdownf {} { exec /sbin/shutdown -p now 2>/dev/console >/dev/console }
+
+proc rebootf {} { exec /sbin/shutdown -r now 2>/dev/console >/dev/console }
+
+button .shutdown -text "Shutdown" -background gray -activebackground red -width 25 -command shutdownf
+
+button .reboot -text "Reboot" -background gray -activebackground blue -width 25 -command rebootf
+
+pack .reboot -side top
+pack .shutdown -side top
+

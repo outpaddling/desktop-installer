@@ -1,0 +1,89 @@
+Index: libgcc/config.host
+===================================================================
+--- libgcc/config.host	(revision 170906)
++++ libgcc/config.host	(working copy)
+@@ -1,6 +1,6 @@
+ # libgcc host-specific configuration file.
+ # Copyright 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
+-# 2008, 2009, 2010 Free Software Foundation, Inc.
++# 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
+ 
+ #This file is part of GCC.
+ 
+@@ -451,7 +451,8 @@
+ 	;;
+ powerpc64-*-darwin*)
+ 	;;
+-powerpc*-*-freebsd*)
++powerpc-*-freebsd*)
++	tmake_file="${tmake_file} rs6000/t-ppccomm rs6000/t-freebsd t-softfp"
+ 	;;
+ powerpc-*-netbsd*)
+ 	;;
+Index: gcc/config.gcc
+===================================================================
+--- gcc/config.gcc	(revision 170906)
++++ gcc/config.gcc	(working copy)
+@@ -1944,9 +1944,10 @@
+  	tmake_file="${tmake_file} t-slibgcc-darwin"
+ 	extra_headers=altivec.h
+ 	;;
+-powerpc*-*-freebsd*)
++powerpc-*-freebsd*)
+ 	tm_file="${tm_file} dbxelf.h elfos.h ${fbsd_tm_file} rs6000/sysv4.h rs6000/freebsd.h"
+-	tmake_file="rs6000/t-fprules rs6000/t-fprules-fpbit rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm"
++	tmake_file="rs6000/t-fprules rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm rs6000/t-freebsd"
++	tmake_file="${tmake_file} t-slibgcc-libgcc rs6000/t-fprules-softfp soft-fp/t-softfp"
+ 	extra_options="${extra_options} rs6000/sysv4.opt"
+ 	;;
+ powerpc-*-netbsd*)
+Index: gcc/config/rs6000/t-freebsd
+===================================================================
+--- gcc/config/rs6000/t-freebsd	(revision 0)
++++ gcc/config/rs6000/t-freebsd	(revision 0)
+@@ -0,0 +1,25 @@
++# Overrides for FreeBSD PowerPC 
++#
++# Copyright (C) 2011 Free Software Foundation, Inc.
++#
++# This file is part of GCC.
++#
++# GCC is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3, or (at your option)
++# any later version.
++#
++# GCC is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with GCC; see the file COPYING3.  If not see
++# <http://www.gnu.org/licenses/>.
++
++# We do not want to build darwin-ldouble.c, so set the LIB2FUNCS_EXTRA again. 
++# Invoke this file after rs6000/t-ppccomm.
++
++LIB2FUNCS_EXTRA = tramp.S
++
+Index: gcc/config/rs6000/freebsd.h
+===================================================================
+--- gcc/config/rs6000/freebsd.h	(revision 170906)
++++ gcc/config/rs6000/freebsd.h	(working copy)
+@@ -1,5 +1,5 @@
+ /* Definitions for PowerPC running FreeBSD using the ELF format
+-   Copyright (C) 2001, 2003, 2007, 2009 Free Software Foundation, Inc.
++   Copyright (C) 2001, 2003, 2007, 2009, 2011 Free Software Foundation, Inc.
+    Contributed by David E. O'Brien <obrien@FreeBSD.org> and BSDi.
+ 
+    This file is part of GCC.
+@@ -72,3 +72,8 @@
+ /* Define SVR4_ASM_SPEC, we use GAS by default. See svr4.h for details.  */
+ #define SVR4_ASM_SPEC \
+   "%{v:-V} %{Wa,*:%*}"
++/* We don't need to generate entries in .fixup, except when
++   -mrelocatable or -mrelocatable-lib is given.  */
++#undef RELOCATABLE_NEEDS_FIXUP
++#define RELOCATABLE_NEEDS_FIXUP	\
++  (target_flags & target_flags_explicit & MASK_RELOCATABLE)

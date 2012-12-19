@@ -1,0 +1,68 @@
+.TH amd-setup 1
+.SH NAME    \" Section header
+.PP
+
+amd-setup \- quickly configure an NFS mount on a client
+
+\" Convention:
+\" Underline anything that is typed verbatim - commands, etc.
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+amd-setup
+.ad
+.fi
+
+\" Optional sections
+.SH "DESCRIPTION"
+
+.B amd-setup
+is an interactive setup utility for creating NFS mounts on a client machine.
+It asks the user for necessary information about the mount, enables AMD
+if necessary, updates the necessary configuration files, and (re)starts
+the automount daemon.
+
+Once configured, mount points are automatically mounted when the
+associated directory (a subdirectory of /net by default) is accessed.
+
+Automounting NFS servers is particularly useful where some servers are
+not always available, such as on laptop clients used at multiple locations.
+
+.SH EXAMPLE
+
+Configure a client to access /share1 on a server named sculpin:
+
+.nf
+.na
+<<<ROOT@manta>>> /home/bacon 1005 # amd-setup
+Mount point under /net? sculpin
+Server hostname or IP? sculpin
+Exported directory on server? /share1
+Stopping amd.
+Waiting for PIDS: 68421, 68421.
+Starting amd.
+
+<<<ROOT@manta>>> /home/bacon 1006 # cd /net/sculpin
+
+<<<ROOT@manta>>> /net/sculpin 1007 # ls
+Shared/     User1/      User2/
+.ad
+.fi
+
+.SH FILES
+.nf
+.na
+/etc/rc.conf, /etc/amd.map
+.ad
+.fi
+
+.SH "SEE ALSO"
+desktop-installer
+
+.SH AUTHOR
+.nf
+.na
+Jason W. Bacon
+Acadix Consulting, LLC
+
