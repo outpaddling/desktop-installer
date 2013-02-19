@@ -549,8 +549,11 @@ EOM
 	install_packages graphics/xv     # Used for login splash image
 	cp ${DATADIR}/XFCE4/bsd_background.jpg $xdmdir/pixmaps
 	cp ${DATADIR}/XFCE4/beastie.xpm $xdmdir/pixmaps
+	# Put FreeBSD logo on login window
 	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdmdir/Xresources
 	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdmdir/Xresources
+	# Login window is too big on SVGA screens
+	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdmdir/Xresources
 	
 	# Enable xdm
 	dm_msg
