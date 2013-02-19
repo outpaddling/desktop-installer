@@ -1,4 +1,6 @@
 
+Explain need for wireless drivers
+
 Add automount and fusefs-ntfs support
 
 Use auto-update-port-framework instead of update-jb-ports to reinstall latest
