@@ -1636,7 +1636,9 @@ atapicam_config()
 
 sound_config()
 {
-    auto-config-snd-driver
+    if ! auto-config-snd-driver; then
+	printf "Warning: No sound devices detected.\n"
+    fi
     # Old method:
     #if ! fgrep -q snd_ $LOADER_CONF && [ $ARCH != 'powerpc' ]; then
     #    auto-append-line snd_driver 'snd_driver_load="YES"' $LOADER_CONF desktop-installer
