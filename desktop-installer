@@ -69,7 +69,6 @@ install_packages()
 	if [ ! -e $log_dir ]; then
 	    mkdir $log_dir
 	fi
-	printf "Installing $pkg...\n"
 	log_cmd auto-install-packages $pkg
 	if [ $? != 0 ]; then
 	    printf "install failed.\n"
@@ -217,7 +216,7 @@ install_xorg()
     install_packages archivers/cabextract
 
     # Without webfonts, print to PDF will look awful
-    if ! auto-package-installed webfonts; then
+    if ! auto-package-installed x11-fonts/webfonts; then
 	save_cwd=`pwd`
 	cd $PORTSDIR/x11-fonts/webfonts && make -DBATCH install && cd $save_cwd
     fi
@@ -325,10 +324,10 @@ EOM
     resp=`auto-ask intel-video "Do you want to install this driver? (y/n)" n`
     if [ "$resp" = 'y' ]; then
 	# Can't have two versions installed at once
-	if auto-package-installed xf86-video-intel; then
+	if auto-package-installed x11-drivers/xf86-video-intel; then
 	    pkg_delete -f /var/db/pkg/xf86-video-intel-*
 	fi
-	if ! auto-package-installed xf86-video-intel29; then
+	if ! auto-package-installed x11-drivers/xf86-video-intel29; then
 	    # IGNORE="not supported" as of 4-23-12
 	    # auto-update-port-framework x11-drivers/xf86-video-intel29
 	    cd $PORTSDIR/x11-drivers/xf86-video-intel29
@@ -735,7 +734,7 @@ firefox_flash()
 flash_config()
 {
     # Test for last item installed in selection
-    if auto-package-installed gnash || auto-package-installed nspluginwrapper; then
+    if auto-package-installed graphics/gnash || auto-package-installed www/nspluginwrapper; then
 	printf "Flash already installed.\n"
     else
 	# Gnash or Flash?
@@ -777,7 +776,6 @@ EOM
 	    install_packages graphics/gnash
 	    ;;
 	2)
-	    printf "Installing Flash...\n"
 	    start_dir=`pwd`
 	    if ! kldstat | grep -q linux; then
 		kldload linux
@@ -806,7 +804,7 @@ EOM
 	    8|9)
 		# Let flash port install the default linux_base as a depend
 		# Install linux_base
-		#if ! auto-package-installed linux_base-f10; then
+		#if ! auto-package-installed emulators/linux_base-f10; then
 		#    cd $PORTSDIR/emulators/linux_base-f10
 		#    make -DBATCH install
 		#fi
@@ -818,9 +816,8 @@ EOM
 			break
 		    fi
 		done
-		printf "Installing $flash\n"
 		
-		if ! auto-package-installed $flash; then
+		if ! auto-package-installed www/$flash; then
 		    # Remove old versions first
 		    if pkg_delete /var/db/pkg/linux-f10-flashplugin*; then
 			printf 'Old flash removed.\n'
@@ -829,9 +826,18 @@ EOM
 		    rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
 		    rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
 		    
-		    # Security risk running makesum, but Macromedia annoyingly
-		    # changes the distfile without changing the filename
-		    cd $PORTSDIR/www/$flash
+		    # Normally running make makesum is considered a security
+		    # risk, but this distfile comes from a trusted
+		    # site, and Macromedia annoyingly changes the distfile
+		    # without changing the filename.
+		    if [ -e $DATADIR/Patches/$flash ]; then
+			# Use port framework included with desktop-installer
+			# which is compatible with the 8.3-RELEASE ports tree.
+			# Newer ports use unsupported option variables.
+			cd $DATADIR/Patches/$flash
+		    else
+			cd $PORTSDIR/www/$flash
+		    fi
 		    make -DBATCH clean deinstall makesum install
 		    
 		    # Old location for browser plugins.  May be obsolete.
@@ -850,7 +856,7 @@ EOM
 	    mount linproc
 	    
 	    # nspluginwrapper for Linux plugins in native Firefox
-	    if ! auto-package-installed nspluginwrapper; then
+	    if ! auto-package-installed www/nspluginwrapper; then
 		# pkg_delete -f /var/db/pkg/curl-*
 		install_packages ftp/curl
 		cd $PORTSDIR/www/nspluginwrapper
@@ -933,8 +939,12 @@ common_packages()
     # warning.
     
     # Install these after X11 and desktop
-    install_packages net-mgmt/wifimgr audio/nas
-
+    if [ 0$enable_wireless = 0'y' ]; then
+	install_packages net-mgmt/wifimgr
+    fi
+    
+    install_packages audio/nas
+    
     # Per nas pkg-mesg:
     # Be sure to create a $NASD_CONF file; use
     # $NASD_CONF.eg as a starting point. 
@@ -942,7 +952,7 @@ common_packages()
     if [ ! -e $NASD_CONF ]; then
 	cp $NASD_CONF.eg $NASD_CONF
     fi
-
+    
     # Daemon and software for USB web cams
     webcam_config
 
@@ -959,12 +969,14 @@ common_packages()
     # bsdstats should be first or last, since it has an interactive
     # post-install script and we want the installs to run unattended
     # as much as possible.
+    
+    # FIXME: Problem with auto-package-installed: graphics/gtkam
+    
     common_pkgs="sysutils/bsdstats \
 	x11-fm/mtoolsfm \
 	mail/thunderbird \
 	www/firefox \
 	graphics/gimp \
-	graphics/gtkam \
 	graphics/xsane \
 	graphics/gocr \
 	graphics/dia \
@@ -999,7 +1011,11 @@ common_packages()
 	fi
     done
 
-    if auto-package-installed virtualbox-ose; then
+    if auto-package-installed emulators/mtools; then
+	mtools_config
+    fi
+    
+    if auto-package-installed emulators/virtualbox-ose; then
 	auto-append-line vboxdrv 'vboxdrv_load="YES"' $LOADER_CONF desktop-installer
 	auto-enable-service vboxnet desktop-installer
 	sync
@@ -1013,7 +1029,7 @@ common_packages()
     fi
 
     # Do this after selected packages are installed
-    if auto-package-installed qt4-corelib; then
+    if auto-package-installed devel/qt4-corelib; then
 	for pkg in x11-themes/qt4-style-phase x11-themes/qt4-style-float; do
 	    install_packages $pkg
 	done
@@ -1037,7 +1053,7 @@ mplayer_plugin_install()
 transcode_install()
 {
     # No package for lame
-    if ! auto-package-installed lame; then
+    if ! auto-package-installed audio/lame; then
 	(cd $PORTSDIR/audio/lame; make -DBATCH install)
     fi
     install_packages multimedia/transcode
@@ -1093,7 +1109,7 @@ xfce4_packages()
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
-    # if ! auto-package-installed thunar-volman; then
+    # if ! auto-package-installed sysutils/thunar-volman; then
 	# install_packages sysutils/thunar-volman-plugin
     # fi
     # multimedia/xfce4-media 
@@ -1148,6 +1164,25 @@ xfce4_packages()
 	make -DBATCH -DWITH_CUPS clean deinstall reinstall
 	cd $START_DIR
     fi
+
+    port=sysutils/xfce4-mount-plugin
+    if ! auto-package-installed $port; then
+	if [ ! -e $PORTSDIR/$port ]; then
+	    auto-update-port-framework -c $port
+	fi
+	
+	# Hack port to use sudo and open Thunar on mount
+	# auto-install-packages $port
+	cd $PORTSDIR/$port
+	make patch
+	sed -i '' -e 's|"mount %d"|"sudo mount %d"|g' \
+	    -e 's|"umount %d"|"sudo umount %d"|g' \
+	    work/xfce4-mount-plugin-*/panel-plugin/mount-plugin.h
+	sed -i '' -e \
+	    's|on_mount_cmd = g_strdup("")|on_mount_cmd = g_strdup("thunar %m")|g' \
+	    work/xfce4-mount-plugin-*/panel-plugin/mount-plugin.c
+	make install
+    fi
 }
 
 
@@ -1174,7 +1209,7 @@ cups_config()
     # CUPS
     # hpijs is for some strange reason not a depend for foomatic-db-hpijs
     
-    if [ $ARCH != 'i386' ] && [ $ARCH != 'amd64' ] && ! auto-package-installed ghostscript9; then
+    if [ $ARCH != 'i386' ] && [ $ARCH != 'amd64' ] && ! auto-package-installed print/ghostscript9; then
 	line
 	cat << EOM
 Some ghostscript ports attempt to build SVGAlib drivers on architectures
@@ -1185,7 +1220,7 @@ When the menu appears, disable all SVGAlib options and then select OK.
 EOM
 	line
 	pause
-	(cd /usr/ports/print/ghostscript9 && make config)
+	(cd $PORTSDIR/print/ghostscript9 && make config)
     fi
     
     install_packages \
@@ -1442,6 +1477,8 @@ samba_config()
 		$RC_CONF desktop-installer
 	    auto-enable-service samba desktop-installer
 	fi
+    else
+	printf "Samba already configured.\n"
     fi
 }
 
@@ -1561,7 +1598,6 @@ kde4_config()
 gnome_config()
 {
     # Gnome
-    printf "Installing Gnome...\n"
     if [ $1 = 'lite' ]; then
 	install_packages x11/gnome2-lite
     else
@@ -1600,11 +1636,12 @@ atapicam_config()
 
 sound_config()
 {
-    # FIXME: Detect proper sound driver instead of loading all
-    if ! fgrep -q snd_ $LOADER_CONF && [ $ARCH != 'powerpc' ]; then
-	auto-append-line snd_driver 'snd_driver_load="YES"' $LOADER_CONF desktop-installer
-	kldload snd_driver
-    fi
+    auto-config-snd-driver
+    # Old method:
+    #if ! fgrep -q snd_ $LOADER_CONF && [ $ARCH != 'powerpc' ]; then
+    #    auto-append-line snd_driver 'snd_driver_load="YES"' $LOADER_CONF desktop-installer
+    #    kldload snd_driver
+    #fi
 }
 
 
@@ -1646,13 +1683,13 @@ EOM
 	lid_state=`auto-ask lid-state 'Action to take when laptop is closed?' 3`
 	case $lid_state in
 	1)
-	    auto-set-suspend-on-lid S3
+	    auto-set-suspend-mode S3
 	    ;;
 	2)
-	    auto-set-suspend-on-lid NONE
+	    auto-set-suspend-mode NONE
 	    ;;
 	3)
-	    auto-set-suspend-on-lid S5
+	    auto-set-suspend-mode S5
 	    ;;
 	esac
     fi
@@ -1691,13 +1728,13 @@ network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
 
-    resp=`auto-ask install-wireless "Install wireless drivers? (y/n)" y`
-    if [ 0"$resp" = 0y ]; then
+    enable_wireless=`auto-ask install-wireless "Enable wireless networking? (y/n)" y`
+    if [ 0"$enable_wireless" = 0y ]; then
 	# add wlans_{dev}0="wlan0" to rc.conf
 	# FIXME: The real solution should detect all wireless devices,
 	# not just those enumerated here.
 	start_cwd=`pwd`
-	cd /usr/ports/net
+	cd $PORTSDIR/net
 	# ipw and iwi are in GENERIC kernel, so don't load their kmods
 	for port in bwi bwn; do
 	    cd $port-firmware-kmod
@@ -1787,7 +1824,7 @@ hal_config()
     # Installing HAL from binary package has been known to cause problems in
     # more than one release.
     # Not necessary, unless using HAL to automount
-    # if auto-package-installed hal && [ ! -e $PORTSDIR/sysutils/hal/work ]; then
+    # if auto-package-installed sysutils/hal && [ ! -e $PORTSDIR/sysutils/hal/work ]; then
     #     (cd ${PORTSDIR}/sysutils/hal && make deinstall reinstall)
     # fi
     auto-enable-service hald desktop-installer
@@ -1800,10 +1837,125 @@ mount_dist()
 	return 0
     fi
     for dev in acd0 cd0 acd1 cd1; do
-	if mount_cd9660 /dev/$dev /dist; then
+	if mount_cd9660 /dev/$dev /dist 2> /dev/null; then
 	    return 0
 	fi
     done
+}
+
+
+##########################################################################
+#   Function description:
+#       Set up user-mounting of cdroms, usb disks
+#
+#   Arguments:
+#       None
+#
+#   History:
+#   Date        Name        Modification
+#   2013-03-03  Jason Bacon Begin
+##########################################################################
+
+usermount_config()
+{
+    if [ ! -e ${LOCALBASE}/etc/sudoers.d/mount ]; then
+	line
+	cat << EOM
+You may configure sudo to allow users to mount and unmount removable media,
+without entering a password, using commands such as
+
+    sudo mount /media/cdrom0
+    sudo mount /media/flash_msdosfs
+
+It also enables the use of the xfce4-mount-plugin.
+
+If you are using AMD or an automounter provided by your desktop, answer 'n'
+here.
+
+Note: Only members of the "operator" group are granted this privilege.
+
+Important note: Unplugging a mounted USB or Firewire drive can cause
+filesystem damage and even system crashes.  Do not grant mount privileges
+to untrusted users.
+
+EOM
+	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
+	if [ 0$resp = 0y ]; then
+	    auto-install-packages sysutils/mcweject
+	    cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
+	    chmod 600 ${LOCALBASE}/etc/eject.allow
+	    gamin_dir='/usr/local/etc/gamin'
+	    mkdir -p $gamin_dir
+	    rm -f $gamin_dir/gaminrc
+	    
+	    sudoers=/usr/local/etc/sudoers.d/mount
+	    printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
+	    chmod 440 $sudoers
+	    
+	    for mount_point in cdrom0 cdrom1 flash_ufs flash_fat flash_ntfs; do
+		# Create mount points
+		mkdir -p /media/$mount_point
+		chgrp operator /media/$mount_point
+		chmod 770 /media/$mount_point
+		
+		# Update fstab
+		case $mount_point in
+		cdrom0)
+		    dev='/dev/cd0'
+		    type='cd9660'
+		    options='ro,noauto'
+		    ;;
+		cdrom1)
+		    dev='/dev/cd1'
+		    type='cd9660'
+		    options='ro,noauto'
+		    ;;
+		flash_ufs)
+		    dev='/dev/da0a'
+		    type='ufs'
+		    options='rw,noauto,sync'
+		    ;;
+		flash_fat)
+		    dev='/dev/da0s1'
+		    type='msdosfs'
+		    options='rw,noauto,sync'
+		    ;;
+		flash_ntfs)
+		    dev='/dev/da0s1'
+		    type='ntfs'
+		    options='rw,noauto,sync'
+		    ;;
+		*)
+		    ;;
+		esac
+		#printf "$dev\t$mount_point\t$type\t$options\t0\t0"
+		auto-append-line "$mount_point" "$dev\t/media/$mount_point\t$type\t$options\t0\t0" \
+		   /etc/fstab $0
+		
+		# Update sudoers drop-in
+		printf " /sbin/mount $dev, /sbin/umount $dev, /sbin/mount /media/$mount_point, /sbin/umount /media/$mount_point," >> $sudoers
+		
+		# Add custom commands
+		# Where do we put this to make it global default?
+		# From .config/xfce4/panel/xfce4-mount-plugin-24.rc
+		#mount_command=sudo mount %m
+		#umount_command=sudo umount -f %m
+		
+		# Prevent gam_server from accessing mount points
+		printf "poll /media/$mount_point\n" >> $gamin_dir/gaminrc
+	    done
+	    
+	    # Remove trailing comma
+	    sed -i '' -e 's|,$||g' $sudoers
+	    
+	    # Restart gam_server
+	    killall gam_server
+	fi
+	printf "poll /dist\n" >> $gamin_dir/gaminrc
+	line
+    else
+	printf "Sudo mount already configured.\n"
+    fi
 }
 
 
@@ -1888,12 +2040,12 @@ EOM
     update=`auto-ask update-desktop-installer "Install the latest version and restart?" n`
     if [ 0$update = 0y ]; then
 	auto-update-port-framework sysutils/auto-admin
-	cd /usr/ports/sysutils/auto-admin
+	cd $PORTSDIR/sysutils/auto-admin
 	pkg_delete -f /var/db/pkg/auto-admin*
 	make clean reinstall
 	
 	auto-update-port-framework sysutils/desktop-installer
-	cd /usr/ports/sysutils/desktop-installer
+	cd $PORTSDIR/sysutils/desktop-installer
 	pkg_delete -f /var/db/pkg/desktop-installer*
 	make clean reinstall
 	
@@ -2027,7 +2179,6 @@ fi
 
 external_drive_config
 cups_config
-mtools_config
 
 case $desktop_selection in
 1)
@@ -2062,6 +2213,7 @@ case $desktop_selection in
     printf "Invalid desktop selection.\n\n"
 esac
 
+usermount_config    # Must come after desktop installation.  Configured gamin.
 samba_config
 common_packages $desktop
 
