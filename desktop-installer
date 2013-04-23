@@ -997,7 +997,7 @@ common_packages()
 		cat $PORTSDIR/$pkg/pkg-descr
 	    fi
 	    printf '\n'
-	    resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
+	    resp=`auto-ask install-$pkg "Install $pkg? (y/n)" n`
 	    if [ "$resp" = y ]; then
 		selected_packages="$selected_packages $pkg"
 	    fi
@@ -1466,7 +1466,9 @@ samba_config()
 	resp=`auto-ask enable-samba 'Enable Windows fileserver? (y/n)' n`
 	if [ "$resp" = 'y' ]; then
 	    # Support multiple ports trees with different samba port names
-	    for port in samba3 samba34 samba35; do
+	    # There doesn't seem to be a default Samba version, so this list
+	    # will have to be updated as time goes by
+	    for port in samba3 samba34 samba35 samba36; do
 		if [ -e ${PORTSDIR}/net/$port ]; then
 		    install_packages net/$port
 		    break
@@ -2146,6 +2148,28 @@ EOM
     pause
 fi
 
+# Basic tools
+install_packages archivers/unzip net/rsync security/sudo devel/gmake
+
+# Configure devices and services
+atapicam_config
+sound_config
+procfs_config
+ntp_config
+nfs_client_config
+usb_serial_config
+serial_config
+bluetooth_config
+boot_splash_config
+if [ -e /dev/usb ]; then
+    # Make sure /dev/usb/* are accessible to operator
+    chgrp operator /dev/usb
+    chmod 750 /dev/usb
+fi
+external_drive_config
+cups_config
+
+# Install GUI
 cat << EOM
 
 Installation of Xorg and your chosen desktop will now begin.  This can
@@ -2160,28 +2184,7 @@ EOM
 
 pause
 
-# Basic tools
-install_packages archivers/unzip net/rsync security/sudo devel/gmake
-
 install_xorg
-atapicam_config
-sound_config
-procfs_config
-ntp_config
-nfs_client_config
-usb_serial_config
-serial_config
-bluetooth_config
-boot_splash_config
-# Make sure /dev/usb/* are accessible to operator
-if [ -e /dev/usb ]; then
-    chgrp operator /dev/usb
-    chmod 750 /dev/usb
-fi
-
-external_drive_config
-cups_config
-
 case $desktop_selection in
 1)
     gnome_config full
