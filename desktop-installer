@@ -2111,6 +2111,7 @@ valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
+    printf "0.. No desktop software.\n"
     printf "1.. Gnome Desktop\n"
     printf "2.. Gnome Lite Desktop\n"
     printf "3.. KDE 3 Desktop\n"
@@ -2127,7 +2128,7 @@ while [ $valid_selection = 0 ]; do
     valid_selection=1       # Assume, and correct if wrong
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
-       [ $desktop_selection -lt 1 ] || \
+       [ $desktop_selection -lt 0 ] || \
        [ $desktop_selection -gt 7 ]; then
 	valid_selection=0
     fi
@@ -2186,6 +2187,9 @@ pause
 
 install_xorg
 case $desktop_selection in
+0)
+    desktop=none
+    ;;
 1)
     gnome_config full
     desktop=gnome
