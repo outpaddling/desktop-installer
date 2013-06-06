@@ -207,7 +207,8 @@ install_xorg()
     # Install Xorg by itself.  Installing as a dependency may not get all the
     # modules we want.
     
-    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-fbdev
+    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-fbdev \
+	x11-drivers/xf86-video-mga
 
     # Install additional fonts before Xorg -configure
     install_packages x11-fonts/bitstream-vera
@@ -419,6 +420,7 @@ EOM
     if [ 0"$resp" = 0'y' ]; then
 	# ${LOCALBASE}$RCDIR/dbus restart started by hald?
 	# hald must be started AFTER moused to function with xorg
+	${LOCALBASE}$RCDIR/dbus restart
 	${LOCALBASE}$RCDIR/hald restart
 	if ! startx; then
 	    echo << EOM
@@ -469,6 +471,8 @@ startup_scripts()
     
     # Update default xinitrc to start selected desktop
     # FIXME: Use auto-replace-file?
+    # FIXME: Back-up to desktop-specific name and allow a second desktop
+    # installation to overwrite if appropriate
     if [ ! -e $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer ]; then
 	printf "Updating xinitrc...\n"
 	mv $X11BASE/lib/X11/xinit/xinitrc $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer
@@ -1290,7 +1294,12 @@ external_drive_config()
 
 java_config()
 {
-    if ! auto-package-installed java/icedtea-web; then
+    # FIXME: Can't have gecko-mediaplayer with icedtea-web
+    # icedtea-web requires libxul-1.9, which conflicts with libxul,
+    # which is required by gecko-mediaplayer
+    # if ! auto-package-installed java/icedtea-web; then
+    if ! auto-package-installed java/openjdk6 && \
+       ! auto-package-installed java/openjdk7; then
 	resp=`auto-ask install-java "Install Java? (y/n):" y`
 	if [ "$resp" = 'y' ]; then
 	    line
@@ -1298,7 +1307,7 @@ java_config()
 	    # plugin, so use the old diablo jdk with seamonkey for now.
 	    if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 		# Icedtea installs default jdk as a dependency
-		auto-install-packages java/icedtea-web
+		auto-install-packages java/openjdk6
 		# Needed by openjdk6
 		fdescfs_config
 	    else
@@ -2168,7 +2177,6 @@ if [ -e /dev/usb ]; then
     chmod 750 /dev/usb
 fi
 external_drive_config
-cups_config
 
 # Install GUI
 cat << EOM
@@ -2186,6 +2194,10 @@ EOM
 pause
 
 install_xorg
+
+# Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
+cups_config
+
 case $desktop_selection in
 0)
     desktop=none
