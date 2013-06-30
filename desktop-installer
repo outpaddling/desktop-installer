@@ -1601,6 +1601,7 @@ kde3_config()
     
     startup_scripts KDE3
     xorg_config kdm3
+    auto-enable-hal-mount
     kde3_packages
 }
 
@@ -1620,6 +1621,7 @@ kde4_config()
     fi
     startup_scripts KDE4
     xorg_config kdm4
+    auto-enable-hal-mount
     kde4_packages
 }
 
@@ -1648,6 +1650,7 @@ gnome_config()
     install_packages print/gnome-print
     startup_scripts Gnome
     xorg_config gdm
+    auto-enable-hal-mount
 }
 
 
