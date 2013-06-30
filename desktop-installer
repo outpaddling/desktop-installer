@@ -1079,11 +1079,11 @@ kde3_packages()
     # Packages specific to kde3
     # k3b, amarok broken in 9.x
     install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer
+	www/gecko-mediaplayer sysutils/k3b
+    
+    k3b_perms
     
     transcode_install
-    
-    # mplayer_plugin_install (dead)
 }
 
 
@@ -1094,7 +1094,29 @@ kde3_packages()
 
 kde4_packages()
 {
-    kde3_packages
+    install_packages multimedia/kaffeine \
+	www/gecko-mediaplayer sysutils/k3b-kde4
+    
+    k3b_perms
+    
+    transcode_install
+    
+    # Prevent nepomuk startup errors
+    # Should this be a dependency for something in the KDE4 collection?
+    install_packages databases/virtuoso
+}
+
+
+##########################################################################
+#   Function description:
+#       Fix permissions to allow users in operator group to use k3b.
+#       See k3b pkg-message for details.
+##########################################################################
+
+k3b_perms()
+{
+    # /dev/cd* and /dev/xpt* should be set by other code
+    chmod 6755 /usr/local/bin/cdrecord /usr/local/bin/cdrdao
 }
 
 
