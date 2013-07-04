@@ -254,6 +254,8 @@ get_mouse_port()
 
 xorg_config()
 {
+    # FIXME: $1 not being used.  Should run ${desktop}_packages
+    # before first X11 test.
     if [ $# != 1 ]; then
 	printf "Usage: xorg_config xdm|gdm|kdm3|kdm4\n"
 	exit 1
