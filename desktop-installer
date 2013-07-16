@@ -254,8 +254,6 @@ get_mouse_port()
 
 xorg_config()
 {
-    # FIXME: $1 not being used.  Should run ${desktop}_packages
-    # before first X11 test.
     if [ $# != 1 ]; then
 	printf "Usage: xorg_config xdm|gdm|kdm3|kdm4\n"
 	exit 1
@@ -342,7 +340,7 @@ EOM
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
-    if [ ! -e $XORG_CONF ]; then
+    #if [ ! -e $XORG_CONF ]; then
 	Xorg -configure
 	if [ 0$use_moused != 0'y' ]; then
 	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
@@ -350,7 +348,7 @@ EOM
 	    sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
-    fi
+    #fi
     line
     
     cat << EOM
@@ -472,7 +470,8 @@ startup_scripts()
     subdir=${DATADIR}/$1
     
     # Update default xinitrc to start selected desktop
-    # FIXME: Use auto-replace-file?
+    # FIXME: Use auto-replace-file?  Only after updating to allow
+    # use of pre-desktop-installer or other extensions.
     # FIXME: Back-up to desktop-specific name and allow a second desktop
     # installation to overwrite if appropriate
     if [ ! -e $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer ]; then
@@ -481,7 +480,11 @@ startup_scripts()
 	cp $subdir/xinitrc $X11BASE/lib/X11/xinit
     else
 	printf "$X11BASE/lib/X11/xinit/xinitrc has already been modified.\n"
-	#exit 1
+	printf "Overwrite? (y/[n]) "
+	read overwrite
+	if [ 0$overwrite = 0y ]; then
+	    cp $subdir/xinitrc $X11BASE/lib/X11/xinit
+	fi
     fi
     
     # Update default xsession to start selected desktop
@@ -491,10 +494,13 @@ startup_scripts()
 	cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
     else
 	printf "$X11BASE/lib/X11/xdm/Xsession has already been modified.\n"
-	#exit 1
+	printf "Overwrite? (y/[n]) "
+	read overwrite
+	if [ 0$overwrite = 0y ]; then
+	    cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
+	fi
     fi
 }
-
 
 dm_msg()
 {
@@ -994,10 +1000,11 @@ common_packages()
 	editors/abiword \
 	math/gnumeric \
 	finance/gnucash \
-	editors/libreoffice"
+	editors/libreoffice \
+	editors/openoffice-3"
     
     for pkg in $common_pkgs; do
-	if ! auto-package-installed $pkg; then
+	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
 	    printf '\n---------------------------------------------------------------------------\n'
 	    if [ -e $PORTSDIR/$pkg/pkg-descr ]; then
 		cat $PORTSDIR/$pkg/pkg-descr
@@ -1598,7 +1605,7 @@ kde3_config()
     if [ $1 = 'lite' ]; then
 	install_packages x11/kde-lite
     else
-	install_packages x11/kde
+	install_packages x11/kde3
     fi
     
     startup_scripts KDE3
@@ -2150,11 +2157,11 @@ while [ $valid_selection = 0 ]; do
     printf "0.. No desktop software.\n"
     printf "1.. Gnome Desktop\n"
     printf "2.. Gnome Lite Desktop\n"
-    printf "3.. KDE 3 Desktop\n"
-    printf "4.. KDE 3 Lite Desktop\n"
-    printf "5.. KDE 4 Desktop\n"
-    printf "6.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
-    printf "7.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    #printf "3.. KDE 3 Desktop\n"
+    #printf "4.. KDE 3 Lite Desktop\n"
+    printf "3.. KDE 4 Desktop\n"
+    printf "4.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "5.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2238,22 +2245,14 @@ case $desktop_selection in
     desktop=gnome
     ;;
 3)
-    kde3_config full
-    desktop=kde3
-    ;;
-4)
-    kde3_config lite
-    desktop=kde3
-    ;;
-5)
     kde4_config
     desktop=kde4
     ;;
-6)
+4)
     xfce4_xdm_config
     desktop=xfce
     ;;
-7)
+5)
     lxde_xdm_config
     desktop=lxde
     ;;
