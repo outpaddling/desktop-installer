@@ -1138,7 +1138,7 @@ xfce4_packages()
 {
     # Packages specific to xfce4
     install_packages graphics/epdfview math/galculator sysutils/xfburn \
-	x11/xlockmore graphics/ristretto misc/xfce4-artwork \
+	x11/xlockmore x11/xscreensaver graphics/ristretto misc/xfce4-artwork \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
 	misc/xfce4-wm-themes
 
