@@ -79,6 +79,33 @@ install_packages()
 
 
 ##########################################################################
+#   Function description:
+#       
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name        Modification
+#   2013-11-09  Charlie &   Begin
+##########################################################################
+
+delete_packages()
+{
+    if [ $# -lt 1 ]; then
+	printf "Usage: $0 pkg [pkg ...]\n"
+	exit 1
+    fi
+    
+    if auto-using-pkgng; then
+	pkg delete $@
+    else
+	pkg_delete $@
+    fi
+}
+
+
+##########################################################################
 #   Add entries to devfs.conf
 #   A reboot is required to fully test the changes
 ##########################################################################
@@ -184,7 +211,7 @@ EOM
     printf "Remove old packages? (requires reboot) (y/n) [n] "
     read resp
     if [ 0"$resp" = 0y ]; then
-	pkg_delete -a
+	delete_packages -a
 	shutdown -r now
     fi
 }
@@ -207,8 +234,9 @@ install_xorg()
     # Install Xorg by itself.  Installing as a dependency may not get all the
     # modules we want.
     
-    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-fbdev \
-	x11-drivers/xf86-video-mga
+    # Is this really of any use?
+    # x11-drivers/xf86-video-fbdev
+    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-mga
 
     # Install additional fonts before Xorg -configure
     install_packages x11-fonts/bitstream-vera
@@ -223,12 +251,14 @@ install_xorg()
     fi
     
     # Check for virtualbox guest
-    if vbox_guest; then
-	install_packages emulators/virtualbox-ose-additions
-	auto-enable-service vboxguest desktop-installer
-	auto-enable-service vboxservice desktop-installer
-	# From wiki.freebsd.org/VirtualBox
-	cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
+    if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
+	if [ $install_guest_additions = y ]; then
+	    install_packages emulators/virtualbox-ose-additions
+	    auto-enable-service vboxguest desktop-installer
+	    auto-enable-service vboxservice desktop-installer
+	    # From wiki.freebsd.org/VirtualBox
+	    cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
+	fi
     fi
     
     hal_config
@@ -316,6 +346,8 @@ exit 0|g' $RC_RESUME
 	mv -f temp.rc.conf $RC_CONF
     fi
 
+# intel29 port no longer available
+if false; then
     cat << EOM
     
     Some newer Intel GPUs, such as the one in the EEE PC 1015PE, require
@@ -326,7 +358,7 @@ EOM
     if [ "$resp" = 'y' ]; then
 	# Can't have two versions installed at once
 	if auto-package-installed x11-drivers/xf86-video-intel; then
-	    pkg_delete -f /var/db/pkg/xf86-video-intel-*
+	    delete_packages -f /var/db/pkg/xf86-video-intel-*
 	fi
 	if ! auto-package-installed x11-drivers/xf86-video-intel29; then
 	    # IGNORE="not supported" as of 4-23-12
@@ -335,6 +367,7 @@ EOM
 	    make distclean install
 	fi
     fi
+fi
 
     # Create and install an xorg.conf file.  This isn't necessary, but it's
     # useful since many monitors are not autodetected properly, and setting
@@ -351,8 +384,10 @@ EOM
     #fi
     line
     
-    cat << EOM
-Configuring xorg.conf.  You may wish to add monitor settings to the
+    success=0
+    while [ $success != 1 ]; do
+	cat << EOM
+You may wish to add monitor settings to the
 Monitor section (HorizSync and VertRefresh) to allow the X11 server
 to optimize your display settings, e.g.
 
@@ -366,72 +401,85 @@ to optimize your display settings, e.g.
 
 These settings can be found in the monitor manual.
 EOM
-    line
+	line
     
-    # Hacks to make Xorg work on PowerPC systems
-    if [ $ARCH = 'powerpc' ]; then
-	cat << EOM
-	In xorg.conf, it may be necessary to add the following to
-	Section "Device":
-	
-	    Option  "BusType"   "PCI"
-	    Option  "Int10"     "False"
-	    Option  "MacModel"  "ibook"
-	
-	and the following to Section "ServerLayout" to enable
-	laptop keyboards:
-	
-	    Option "AllowEmptyInput" "off"
-	
-	These items are being appended to your xorg.conf as
-	comments, so you easily can add them.
+	# Hacks to make Xorg work on PowerPC systems
+	if [ $ARCH = 'powerpc' ]; then
+	    cat << EOM
+	    In xorg.conf, it may be necessary to add the following to
+	    Section "Device":
+	    
+		Option  "BusType"   "PCI"
+		Option  "Int10"     "False"
+		Option  "MacModel"  "ibook"
+	    
+	    and the following to Section "ServerLayout" to enable
+	    laptop keyboards:
+	    
+		Option "AllowEmptyInput" "off"
+	    
+	    These items are being appended to your xorg.conf as
+	    comments, so you easily can add them.
 EOM
-cat << EOM >> /etc/X11/xorg.conf
-# Section "Device"
-#           Option  "BusType"   "PCI"
-#           Option  "Int10"     "False"
-#           Option  "MacModel"  "ibook"
-# "ServerLayout"
-#           Option "AllowEmptyInput" "off"
-EOM
-    fi
-
-    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
-    if [ "$resp" = 'y' ]; then
-	vi $XORG_CONF
-    fi
-
-    cat << EOM
-    
-    The first test of X11 may take a minute to start up, as the desktop
-    system creates all new configuration files.
-    
-EOM
-    if [ -e /tmp/.X0-lock ]; then
-	default_resp='n'
-    else
-	default_resp='y'
-    fi
-    printf "Test X11? (y/n) [$default_resp] "
-    read resp
-    if [ 0$resp = 0 ]; then
-	resp=$default_resp
-    fi
-    if [ 0"$resp" = 0'y' ]; then
-	# ${LOCALBASE}$RCDIR/dbus restart started by hald?
-	# hald must be started AFTER moused to function with xorg
-	${LOCALBASE}$RCDIR/dbus restart
-	${LOCALBASE}$RCDIR/hald restart
-	if ! startx; then
-	    echo << EOM
-X11 seems to have failed to start.  Try editing $XORG_CONF.
-If you are using an older video chipset (as many servers do), try
-rebuilding x11-drivers/xorg-drivers with additional drivers such as
-MGA.
-EOM
-	    exit 1
 	fi
-    fi
+    
+	resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
+	if [ "$resp" = 'y' ]; then
+	    vi $XORG_CONF
+	fi
+    
+	cat << EOM
+    
+The first test of X11 may take a minute to start up, as the desktop
+system creates all new configuration files.
+    
+EOM
+	if [ -e /tmp/.X0-lock ]; then
+	    default_resp='n'
+	else
+	    default_resp='y'
+	fi
+	printf "Test X11? (y/n) [$default_resp] "
+	read resp
+	if [ 0$resp = 0 ]; then
+	    resp=$default_resp
+	fi
+	if [ 0"$resp" = 0'y' ]; then
+	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
+	    # hald must be started AFTER moused to function with xorg
+	    ${LOCALBASE}$RCDIR/dbus restart
+	    ${LOCALBASE}$RCDIR/hald restart
+	    if startx; then
+		success=1
+	    else
+		cat << EOM
+X11 seems to have failed to start.  Viewing your Xorg log...
+EOM
+		pause
+		$EDITOR /var/log/Xorg.0.log
+		cat << EOM
+Your chipset is
+
+$(grep Chipset /var/log/Xorg.0.log)
+
+If you are using an older video chipset (as many server motherboards do),
+you may need an Xorg video driver that is not installed by default.
+EOM
+
+		more_drivers=`auto-ask more-drivers \
+		    "Would you like to try installing additional drivers? (y/n)" y`
+		if [ $more_drivers = 'y' ]; then
+		    save_cwd=`pwd`
+		    cd /usr/ports/x11-drivers/xorg-drivers
+		    make config
+		    make install
+		    cd $save_cwd
+		fi
+	    fi
+	else
+	    success=1
+	fi
+    done
     
     resp=`auto-ask forward-x11 "Forward X11 DISPLAY to other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
@@ -476,7 +524,9 @@ startup_scripts()
     # installation to overwrite if appropriate
     if [ ! -e $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer ]; then
 	printf "Updating xinitrc...\n"
-	mv $X11BASE/lib/X11/xinit/xinitrc $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer
+	if [ -e $X11BASE/lib/X11/xinit/xinitrc ]; then
+	    mv $X11BASE/lib/X11/xinit/xinitrc $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer
+	fi
 	cp $subdir/xinitrc $X11BASE/lib/X11/xinit
     else
 	printf "$X11BASE/lib/X11/xinit/xinitrc has already been modified.\n"
@@ -490,7 +540,9 @@ startup_scripts()
     # Update default xsession to start selected desktop
     if [ ! -e $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer ]; then
 	printf "Updating Xsession...\n"
-	mv $X11BASE/lib/X11/xdm/Xsession $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
+	if [ -e $X11BASE/lib/X11/xdm/Xsession ]; then
+	    mv $X11BASE/lib/X11/xdm/Xsession $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
+	fi
 	cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
     else
 	printf "$X11BASE/lib/X11/xdm/Xsession has already been modified.\n"
@@ -545,6 +597,7 @@ EOM
 	# Disable gdm and kdm
 	# FIXME: Disable kdm in ttys
 	gdm_disable
+
 	# Install xdmshutdown
 	if [ ! -e /var/db/pkg/tk-8.5* ]; then
 	    install_packages x11-toolkits/tk85
@@ -565,6 +618,13 @@ EOM
 	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdmdir/Xresources
 	# Login window is too big on SVGA screens
 	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdmdir/Xresources
+	
+	# Fix login problem on 9.2-RELEASE with XFCE
+	# Error: XDM authorization key matches an existing client
+	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
+	auto-append-line \
+	    'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
+	    /usr/local/lib/X11/xdm/xdm-config $0
 	
 	# Enable xdm
 	dm_msg
@@ -813,7 +873,7 @@ EOM
 		cd $PORTSDIR/www/linux-flashplugin9
 		make -DBATCH install
 		;;
-	    8|9)
+	    8|9|10)
 		# Let flash port install the default linux_base as a depend
 		# Install linux_base
 		#if ! auto-package-installed emulators/linux_base-f10; then
@@ -831,8 +891,14 @@ EOM
 		
 		if ! auto-package-installed www/$flash; then
 		    # Remove old versions first
-		    if pkg_delete /var/db/pkg/linux-f10-flashplugin*; then
-			printf 'Old flash removed.\n'
+		    if auto-using-pkgng; then
+			if pkg delete linux-f10-flashplugin; then
+			    printf 'Old flash removed.\n'
+			fi
+		    else
+			if pkg_delete /var/db/pkg/linux-f10-flashplugin*; then
+			    printf 'Old flash removed.\n'
+			fi
 		    fi
 		    rm -f $LOCALBASE/lib/firefox/plugins/libflash*
 		    rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
@@ -842,14 +908,7 @@ EOM
 		    # risk, but this distfile comes from a trusted
 		    # site, and Macromedia annoyingly changes the distfile
 		    # without changing the filename.
-		    if [ -e $DATADIR/Patches/$flash ]; then
-			# Use port framework included with desktop-installer
-			# which is compatible with the 8.3-RELEASE ports tree.
-			# Newer ports use unsupported option variables.
-			cd $DATADIR/Patches/$flash
-		    else
-			cd $PORTSDIR/www/$flash
-		    fi
+		    cd $PORTSDIR/www/$flash
 		    make -DBATCH clean deinstall makesum install
 		    
 		    # Old location for browser plugins.  May be obsolete.
@@ -869,7 +928,7 @@ EOM
 	    
 	    # nspluginwrapper for Linux plugins in native Firefox
 	    if ! auto-package-installed www/nspluginwrapper; then
-		# pkg_delete -f /var/db/pkg/curl-*
+		export AUTO_BUILD_FROM_SOURCE=fall-back
 		install_packages ftp/curl
 		cd $PORTSDIR/www/nspluginwrapper
 		make -DBATCH install
@@ -916,11 +975,6 @@ gtk2_cups()
 	read resp
 	if [ 0"$resp" = 0y ]; then
 	    auto-append-line WITH_CUPS 'WITH_CUPS="YES"' $MAKE_CONF desktop-installer
-	    #pkg_delete -f /var/db/pkg/jpeg-7*
-	    #pkg_delete -f /var/db/pkg/tiff-3.*
-	    #pkg_delete -f /var/db/pkg/jasper-1.*
-	    #pkg_delete -f /var/db/pkg/glibmm-*
-	    #pkg_delete -f /var/db/pkg/glib-2.*
 	    
 	    cd $PORTSDIR/print/libgnomeprint
 	    make && make deinstall && make reinstall
@@ -975,34 +1029,34 @@ common_packages()
     flash_config
 
     # Install JDK
-    java_config
+    # Let it be installed as a prereq for something else
+    # java_config
     
     # Common packages for desktop systems
-    # bsdstats should be first or last, since it has an interactive
+    # bsdstats should be last, since it has an interactive
     # post-install script and we want the installs to run unattended
-    # as much as possible.
+    # as much as possible.  Also, it reports installed software, so
+    # we want everything else installed first.
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs="sysutils/bsdstats \
-	x11-fm/mtoolsfm \
+    common_pkgs="x11-fm/mtoolsfm \
 	mail/thunderbird \
 	www/firefox \
 	graphics/gimp \
 	graphics/xsane \
-	graphics/gocr \
 	graphics/dia \
 	graphics/inkscape \
 	print/scribus \
 	print/teTeX \
 	textproc/dblatex \
 	textproc/xmlto \
-	editors/abiword \
-	math/gnumeric \
 	finance/gnucash \
 	editors/libreoffice \
-	editors/openoffice-3"
+	editors/openoffice-3 \
+	sysutils/bsdstats"
     
+    pwd
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
 	    printf '\n---------------------------------------------------------------------------\n'
@@ -1010,7 +1064,14 @@ common_packages()
 		cat $PORTSDIR/$pkg/pkg-descr
 	    fi
 	    printf '\n'
-	    resp=`auto-ask install-$pkg "Install $pkg? (y/n)" n`
+	    case $pkg in
+	    'sysutils/bsdstats'|'www/firefox')
+		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
+		;;
+	    *)
+		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" n`
+		;;
+	    esac
 	    if [ "$resp" = y ]; then
 		selected_packages="$selected_packages $pkg"
 	    fi
@@ -1140,7 +1201,7 @@ xfce4_packages()
     install_packages graphics/epdfview math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xscreensaver graphics/ristretto misc/xfce4-artwork \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes
+	misc/xfce4-wm-themes audio/xfce4-mixer
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
@@ -1216,7 +1277,7 @@ xfce4_packages()
 	sed -i '' -e \
 	    's|on_mount_cmd = g_strdup("")|on_mount_cmd = g_strdup("thunar %m")|g' \
 	    work/xfce4-mount-plugin-*/panel-plugin/mount-plugin.c
-	make install
+	make -DBATCH install
     fi
 }
 
@@ -1242,7 +1303,6 @@ cups_config()
 {
     printf "Configuring cups...\n"
     # CUPS
-    # hpijs is for some strange reason not a depend for foomatic-db-hpijs
     
     if [ $ARCH != 'i386' ] && [ $ARCH != 'amd64' ] && ! auto-package-installed print/ghostscript9; then
 	line
@@ -1258,8 +1318,12 @@ EOM
 	(cd $PORTSDIR/print/ghostscript9 && make config)
     fi
     
+    # FIXME
+    # print/hpijs is for some strange reason not a depend for
+    # foomatic-db-hpijs, which fails to build without it.
+    # hpijs also conflicts with foomatic-filters
     install_packages \
-	print/cups print/hpijs print/foomatic-db-engine \
+	print/cups print/foomatic-db-engine \
 	print/foomatic-db-hpijs print/foomatic-db \
 	print/foomatic-filters print/gutenprint
 
@@ -1331,7 +1395,7 @@ java_config()
     # if ! auto-package-installed java/icedtea-web; then
     if ! auto-package-installed java/openjdk6 && \
        ! auto-package-installed java/openjdk7; then
-	resp=`auto-ask install-java "Install Java? (y/n):" y`
+	resp=`auto-ask install-java "Install Java? (y/n):" n`
 	if [ "$resp" = 'y' ]; then
 	    line
 	    # As of Nov 2010, openjdk6 does not have a working browser
@@ -1649,12 +1713,17 @@ gnome_config()
     fi
     
     # 8.2: gpk-update-icon torrent overloads system
-    # Work around y removing packagekit
-    for bad_pkg in /var/db/pkg/gnome-packagekit-* /var/db/pkg/PackageKit-*; do
-	if [ -e $bad_pkg ]; then
-	    pkg_delete -f $bad_pkg
-	fi
-    done
+    # Work around by removing packagekit
+    if ! auto-using-pkgng; then
+	for bad_pkg in /var/db/pkg/gnome-packagekit-* /var/db/pkg/PackageKit-*; do
+	    if [ -e $bad_pkg ]; then
+		delete_packages -f $bad_pkg
+	    fi
+	done
+    else
+	# FIXME: Delete packagekit packages with pkgng, assuming this
+	# is still necessary
+    fi
 
     install_packages print/gnome-print
     startup_scripts Gnome
@@ -1775,7 +1844,12 @@ network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
 
-    enable_wireless=`auto-ask install-wireless "Enable wireless networking? (y/n)" y`
+    if sysctl -a | fgrep -q dev.acpi_lid.0; then
+	default_wireless='y'
+    else
+	default_wireless='n'
+    fi
+    enable_wireless=`auto-ask install-wireless "Enable wireless networking? (y/n)" $default_wireless`
     if [ 0"$enable_wireless" = 0y ]; then
 	# add wlans_{dev}0="wlan0" to rc.conf
 	# FIXME: The real solution should detect all wireless devices,
@@ -1793,14 +1867,15 @@ network_config()
 	cd $start_cwd
 	# Check bwi before bwn.  They support the same devices, but
 	# bwi seems to work better.
-	for driver in an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw wpi zyd; do
+	drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw urtwn wpi zyd"
+	for driver in $drivers; do
 	    if kldload if_${driver} > /dev/null 2>&1; then
 		printf "Loaded $driver.\n"
 	    fi
 	done
 	
 	wlan=0
-	for driver in an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw wpi zyd; do
+	for driver in $drivers; do
 	    if grep -q "^${driver}0" /var/run/dmesg.boot || \
 		# FIXME: Check also for ${driver}1, ${driver}2, etc.
 		# Also could use a better test than this simple grep.
@@ -1996,7 +2071,9 @@ EOM
 	    sed -i '' -e 's|,$||g' $sudoers
 	    
 	    # Restart gam_server
-	    killall gam_server
+	    if ! killall gam_server; then
+		printf "Note: gam_server was not running.\n"
+	    fi
 	fi
 	printf "poll /dist\n" >> $gamin_dir/gaminrc
 	line
@@ -2046,6 +2123,7 @@ NASD_CONF="$LOCALBASE/etc/nasd.conf"
 
 cat << EOM
 
+---------------------------------------------------------------------------
 Desktop-installer automates the configuration of a FreeBSD desktop/laptop
 system.  You will be guided through the process and asked some basic
 questions, as well as a few that may require some thought and research.
@@ -2067,41 +2145,23 @@ Answers to most configuration questions will be saved in the file
 "./auto-ask-responses.txt".  If this file is present in the current directory
 when you run desktop-installer again, your previous responses will be
 the defaults.
-
+---------------------------------------------------------------------------
 EOM
 pause
 
-if [ ! -e updated ]; then
-    clear
     cat << EOM
-    
+
+---------------------------------------------------------------------------
 Note: Desktop-installer is evolving rapidly, as it faces huge challenges
 in keeping up with the evolution of FreeBSD and the many ports it installs.
 
-You may wish to install the latest version and restart.
+You may want to install the latest version available from:
 
-Note that if you are using a development version from jb-ports, this will
-DOWNGRADE auto-admin and desktop-installer to the latest committed version.
+    svn  co  http://svn.code.sf.net/p/freebsdwip/code/  wip
 
+Note that you may need to upgrade both desktop-installer and auto-admin.
+---------------------------------------------------------------------------
 EOM
-    update=`auto-ask update-desktop-installer "Install the latest version and restart?" n`
-    if [ 0$update = 0y ]; then
-	auto-update-port-framework sysutils/auto-admin
-	cd $PORTSDIR/sysutils/auto-admin
-	pkg_delete -f /var/db/pkg/auto-admin*
-	make clean reinstall
-	
-	auto-update-port-framework sysutils/desktop-installer
-	cd $PORTSDIR/sysutils/desktop-installer
-	pkg_delete -f /var/db/pkg/desktop-installer*
-	make clean reinstall
-	
-	touch updated
-	printf "Restarting desktop-installer.  "
-	pause
-	exec desktop-installer
-    fi
-fi
 
 check_inodes
 mount_dist
@@ -2178,7 +2238,6 @@ while [ $valid_selection = 0 ]; do
 done
 
 power_config
-network_config
 auto-append-line kern.maxfiles 'kern.maxfiles="25000"' $LOADER_CONF desktop-installer
 if vbox_guest; then
     auto-append-line kern.timecounter.hardware=i8254 \
@@ -2194,6 +2253,9 @@ fi
 
 # Basic tools
 install_packages archivers/unzip net/rsync security/sudo devel/gmake
+
+# Need gmake for some wireless drivers, so do this after basic tools
+network_config
 
 # Configure devices and services
 atapicam_config
@@ -2211,6 +2273,13 @@ if [ -e /dev/usb ]; then
     chmod 750 /dev/usb
 fi
 external_drive_config
+
+# Ask the questions before beginning so the installation can
+# run unattended
+if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
+    install_guest_additions=`auto-ask guest-additions \
+    'Install VirtualBox guest additions?' y`
+fi
 
 # Install GUI
 cat << EOM
