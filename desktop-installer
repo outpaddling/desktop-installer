@@ -1858,11 +1858,13 @@ network_config()
 	cd $PORTSDIR/net
 	# ipw and iwi are in GENERIC kernel, so don't load their kmods
 	for port in bwi bwn; do
-	    cd $port-firmware-kmod
-	    if ! make -DBATCH install; then
-		printf "Failed to install $port-firmware-kmod.\n"
+	    if ! auto-package-installed net/$port-firmware-kmod; then
+		cd $port-firmware-kmod
+		if ! make -DBATCH install; then
+		    printf "Failed to install $port-firmware-kmod.\n"
+		fi
+		cd ..
 	    fi
-	    cd ..
 	done
 	cd $start_cwd
 	# Check bwi before bwn.  They support the same devices, but
@@ -2331,6 +2333,8 @@ esac
 
 usermount_config    # Must come after desktop installation.  Configured gamin.
 samba_config
+
+# After network_config
 common_packages $desktop
 
 # Additional package installs may have added fonts, etc.
