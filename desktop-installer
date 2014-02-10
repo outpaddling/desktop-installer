@@ -1325,7 +1325,7 @@ EOM
     install_packages \
 	print/cups print/foomatic-db-engine \
 	print/foomatic-db-hpijs print/foomatic-db \
-	print/foomatic-filters print/gutenprint
+	print/hpijs print/gutenprint
 
     update_devfs_rules cups unlpt ulpt lpt
     
