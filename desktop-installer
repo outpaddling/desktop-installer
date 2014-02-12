@@ -214,6 +214,35 @@ EOM
 	delete_packages -a
 	shutdown -r now
     fi
+    
+    line
+    if ! auto-using-pkgng; then
+	cat << EOM
+The new pkgng package management system does a much better job working with
+the latest packages.  If you are using the old pkg_add command, using the
+-RELEASE ports tree is recommended to maintain compatibility between
+binary packages and ports built from source.  With pkgng, you can install
+the latest binary packages and keep your ports tree up-to-date using
+portsnap.
+
+EOM
+	use_pkgng=`auto-ask use-pkgng 'Switch to pkgng?' y`
+	if [ $use_pkgng = 'y' ]; then
+	    auto-enable-pkgng
+	fi
+    fi
+    
+    # Update ports
+    line
+    if auto-using-pkgng; then
+	update_ports=`auto-ask update-ports "Update to latest ports with portsnap?" y`
+	if [ $update_ports = 'y' ]; then
+	    portsnap fetch
+	    if ! portsnap update; then
+		portsnap extract
+	    fi
+	fi
+    fi
 }
 
 
@@ -1198,10 +1227,11 @@ k3b_perms()
 xfce4_packages()
 {
     # Packages specific to xfce4
+    # FIXME: librsvg2 should be a depend for the xfce4 port
     install_packages graphics/epdfview math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xscreensaver graphics/ristretto misc/xfce4-artwork \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes audio/xfce4-mixer
+	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
@@ -1323,9 +1353,11 @@ EOM
     # foomatic-db-hpijs, which fails to build without it.
     # hpijs also conflicts with foomatic-filters
     install_packages \
-	print/cups print/foomatic-db-engine \
-	print/foomatic-db-hpijs print/foomatic-db \
-	print/hpijs print/gutenprint
+	print/hpijs \
+	print/cups \
+	print/foomatic-db-engine \
+	print/foomatic-db-hpijs \
+	print/gutenprint
 
     update_devfs_rules cups unlpt ulpt lpt
     
