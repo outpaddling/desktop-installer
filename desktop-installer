@@ -1194,7 +1194,8 @@ kde3_packages()
 kde4_packages()
 {
     install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer sysutils/k3b-kde4
+	www/gecko-mediaplayer sysutils/k3b-kde4 \
+	x11-themes/kde-gtk-config
     
     k3b_perms
     
