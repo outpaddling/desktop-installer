@@ -533,14 +533,14 @@ EOM
 
 
 ##########################################################################
-#   Modify default startup scripts so that KDE3 is the default for
-#   all users.
+#   Modify default startup scripts so that chosen desktop is the default
+#   for all users.
 ##########################################################################
 
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts Gnome|KDE3|KDE4|XFCE4|LXDE\n"
+	printf "Usage: startup_scripts Gnome|KDE4|XFCE4|LXDE\n"
 	exit 1
     fi
     
@@ -551,18 +551,16 @@ startup_scripts()
     # use of pre-desktop-installer or other extensions.
     # FIXME: Back-up to desktop-specific name and allow a second desktop
     # installation to overwrite if appropriate
-    if [ ! -e $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer ]; then
+    xinitrc=/root/.xinitrc
+    if [ ! -e $xinitrc ]; then
 	printf "Updating xinitrc...\n"
-	if [ -e $X11BASE/lib/X11/xinit/xinitrc ]; then
-	    mv $X11BASE/lib/X11/xinit/xinitrc $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer
-	fi
-	cp $subdir/xinitrc $X11BASE/lib/X11/xinit
+	cp $subdir/xinitrc $xinitrc
     else
-	printf "$X11BASE/lib/X11/xinit/xinitrc has already been modified.\n"
+	printf "$xinitrc already exists.\n"
 	printf "Overwrite? (y/[n]) "
 	read overwrite
 	if [ 0$overwrite = 0y ]; then
-	    cp $subdir/xinitrc $X11BASE/lib/X11/xinit
+	    cp $subdir/xinitrc $xinitrc
 	fi
     fi
     
@@ -1082,7 +1080,6 @@ common_packages()
 	textproc/xmlto \
 	finance/gnucash \
 	editors/libreoffice \
-	editors/openoffice-3 \
 	sysutils/bsdstats"
     
     pwd
@@ -1165,24 +1162,6 @@ transcode_install()
     #    cd $PORTSDIR/multimedia/transcode
     #    make -DBATCH install
     #fi
-}
-
-
-##########################################################################
-#   Install packages useful to KDE3 users.  These packages will have
-#   alternatives under KDE and Gnome.
-##########################################################################
-
-kde3_packages()
-{
-    # Packages specific to kde3
-    # k3b, amarok broken in 9.x
-    install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer sysutils/k3b
-    
-    k3b_perms
-    
-    transcode_install
 }
 
 
@@ -1689,26 +1668,6 @@ lxde_xdm_config()
     cp ${DATADIR}/org.freedesktop.consolekit.pkla \
 	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
-}
-
-
-##########################################################################
-#   Configure the system to run the KDE3 desktop.
-##########################################################################
-
-kde3_config()
-{
-    # kde3
-    if [ $1 = 'lite' ]; then
-	install_packages x11/kde-lite
-    else
-	install_packages x11/kde3
-    fi
-    
-    startup_scripts KDE3
-    xorg_config kdm3
-    auto-enable-hal-mount
-    kde3_packages
 }
 
 
