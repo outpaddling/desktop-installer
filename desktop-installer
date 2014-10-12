@@ -314,7 +314,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|kdm3|kdm4\n"
+	printf "Usage: xorg_config xdm|gdm|kdm4\n"
 	exit 1
     else
 	display_manager=$1
@@ -617,13 +617,22 @@ GDM is already enabled.  If you are running both Gnome and XFCE, you should
 use GDM, not XDM.
 
 EOM
+	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
+    elif auto-service-enabled kdm4; then
+	cat << EOM
+
+KDM4 is already enabled.  If you are running both Gnome and XFCE, you should
+use KDM4, not XDM.
+
+EOM
+	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
+    else
+	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" y`
     fi
-    printf "Enable XDM graphical login screen? (y/n) [n] "
-    read resp
     if [ 0"$resp" = 0'y' ]; then
 	# Disable gdm and kdm
-	# FIXME: Disable kdm in ttys
 	gdm_disable
+	kdm4_disable
 
 	# Install xdmshutdown
 	if [ ! -e /var/db/pkg/tk-8.5* ]; then
@@ -651,7 +660,7 @@ EOM
 	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
 	auto-append-line \
 	    'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
-	    /usr/local/lib/X11/xdm/xdm-config $0
+	    /usr/local/lib/X11/xdm/xdm-config desktop-installer
 	
 	# Enable xdm
 	dm_msg
@@ -693,7 +702,6 @@ EOM
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
-	kdm3_disable
 	kdm4_disable
 	# Mouse may not work in gdm unless we restart HAL
 	/usr/local/etc/rc.d/hald restart
@@ -723,52 +731,6 @@ gdm_disable()
 }
 
 
-##########################################################################
-#   Enable KDM.
-##########################################################################
-
-kdm3_config()
-{
-    if [ $# != 0 ]; then
-	printf "Usage: kdm3_config\n"
-	exit 1
-    fi
-    
-    # Graphical login screen
-    printf "Enable KDM graphical login screen? (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0'y' ]; then
-	xdm_disable
-	gdm_disable
-	kdm4_disable
-	dm_msg
-	auto-kdm3-toggle on
-	kill -HUP 1
-	exit
-    fi
-}
-
-
-##########################################################################
-#   Function description:
-#       Disable kdm3, if running.
-#       Needs more testing.
-#
-#   History:
-#   Date        Name        Modification
-#   2012-08-04  J Bacon     Begin
-##########################################################################
-
-kdm3_disable()
-{
-    auto-kdm3-toggle off
-    kill -HUP 1
-    if ! killall kdm; then
-	printf "INFO: No kdm found running.\n"
-    fi
-}
-
-
 kdm4_config()
 {
     cat << EOM
@@ -783,7 +745,6 @@ EOM
 	dm_msg
 	xdm_disable
 	gdm_disable
-	kdm3_disable
 	auto-append-line $LOCALBASE/kde4$RCDIR \
 	    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
 	    $RC_CONF desktop-installer
@@ -1067,15 +1028,14 @@ common_packages()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs="x11-fm/mtoolsfm \
+    common_pkgs=" \
 	mail/thunderbird \
 	www/firefox \
 	graphics/gimp \
-	graphics/xsane \
 	graphics/dia \
 	graphics/inkscape \
 	print/scribus \
-	print/teTeX \
+	print/texlive-full \
 	textproc/dblatex \
 	textproc/xmlto \
 	finance/gnucash \
@@ -2046,7 +2006,7 @@ EOM
 		esac
 		#printf "$dev\t$mount_point\t$type\t$options\t0\t0"
 		auto-append-line "$mount_point" "$dev\t/media/$mount_point\t$type\t$options\t0\t0" \
-		   /etc/fstab $0
+		   /etc/fstab desktop-installer
 		
 		# Update sudoers drop-in
 		printf " /sbin/mount $dev, /sbin/umount $dev, /sbin/mount /media/$mount_point, /sbin/umount /media/$mount_point," >> $sudoers
@@ -2260,7 +2220,9 @@ nfs_client_config
 usb_serial_config
 serial_config
 bluetooth_config
-boot_splash_config
+# Does not work with vt console 
+# boot_splash_config
+auto-append-line 'kern.vty=vt' /boot/loader.conf desktop-installer
 if [ -e /dev/usb ]; then
     # Make sure /dev/usb/* are accessible to operator
     chgrp operator /dev/usb
