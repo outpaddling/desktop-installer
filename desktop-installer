@@ -314,7 +314,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|kdm4\n"
+	printf "Usage: xorg_config xdm|gdm2|kdm4\n"
 	exit 1
     else
 	display_manager=$1
@@ -362,7 +362,7 @@ EOM
     
 	# Restart moused after suspend
 	if ! fgrep -q $RCDIR/moused $RC_RESUME; then
-	    sed -i 'orig' -E 's|exit 0|# Added by desktop-installer \
+	    sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
 $RCDIR/moused restart \
 \
 exit 0|g' $RC_RESUME
@@ -375,42 +375,17 @@ exit 0|g' $RC_RESUME
 	mv -f temp.rc.conf $RC_CONF
     fi
 
-# intel29 port no longer available
-if false; then
-    cat << EOM
-    
-    Some newer Intel GPUs, such as the one in the EEE PC 1015PE, require
-    an experimental driver version 2.9.
-    
-EOM
-    resp=`auto-ask intel-video "Do you want to install this driver? (y/n)" n`
-    if [ "$resp" = 'y' ]; then
-	# Can't have two versions installed at once
-	if auto-package-installed x11-drivers/xf86-video-intel; then
-	    delete_packages -f /var/db/pkg/xf86-video-intel-*
-	fi
-	if ! auto-package-installed x11-drivers/xf86-video-intel29; then
-	    # IGNORE="not supported" as of 4-23-12
-	    # auto-update-port-framework x11-drivers/xf86-video-intel29
-	    cd $PORTSDIR/x11-drivers/xf86-video-intel29
-	    make distclean install
-	fi
-    fi
-fi
-
     # Create and install an xorg.conf file.  This isn't necessary, but it's
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
-    #if [ ! -e $XORG_CONF ]; then
-	Xorg -configure
-	if [ 0$use_moused != 0'y' ]; then
-	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
-	    mouse_port=`get_mouse_port`
-	    sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
-	fi
-	mv $HOME/xorg.conf.new $XORG_CONF
-    #fi
+    Xorg -configure
+    if [ 0$use_moused != 0'y' ]; then
+	#mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
+	mouse_port=`get_mouse_port`
+	sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
+    fi
+    mv $HOME/xorg.conf.new $XORG_CONF
     line
     
     success=0
@@ -512,18 +487,18 @@ EOM
     
     resp=`auto-ask forward-x11 "Forward X11 DISPLAY to other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
+	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
     fi
     
     resp=`auto-ask forward-x11-trusted \
 	"Trust all forwarded X11 hosts? (this is a security risk) (y/n)" n`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
+	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
     fi
     
     resp=`auto-ask accept-x11-forward "Accept forwarded X11 DISPLAY from other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *X11Forwarding yes/X11Forwarding yes/g' $SSHDIR/sshd_config
+	sed -i '.bak' -e 's/# *X11Forwarding yes/X11Forwarding yes/g' $SSHDIR/sshd_config
 	$RCDIR/sshd restart
     fi
 
@@ -540,10 +515,10 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts Gnome|KDE4|XFCE4|LXDE\n"
+	printf "Usage: startup_scripts GNOME2|KDE4|LXDE|MATE|XFCE4\n"
 	exit 1
     fi
-    
+
     subdir=${DATADIR}/$1
     
     # Update default xinitrc to start selected desktop
@@ -564,20 +539,45 @@ startup_scripts()
 	fi
     fi
     
+    case $1 in
+    GNOME2)
+	session='/usr/local/bin/gnome-session'
+	;;
+    KDE4)
+	session='startkde4'
+	;;
+    LXDE)
+	session='/usr/local/bin/startlxde'
+	;;
+    MATE)
+	session='/usr/local/bin/mate-session'
+	;;
+    XFCE4)
+	session='/usr/local/bin/startxfce4'
+	;;
+    *)
+	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
+	exit 1
+    esac
+    
     # Update default xsession to start selected desktop
-    if [ ! -e $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer ]; then
-	printf "Updating Xsession...\n"
-	if [ -e $X11BASE/lib/X11/xdm/Xsession ]; then
-	    mv $X11BASE/lib/X11/xdm/Xsession $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
+    printf "Updating Xsession...\n"
+    if [ -e $X11BASE/lib/X11/xdm/Xsession ]; then
+	# Revert to original so sed command will work
+	if [ -e $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer ]; then
+	    cp $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer \
+		$X11BASE/lib/X11/xdm/Xsession
+	else
+	    # Never overwrite Xsession.pre-desktop-installer
+	    cp $X11BASE/lib/X11/xdm/Xsession \
+		$X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
 	fi
-	cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
+	sed -i '' \
+	    -e "s|/usr/local/bin/xsm|$session|g" \
+	    $X11BASE/lib/X11/xdm/Xsession
     else
-	printf "$X11BASE/lib/X11/xdm/Xsession has already been modified.\n"
-	printf "Overwrite? (y/[n]) "
-	read overwrite
-	if [ 0$overwrite = 0y ]; then
-	    cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
-	fi
+	printf "Internal error: $X11BASE/lib/X11/xdm/Xsession is missing!\n"
+	exit 1
     fi
 }
 
@@ -602,7 +602,7 @@ EOM
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome uses gdm, so this is
+#   Enable XDM.  Note that KDE uses kdm and Gnome2 uses gdm2, so this is
 #   for XFCE and other lightweight desktops.
 ##########################################################################
 
@@ -613,15 +613,15 @@ xdm_config()
     if auto-service-enabled gdm; then
 	cat << EOM
 
-GDM is already enabled.  If you are running both Gnome and XFCE, you should
-use GDM, not XDM.
+GDM2 is already enabled.  If you are running both Gnome2 and XFCE, you should
+use GDM2, not XDM.
 
 EOM
 	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
     elif auto-service-enabled kdm4; then
 	cat << EOM
 
-KDM4 is already enabled.  If you are running both Gnome and XFCE, you should
+KDM4 is already enabled.  If you are running both Gnome2 and XFCE, you should
 use KDM4, not XDM.
 
 EOM
@@ -630,8 +630,9 @@ EOM
 	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" y`
     fi
     if [ 0"$resp" = 0'y' ]; then
-	# Disable gdm and kdm
-	gdm_disable
+	# Disable gdm2 and kdm
+	gdm2_disable
+	slim_disable
 	kdm4_disable
 
 	# Install xdmshutdown
@@ -682,28 +683,28 @@ xdm_disable()
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome uses gdm, so this is
-#   for XFCE and other lightweight desktops.
+#   Enable GDM2.
 ##########################################################################
 
-gdm_config()
+gdm2_config()
 {
     # Graphical login screen
     install_packages x11/gdm
     line
     cat << EOM
 Warning:
-Enabling gdm will terminate any sessions running under other display
+Enabling gdm2 will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
-    printf "Enable GDM graphical login screen? (y/n) [n] "
+    printf "Enable GDM2 graphical login screen? (y/n) [n] "
     read resp
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
+	slim_disable
 	kdm4_disable
-	# Mouse may not work in gdm unless we restart HAL
+	# Mouse may not work in gdm2 unless we restart HAL
 	/usr/local/etc/rc.d/hald restart
 	auto-enable-service gdm desktop-installer
 	exit 0
@@ -712,8 +713,38 @@ EOM
 
 
 ##########################################################################
+#   Enable SLIM display manager.
+##########################################################################
+
+slim_config()
+{
+    # Graphical login screen
+    install_packages x11/slim
+    line
+    cat << EOM
+Warning:
+Enabling slim will terminate any sessions running under other display
+managers such as xdm or kdm.
+EOM
+    line
+    printf "Enable SLIM graphical login screen? (y/n) [n] "
+    read resp
+    if [ 0"$resp" = 0'y' ]; then
+	dm_msg
+	xdm_disable
+	gdm2_disable
+	kdm4_disable
+	# Mouse may not work in gdm2 unless we restart HAL
+	/usr/local/etc/rc.d/hald restart
+	auto-enable-service slim desktop-installer
+	exit 0
+    fi
+}
+
+
+##########################################################################
 #   Function description:
-#       Disable gdm, if running.
+#       Disable gdm2, if running.
 #       Needs more testing.
 #
 #   History:
@@ -721,7 +752,7 @@ EOM
 #   2012-08-04  J Bacon     Begin
 ##########################################################################
 
-gdm_disable()
+gdm2_disable()
 {
     if fgrep -q 'gdm_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/gdm ]; then
@@ -730,13 +761,22 @@ gdm_disable()
     auto-disable-service gdm
 }
 
+slim_disable()
+{
+    if fgrep -q 'slim_enable="YES"' /etc/rc.conf && \
+	[ -e $LOCALBASE/etc/rc.d/slim ]; then
+	/usr/local/etc/rc.d/slim stop
+    fi
+    auto-disable-service slim
+}
+
 
 kdm4_config()
 {
     cat << EOM
 Warning:
 Enabling kdm will terminate any sessions running under other display
-managers such as xdm or gdm.
+managers such as xdm or gdm2.
 EOM
     line
     printf "Enable KDM graphical login screen? (y/n) [n] "
@@ -744,7 +784,8 @@ EOM
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
-	gdm_disable
+	gdm2_disable
+	slim_disable
 	auto-append-line $LOCALBASE/kde4$RCDIR \
 	    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
 	    $RC_CONF desktop-installer
@@ -1127,7 +1168,7 @@ transcode_install()
 
 ##########################################################################
 #   Install packages useful to KDE4 users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   alternatives under KDE and Gnome2.
 ##########################################################################
 
 kde4_packages()
@@ -1161,7 +1202,7 @@ k3b_perms()
 
 ##########################################################################
 #   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   alternatives under KDE and Gnome2.
 ##########################################################################
 
 xfce4_packages()
@@ -1254,7 +1295,7 @@ xfce4_packages()
 
 ##########################################################################
 #   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   alternatives under KDE and Gnome2.
 ##########################################################################
 
 lxde_packages()
@@ -1386,7 +1427,7 @@ java_config()
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome, and various other
+#   Enable procfs.  This is required by Gnome2, and various other
 #   packages.
 ##########################################################################
 
@@ -1406,7 +1447,7 @@ procfs_config()
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome, and various other
+#   Enable procfs.  This is required by Gnome2, and various other
 #   packages.
 ##########################################################################
 
@@ -1565,24 +1606,6 @@ samba_config()
 #   Configure the system to run the XFCE4 lightweight desktop.
 ##########################################################################
 
-xfce4_gdm_config()
-{
-    # XFCE4 registers as xfce in /var/db/pkg, so installed() function
-    # won't detect it.
-    if [ ! -e /var/db/pkg/xfce-4* ]; then
-	install_packages x11-wm/xfce4
-    fi
-    
-    startup_scripts XFCE4
-    xorg_config gdm
-    xfce4_packages
-}
-
-
-##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
-##########################################################################
-
 xfce4_xdm_config()
 {
     # XFCE4 registers as xfce in /var/db/pkg, so installed() function
@@ -1652,12 +1675,12 @@ kde4_config()
 
 
 ##########################################################################
-#   Configure the system to run the Gnome desktop.
+#   Configure the system to run the Gnome2 desktop.
 ##########################################################################
 
-gnome_config()
+gnome2_config()
 {
-    # Gnome
+    # Gnome2
     if [ $1 = 'lite' ]; then
 	install_packages x11/gnome2-lite
     else
@@ -1678,9 +1701,23 @@ gnome_config()
     fi
 
     install_packages print/gnome-print
-    startup_scripts Gnome
-    xorg_config gdm
+    startup_scripts GNOME2
+    xorg_config gdm2
     auto-enable-hal-mount
+}
+
+
+##########################################################################
+#   Configure the system to run the Mate desktop.
+##########################################################################
+
+mate_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/mate
+    
+    startup_scripts MATE
+    xorg_config slim
 }
 
 
@@ -2168,14 +2205,13 @@ valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
-    printf "0.. No desktop software.\n"
-    printf "1.. Gnome Desktop\n"
-    printf "2.. Gnome Lite Desktop\n"
-    #printf "3.. KDE 3 Desktop\n"
-    #printf "4.. KDE 3 Lite Desktop\n"
-    printf "3.. KDE 4 Desktop\n"
-    printf "4.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "1.. No desktop software.\n"
+    printf "2.. Gnome2 Desktop\n"
+    printf "3.. Gnome2 Lite Desktop\n"
+    printf "4.. KDE 4 Desktop\n"
     printf "5.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "6.. MATE Desktop + SLiM login manager\n"
+    printf "7.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2185,7 +2221,7 @@ while [ $valid_selection = 0 ]; do
     valid_selection=1       # Assume, and correct if wrong
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
-       [ $desktop_selection -lt 0 ] || \
+       [ $desktop_selection -lt 1 ] || \
        [ $desktop_selection -gt 7 ]; then
 	valid_selection=0
     fi
@@ -2258,28 +2294,32 @@ install_xorg
 cups_config
 
 case $desktop_selection in
-0)
+1)
     desktop=none
     ;;
-1)
-    gnome_config full
-    desktop=gnome
-    ;;
 2)
-    gnome_config lite
-    desktop=gnome
+    gnome2_config full
+    desktop=gnome2
     ;;
 3)
-    kde4_config
-    desktop=kde4
+    gnome2_config lite
+    desktop=gnome2
     ;;
 4)
-    xfce4_xdm_config
-    desktop=xfce
+    kde4_config
+    desktop=kde4
     ;;
 5)
     lxde_xdm_config
     desktop=lxde
+    ;;
+6)
+    mate_config
+    desktop=mate
+    ;;
+7)
+    xfce4_xdm_config
+    desktop=xfce
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
