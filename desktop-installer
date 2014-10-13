@@ -1994,7 +1994,7 @@ to untrusted users.
 EOM
 	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
 	if [ 0$resp = 0y ]; then
-	    auto-install-packages sysutils/mcweject
+	    auto-install-packages security/sudo sysutils/mcweject
 	    cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
 	    chmod 600 ${LOCALBASE}/etc/eject.allow
 	    gamin_dir='/usr/local/etc/gamin'
@@ -2080,7 +2080,6 @@ EOM
 
 if [ `whoami` != 'root' ]; then
     printf "Desktop-installer must be run by root.\n"
-    printf "Try 'sudo $0'.\n"
     exit 1
 fi
 
@@ -2242,7 +2241,7 @@ EOM
 fi
 
 # Basic tools
-install_packages archivers/unzip net/rsync security/sudo devel/gmake
+install_packages archivers/unzip net/rsync devel/gmake
 
 # Need gmake for some wireless drivers, so do this after basic tools
 network_config
@@ -2256,9 +2255,17 @@ nfs_client_config
 usb_serial_config
 serial_config
 bluetooth_config
-# Does not work with vt console 
-# boot_splash_config
-auto-append-line 'kern.vty=vt' /boot/loader.conf desktop-installer
+
+# Use vt instead of syscons if present (10.1 and later)
+if [ -e /usr/share/vt ]; then
+    # vt is necessary for virtual terminal switching on some systems
+    # boot splash screen is not supported in vt as of 2014-10
+    auto-append-line 'kern.vty=vt' /boot/loader.conf desktop-installer
+else
+    # If using syscons, enable boot splash
+    # Does not work with vt console 
+    boot_splash_config
+fi
 if [ -e /dev/usb ]; then
     # Make sure /dev/usb/* are accessible to operator
     chgrp operator /dev/usb
