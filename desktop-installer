@@ -384,14 +384,18 @@ exit 0|g' $RC_RESUME
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
-    Xorg -configure
-    if [ 0$use_moused != 0'y' ]; then
-	#mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
-	mouse_port=`get_mouse_port`
-	sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
+    
+    probe_x=`auto-ask probe-x 'Generate new xorg.conf?' y`
+    if [ $probe_x = 'y' ]; then
+	Xorg -configure
+	if [ 0$use_moused != 0'y' ]; then
+	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
+	    mouse_port=`get_mouse_port`
+	    sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
+	fi
+	mv $HOME/xorg.conf.new $XORG_CONF
+	line
     fi
-    mv $HOME/xorg.conf.new $XORG_CONF
-    line
     
     success=0
     while [ $success != 1 ]; do
@@ -615,25 +619,16 @@ xdm_config()
 {
     
     # Graphical login screen
-    if auto-service-enabled gdm; then
-	cat << EOM
+    cat << EOM
 
-GDM2 is already enabled.  If you are running both Gnome2 and XFCE, you should
-use GDM2, not XDM.
+If you want to install multiple desktops, such as Gnome, KDE, etc., another
+display manager such as gdm, kdm, or slim may be easier to set up and use.
 
-EOM
-	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
-    elif auto-service-enabled kdm4; then
-	cat << EOM
-
-KDM4 is already enabled.  If you are running both Gnome2 and XFCE, you should
-use KDM4, not XDM.
+XDM is appropriate for a single-desktop system running lightweight
+desktops such as XFCE or LXDE.
 
 EOM
-	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
-    else
-	resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" y`
-    fi
+    resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
     if [ 0"$resp" = 0'y' ]; then
 	# Disable gdm2 and kdm
 	gdm2_disable
@@ -1086,9 +1081,10 @@ common_packages()
 	textproc/xmlto \
 	finance/gnucash \
 	editors/libreoffice \
+	security/keepassx \
+	emulators/virtualbox-ose \
 	sysutils/bsdstats"
     
-    pwd
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
 	    printf '\n---------------------------------------------------------------------------\n'
@@ -2291,10 +2287,8 @@ cat << EOM
 Installation of Xorg and your chosen desktop will now begin.  This can
 be a very long process, depending on the speed of your Internet connection
 and disk.  On a modern machine, using binary packages (not installing from
-source), this should take about an hour.  Installing from source on a
-slow machine could take a day or more.
-
-Now might be a good time to grab a cup of tea...
+source), this will generally take less than  an hour.  Installing from
+source on a slow machine could take a day or more.
 
 EOM
 
