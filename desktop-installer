@@ -235,6 +235,11 @@ EOM
     # Update ports
     line
     if auto-using-pkgng; then
+	update_packages=`auto-ask update-packages "Update installed packages with pkg upgrade?" y`
+	if [ $update_packages = 'y' ]; then
+	    pkg upgrade -y
+	fi
+
 	update_ports=`auto-ask update-ports "Update to latest ports with portsnap?" y`
 	if [ $update_ports = 'y' ]; then
 	    portsnap fetch
@@ -1302,7 +1307,7 @@ lxde_packages()
 {
     # Packages specific to xfce4
     install_packages graphics/epdfview math/galculator \
-	x11/xlockmore graphics/ristretto www/gecko-mediaplayer
+	x11/xlockmore www/gecko-mediaplayer
 }
 
 
@@ -1608,6 +1613,12 @@ samba_config()
 
 xfce4_xdm_config()
 {
+    # XFCE 4.8 no longer uses HAL
+    # From x11-wm/xfce4-session/pkg-message:
+    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
+	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
+    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
+
     # XFCE4 registers as xfce in /var/db/pkg, so installed() function
     # won't detect it.
     if [ ! -e /var/db/pkg/xfce-4* ]; then
@@ -1626,12 +1637,6 @@ xfce4_xdm_config()
     # printf "Updating PolicyKit.conf to enable shutdown, restart, etc. buttons\n"
     # auto-replace-file ${DATADIR}/PolicyKit.conf \
     #    ${LOCALBASE}/${POLKIT_ETC}/PolicyKit.conf
-
-    # XFCE 4.8 no longer uses HAL
-    # From x11-wm/xfce4-session/pkg-message:
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 }
 
 
@@ -1641,16 +1646,16 @@ xfce4_xdm_config()
 
 lxde_xdm_config()
 {
+    # Same as XFCE 4.8 for shutdown, reboot, etc.
+    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
+	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
+    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
+
     install_packages x11/lxde-meta
     
     startup_scripts LXDE
     xorg_config xdm
     lxde_packages
-
-    # Same as XFCE 4.8 for shutdown, reboot, etc.
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 }
 
 
