@@ -1615,24 +1615,10 @@ xfce4_xdm_config()
 	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 
-    # XFCE4 registers as xfce in /var/db/pkg, so installed() function
-    # won't detect it.
-    if [ ! -e /var/db/pkg/xfce-4* ]; then
-	install_packages x11-wm/xfce4
-    fi
-    
+    install_packages x11-wm/xfce4
     startup_scripts XFCE4
     xorg_config xdm
     xfce4_packages
-    
-    # Enable XFCE 4.6 restart and shutdown options
-    # FIXME: HAL is no longer necessary for XFCE 4.8, and may actually
-    # be detrimental
-    # auto-enable-service hald desktop-installer
-    
-    # printf "Updating PolicyKit.conf to enable shutdown, restart, etc. buttons\n"
-    # auto-replace-file ${DATADIR}/PolicyKit.conf \
-    #    ${LOCALBASE}/${POLKIT_ETC}/PolicyKit.conf
 }
 
 
@@ -1648,7 +1634,6 @@ lxde_xdm_config()
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 
     install_packages x11/lxde-meta
-    
     startup_scripts LXDE
     xorg_config xdm
     lxde_packages
@@ -1664,10 +1649,7 @@ kde4_config()
     PATH=${PATH}:${LOCALBASE}/kde4/bin
     export PATH
     
-    # kde4
-    if [ ! -e /var/db/pkg/kde-4* ]; then
-	install_packages x11/kde4
-    fi
+    install_packages x11/kde4
     startup_scripts KDE4
     xorg_config kdm4
     auto-enable-hal-mount
@@ -1716,7 +1698,6 @@ mate_config()
 {
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/mate
-    
     startup_scripts MATE
     xorg_config slim
 }
