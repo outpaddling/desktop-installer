@@ -1210,7 +1210,10 @@ xfce4_packages()
 {
     # Packages specific to xfce4
     # FIXME: librsvg2 should be a depend for the xfce4 port
-    install_packages graphics/epdfview math/galculator sysutils/xfburn \
+    # I like epdfview, but it has proven to be somewhat slow and buggy.
+    # I try to avoid using gnome apps with xfce, but evince is fast,
+    # reliable, and requires very few extra dependencies.
+    install_packages graphics/evince math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xscreensaver graphics/ristretto misc/xfce4-artwork \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
 	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2
@@ -1263,7 +1266,8 @@ xfce4_packages()
     fi
     
     # Reinstall epdfview with CUPS if existing binary was not built with it
-    if ! ldd ${LOCALBASE}/bin/epdfview | fgrep -q cups; then
+    # Disabled until epdfview matures
+    if false; then #! ldd ${LOCALBASE}/bin/epdfview | fgrep -q cups; then
 	cd $PORTSDIR/*/epdfview
 	printf "Rebuilding epdfview to enable CUPS.\n"
 	install_packages devel/libtool devel/cppunit
@@ -1302,7 +1306,7 @@ xfce4_packages()
 lxde_packages()
 {
     # Packages specific to xfce4
-    install_packages graphics/epdfview math/galculator \
+    install_packages graphics/evince math/galculator \
 	x11/xlockmore www/gecko-mediaplayer
 }
 
