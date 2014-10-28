@@ -325,11 +325,9 @@ xorg_config()
 	display_manager=$1
     fi
     
-    if [ -e /etc/X11/xorg.conf ]; then
-	resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" n`
-	if [ "$resp" != y ]; then
-	    return
-	fi
+    resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" n`
+    if [ "$resp" != y ]; then
+	return
     fi
     
     if [ $ARCH = 'powerpc' ]; then
@@ -384,7 +382,15 @@ exit 0|g' $RC_RESUME
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
-    
+
+    line
+    cat << EOM
+
+Generating an xorg.conf file should only be necessary if you want to
+override the default resolution or other options.
+
+EOM
+
     probe_x=`auto-ask probe-x 'Generate new xorg.conf?' y`
     if [ $probe_x = 'y' ]; then
 	Xorg -configure
@@ -2323,7 +2329,9 @@ samba_config
 common_packages $desktop
 
 # Additional package installs may have added fonts, etc.
-auto-update-xorg.conf
+if [ -e $XORG_CONF ]; then
+    auto-update-xorg.conf
+fi
 
 cat << EOM
 
