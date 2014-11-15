@@ -2256,7 +2256,10 @@ if [ -e /usr/share/vt ]; then
 else
     # If using syscons, enable boot splash
     # Does not work with vt console 
-    boot_splash_config
+    # Upgrading to 10.1 via freebsd-update or manually enabling
+    # vt i loader.conf without disabling the boot splash could cause
+    # panics at boot time, so disable this for now.
+    # boot_splash_config
 fi
 if [ -e /dev/usb ]; then
     # Make sure /dev/usb/* are accessible to operator
