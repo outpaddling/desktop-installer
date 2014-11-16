@@ -1341,14 +1341,17 @@ EOM
     fi
     
     # FIXME
-    # print/hpijs is for some strange reason not a depend for
-    # foomatic-db-hpijs, which fails to build without it.
-    # hpijs also conflicts with foomatic-filters
+    # foomatic-db-hpijs and hpijs appear to be redundant.
+    # 2014-11-16: The hpijs package is broken, as does the foomatic-db-hpijs
+    # *port*, so as much as I hate to work around bugs in other software,
+    # we'll install hpijs from source for now.  This print driver is just
+    # too important to leave out.
+    cd /usr/ports/print/hpijs
+    make deinstall reinstall
+    
     install_packages \
-	print/hpijs \
 	print/cups \
 	print/foomatic-db-engine \
-	print/foomatic-db-hpijs \
 	print/gutenprint
 
     update_devfs_rules cups unlpt ulpt lpt
