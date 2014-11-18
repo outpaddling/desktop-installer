@@ -389,6 +389,10 @@ exit 0|g' $RC_RESUME
 Generating an xorg.conf file should only be necessary if you want to
 override the default resolution or other options.
 
+Note that this could cause your display to freeze, but rest assured
+that FreeBSD is still running.  You can restart by typing Ctrl+Alt+F1
+followed by Ctrl+Alt+Del.
+
 EOM
 
     probe_x=`auto-ask probe-x 'Generate new xorg.conf?' y`
@@ -500,6 +504,7 @@ EOM
 	fi
     done
     
+    clear   # Switch back to VT might leave a mess
     resp=`auto-ask forward-x11 "Forward X11 DISPLAY to other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
 	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
@@ -1340,6 +1345,12 @@ EOM
 	(cd $PORTSDIR/print/ghostscript9 && make config)
     fi
     
+    install_packages \
+	print/cups \
+	print/hpijs \
+	print/foomatic-db-engine \
+	print/gutenprint
+
     # FIXME
     # foomatic-db-hpijs and hpijs appear to be redundant.
     # 2014-11-16: The hpijs package is broken, as does the foomatic-db-hpijs
@@ -1349,11 +1360,6 @@ EOM
     cd /usr/ports/print/hpijs
     make deinstall reinstall
     
-    install_packages \
-	print/cups \
-	print/foomatic-db-engine \
-	print/gutenprint
-
     update_devfs_rules cups unlpt ulpt lpt
     
     # Older ports have lpt-cupsd.conf, newer ulpt-cupsd.conf
@@ -1504,7 +1510,7 @@ ntp_config()
 	$RCDIR/ntpd stop
     fi
     auto-enable-service ntpdate desktop-installer
-    auto-append-line ntpdate_flags 'ntpdate_flags="pool.ntp.org"' $RC_CONF desktop-installer
+    auto-append-line ntpdate_flags 'ntpdate_flags="-u pool.ntp.org"' $RC_CONF desktop-installer
 
     # Do after ntpdate, or it will block the port
     auto-enable-service ntpd desktop-installer
