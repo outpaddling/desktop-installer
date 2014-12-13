@@ -833,7 +833,7 @@ firefox_flash()
     do
 	mkdir -p $dir
 	for plugin in \
-	    $LOCALBASE/lib/npapi/linux-f10-flashplugin/libflashplayer.so \
+	    $LOCALBASE/lib/npapi/*/libflashplayer.so \
 	    $LOCALBASE/lib/browser_plugins/npwrapper.libflashplayer.so; do
 	    if [ -e $plugin ]; then
 		ln -sf $plugin $dir
@@ -904,62 +904,47 @@ EOM
 	    
 	    # Install the appropriate linux_base
 	    major=`uname -r | cut -d '.' -f 1`
-	    case $major in
-	    7)
-		# Install linux_base
-		cd $PORTSDIR/emulators/linux_base-fc4
-		make -DBATCH install
-		
-		cd $PORTSDIR/www/linux-flashplugin9
-		make -DBATCH install
-		;;
-	    8|9|10)
-		# Let flash port install the default linux_base as a depend
-		# Install linux_base
-		#if ! auto-package-installed emulators/linux_base-f10; then
-		#    cd $PORTSDIR/emulators/linux_base-f10
-		#    make -DBATCH install
-		#fi
-		
-		# Use the latest
-		for version in 11 10; do
-		    if [ -e $PORTSDIR/www/linux-f10-flashplugin$version ]; then
-			flash=linux-f10-flashplugin$version
-			break
-		    fi
-		done
-		
-		if ! auto-package-installed www/$flash; then
-		    # Remove old versions first
-		    if auto-using-pkgng; then
-			if pkg delete linux-f10-flashplugin; then
-			    printf 'Old flash removed.\n'
-			fi
-		    else
-			if pkg_delete /var/db/pkg/linux-f10-flashplugin*; then
-			    printf 'Old flash removed.\n'
-			fi
-		    fi
-		    rm -f $LOCALBASE/lib/firefox/plugins/libflash*
-		    rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
-		    rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
-		    
-		    # Normally running make makesum is considered a security
-		    # risk, but this distfile comes from a trusted
-		    # site, and Macromedia annoyingly changes the distfile
-		    # without changing the filename.
-		    cd $PORTSDIR/www/$flash
-		    make -DBATCH clean deinstall makesum install
-		    
-		    # Old location for browser plugins.  May be obsolete.
-		    mkdir -p $LOCALBASE/lib/browser_plugins
-		    ln -sf $LOCALBASE/lib/npapi/linux-f10-flashplugin/libflashplayer.so \
-			$LOCALBASE/lib/browser_plugins/
+	    # Let flash port install the default linux_base as a depend
+	    
+	    # Install linux_base
+	    linux_base=c6
+	    pkg install linux_base-$linux_base
+	    
+	    # Use the latest flash plugin
+	    for version in 11 10; do
+		if [ -e $PORTSDIR/www/linux-$linux_base-flashplugin$version ]; then
+		    flash=linux-$linux_base-flashplugin$version
+		    break
 		fi
-		;;
-	    *)
-		printf "Sorry, FreeBSD $major is not supported at this time.\n"
-	    esac
+	    done
+	    
+	    if ! auto-package-installed www/$flash; then
+		# Remove old versions first
+		if auto-using-pkgng; then
+		    if pkg delete linux-\*-flashplugin; then
+			printf 'Old flash removed.\n'
+		    fi
+		else
+		    if pkg delete linux-\*-flashplugin*; then
+			printf 'Old flash removed.\n'
+		    fi
+		fi
+		rm -f $LOCALBASE/lib/firefox/plugins/libflash*
+		rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
+		rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
+		
+		# Normally running make makesum is considered a security
+		# risk, but this distfile comes from a trusted
+		# site, and Macromedia annoyingly changes the distfile
+		# without changing the filename.
+		cd $PORTSDIR/www/$flash
+		make -DBATCH clean deinstall makesum install
+		
+		# Old location for browser plugins.  May be obsolete.
+		mkdir -p $LOCALBASE/lib/browser_plugins
+		ln -sf $LOCALBASE/lib/npapi/*/libflashplayer.so \
+		    $LOCALBASE/lib/browser_plugins/
+	    fi
 	    cd $START_DIR
 	    
 	    # fstab: linproc    /compat/linux/proc  linprocfs   rw  0   0
@@ -2119,9 +2104,10 @@ Desktop-installer automates the configuration of a FreeBSD desktop/laptop
 system.  You will be guided through the process and asked some basic
 questions, as well as a few that may require some thought and research.
 
-Desktop-installer may fail at some point due to broken ports of changes
+Desktop-installer may fail at some point due to broken ports or changes
 in the base system since the last release of desktop-installer.  If this
-happens, you can manually fix the issue and simply run the script again.
+happens, you can manually fix the issue and simply run desktop-installer
+again.
 
 *** Please report any failures of this nature to the maintainer,
 and send a patch if possible.
@@ -2172,17 +2158,11 @@ Building from source allows you to build from the latest ports snapshot, but
 it takes a lot longer (possibly a full day or more for the entire
 desktop setup).
 
-Using binary packages is much faster, but should only be attempted using the
-stock ports tree distribution from the base install.  Some software cannot be
-installed from packages, so the ports tree must be compatible with the
-available binary packages.  This is only possible using both ports and
-packages included with a -RELEASE version.
+Using binary packages is much faster, but binary package versions are
+sometimes a little behind what's in the ports tree.
 
-If you want to use binary packages, and you have run portsnap or cvsup, remove
-$PORTSDIR and reinstall the ports tree from sysinstall.
-
-If you want to install from the latest ports snapshot obtained via CVS or
-portsnap, you should build everything from source.
+In any case, make sure that BOTH your installed binary packages and ports
+are kept up-to-date with "pkg update" and "portsnap".
 
 EOM
 
