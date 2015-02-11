@@ -325,7 +325,7 @@ xorg_config()
 	display_manager=$1
     fi
     
-    resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" n`
+    resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" y`
     if [ "$resp" != y ]; then
 	return
     fi
@@ -405,6 +405,28 @@ EOM
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
 	line
+    fi
+    
+    # Patch for VirtualBox guest additions
+    if vbox_guest; then
+	awk '
+	{
+	    if ( $1 == "Driver" && $2 == "\"mouse\"" )
+	    {
+		printf("\t%s      %s\n", "Driver", "\"vboxmouse\"");
+		while ( $0 != "EndSection" )
+		{
+		    printf("\t# %s\n", $0);
+		    getline;
+		}
+		print $0;
+	    }
+	    else
+	    {
+		print $0;
+	    }
+	}'   /etc/X11/xorg.conf > /etc/X11/xorg.conf.vbox
+	mv -f /etc/X11/xorg.conf.vbox /etc/X11/xorg.conf
     fi
     
     success=0
@@ -908,7 +930,7 @@ EOM
 	    
 	    # Install linux_base
 	    linux_base=c6
-	    pkg install linux_base-$linux_base
+	    pkg install -y linux_base-$linux_base
 	    
 	    # Use the latest flash plugin
 	    for version in 11 10; do
@@ -1068,17 +1090,8 @@ common_packages()
     common_pkgs=" \
 	mail/thunderbird \
 	www/firefox \
-	graphics/gimp \
-	graphics/dia \
-	graphics/inkscape \
-	print/scribus \
-	print/texlive-full \
-	textproc/dblatex \
-	textproc/xmlto \
-	finance/gnucash \
 	editors/libreoffice \
 	security/keepassx \
-	emulators/virtualbox-ose \
 	sysutils/bsdstats"
     
     for pkg in $common_pkgs; do
@@ -1206,11 +1219,8 @@ xfce4_packages()
 {
     # Packages specific to xfce4
     # FIXME: librsvg2 should be a depend for the xfce4 port
-    # I like epdfview, but it has proven to be somewhat slow and buggy.
-    # I try to avoid using gnome apps with xfce, but evince is fast,
-    # reliable, and requires very few extra dependencies.
-    install_packages graphics/evince math/galculator sysutils/xfburn \
-	x11/xlockmore x11/xscreensaver graphics/ristretto misc/xfce4-artwork \
+    install_packages math/galculator sysutils/xfburn \
+	x11/xlockmore x11/xscreensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
 	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2
 
@@ -1302,7 +1312,7 @@ xfce4_packages()
 lxde_packages()
 {
     # Packages specific to xfce4
-    install_packages graphics/evince math/galculator \
+    install_packages math/galculator \
 	x11/xlockmore www/gecko-mediaplayer
 }
 
@@ -1342,8 +1352,8 @@ EOM
     # *port*, so as much as I hate to work around bugs in other software,
     # we'll install hpijs from source for now.  This print driver is just
     # too important to leave out.
-    cd /usr/ports/print/hpijs
-    make deinstall reinstall
+    #cd /usr/ports/print/hpijs
+    #make deinstall reinstall
     
     update_devfs_rules cups unlpt ulpt lpt
     
@@ -1483,10 +1493,10 @@ ntp_config()
 	return
     fi
     
-    # ntpd
-    if [ ! -f /etc/ntp.conf ]; then
-	cp ${DATADIR}/ntp.conf /etc
-    fi
+    # Format may change over time, making this a time bomb.
+    #if [ ! -f /etc/ntp.conf ]; then
+    #    cp ${DATADIR}/ntp.conf /etc
+    #fi
     
     # ntpdate at startup
     if [ -e /var/run/ntpd.pid ]; then
@@ -1494,9 +1504,13 @@ ntp_config()
 	sleep 2
 	$RCDIR/ntpd stop
     fi
-    auto-enable-service ntpdate desktop-installer
+    # Kill off any rogue daemons
+    killall -9 ntpd || true
+    
+    auto-append-line 'ntpdate_enable="YES"' $RC_CONF desktop-installer
     auto-append-line ntpdate_flags 'ntpdate_flags="-u pool.ntp.org"' $RC_CONF desktop-installer
-
+    ntpdate -u pool.ntp.org
+    
     # Do after ntpdate, or it will block the port
     auto-enable-service ntpd desktop-installer
 }
@@ -1615,6 +1629,7 @@ xfce4_xdm_config()
 {
     # XFCE 4.8 no longer uses HAL
     # From x11-wm/xfce4-session/pkg-message:
+    auto-install-packages sysutils/polkit
     cp ${DATADIR}/org.freedesktop.consolekit.pkla \
 	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
