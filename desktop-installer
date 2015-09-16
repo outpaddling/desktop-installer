@@ -69,7 +69,7 @@ install_packages()
 	if [ ! -e $log_dir ]; then
 	    mkdir $log_dir
 	fi
-	log_cmd auto-install-packages $pkg
+	log_cmd auto-install-packages -l $pkg
 	if [ $? != 0 ]; then
 	    printf "install failed.\n"
 	    exit $?
@@ -171,26 +171,8 @@ update_system()
     
     # Install ports tree
     if [ ! -e $PORTSDIR/Makefile ]; then
-	cat << EOM
-    
-    You need to install a ports tree first.
-    
-    1.. Install the stock ports tree, compatible with binary packages.
-    2.. Install the latest ports frameworks using portsnap.
-    
-EOM
-	read resp
-	if [ 0"$resp" = 0'1' ]; then
-	    printf "Entering sysinstall... Select Configure->Distributions->ports\n"
-	    pause
-	    sysinstall
-	elif [ 0"$resp" = 0'2' ]; then
-	    portsnap fetch
-	    portsnap extract
-	else
-	    printf "Invalid selection.\n"
-	    exit 1
-	fi
+	portsnap fetch
+	portsnap extract
     fi
 
     # If updating a previously configured system, wipe the slate clean.
@@ -291,6 +273,7 @@ install_xorg()
 	    auto-enable-service vboxguest desktop-installer
 	    auto-enable-service vboxservice desktop-installer
 	    # From wiki.freebsd.org/VirtualBox
+	    mkdir -p $LOCALBASE/etc/hal/fdi/policy/
 	    cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
 	fi
     fi
@@ -1088,9 +1071,6 @@ common_packages()
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
     common_pkgs=" \
-	mail/thunderbird \
-	www/firefox \
-	editors/libreoffice \
 	security/keepassx \
 	sysutils/bsdstats"
     
@@ -1193,7 +1173,8 @@ kde4_packages()
     
     # Prevent nepomuk startup errors
     # Should this be a dependency for something in the KDE4 collection?
-    install_packages databases/virtuoso
+    # Does not run on i386
+    # install_packages databases/virtuoso
 }
 
 
@@ -1290,7 +1271,6 @@ xfce4_packages()
 	fi
 	
 	# Hack port to use sudo and open Thunar on mount
-	# auto-install-packages $port
 	cd $PORTSDIR/$port
 	make patch
 	sed -i '' -e 's|"mount %d"|"sudo mount %d"|g' \
@@ -1430,7 +1410,7 @@ java_config()
 	    # plugin, so use the old diablo jdk with seamonkey for now.
 	    if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 		# Icedtea installs default jdk as a dependency
-		auto-install-packages java/openjdk6
+		install_packages java/openjdk6
 		# Needed by openjdk6
 		fdescfs_config
 	    else
@@ -1629,7 +1609,7 @@ xfce4_xdm_config()
 {
     # XFCE 4.8 no longer uses HAL
     # From x11-wm/xfce4-session/pkg-message:
-    auto-install-packages sysutils/polkit
+    install_packages sysutils/polkit
     cp ${DATADIR}/org.freedesktop.consolekit.pkla \
 	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
@@ -1995,7 +1975,7 @@ to untrusted users.
 EOM
 	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
 	if [ 0$resp = 0y ]; then
-	    auto-install-packages security/sudo sysutils/mcweject
+	    install_packages security/sudo sysutils/mcweject
 	    cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
 	    chmod 600 ${LOCALBASE}/etc/eject.allow
 	    gamin_dir='/usr/local/etc/gamin'
