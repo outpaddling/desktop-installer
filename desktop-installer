@@ -566,19 +566,19 @@ startup_scripts()
     
     case $1 in
     GNOME2)
-	session='/usr/local/bin/gnome-session'
+	session="$LOCALBASE/bin/gnome-session"
 	;;
     KDE4)
 	session='startkde4'
 	;;
     LXDE)
-	session='/usr/local/bin/startlxde'
+	session="$LOCALBASE/bin/startlxde"
 	;;
     MATE)
-	session='/usr/local/bin/mate-session'
+	session="$LOCALBASE/bin/mate-session"
 	;;
     XFCE4)
-	session='/usr/local/bin/startxfce4'
+	session="$LOCALBASE/bin/startxfce4"
 	;;
     *)
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
@@ -677,7 +677,7 @@ EOM
 	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
 	auto-append-line \
 	    'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
-	    /usr/local/lib/X11/xdm/xdm-config desktop-installer
+	    $LOCALBASE/lib/X11/xdm/xdm-config desktop-installer
 	
 	# Enable xdm
 	dm_msg
@@ -721,7 +721,7 @@ EOM
 	slim_disable
 	kdm4_disable
 	# Mouse may not work in gdm2 unless we restart HAL
-	/usr/local/etc/rc.d/hald restart
+	$LOCALBASE/etc/rc.d/hald restart
 	auto-enable-service gdm desktop-installer
 	exit 0
     fi
@@ -736,6 +736,10 @@ slim_config()
 {
     # Graphical login screen
     install_packages x11/slim
+    cp $LOCALBASE/share/desktop-installer/MATE/xinitrc \
+	$LOCALBASE/etc/X11/xinit/xinitrc.mate
+    sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.mate|g" \
+	$LOCALBASE/etc/slim.conf
     line
     cat << EOM
 Warning:
@@ -751,7 +755,7 @@ EOM
 	gdm2_disable
 	kdm4_disable
 	# Mouse may not work in gdm2 unless we restart HAL
-	/usr/local/etc/rc.d/hald restart
+	$LOCALBASE/etc/rc.d/hald restart
 	auto-enable-service slim desktop-installer
 	exit 0
     fi
@@ -772,7 +776,7 @@ gdm2_disable()
 {
     if fgrep -q 'gdm_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/gdm ]; then
-	/usr/local/etc/rc.d/gdm stop
+	$LOCALBASE/etc/rc.d/gdm stop
     fi
     auto-disable-service gdm
 }
@@ -781,7 +785,7 @@ slim_disable()
 {
     if fgrep -q 'slim_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/slim ]; then
-	/usr/local/etc/rc.d/slim stop
+	$LOCALBASE/etc/rc.d/slim stop
     fi
     auto-disable-service slim
 }
@@ -825,7 +829,7 @@ kdm4_disable()
 {
     if fgrep -q 'kdm4_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/kdm4 ]; then
-	/usr/local/etc/rc.d/kdm4 stop
+	$LOCALBASE/etc/rc.d/kdm4 stop
     fi
     auto-disable-service kdm4
 }
@@ -1187,7 +1191,7 @@ kde4_packages()
 k3b_perms()
 {
     # /dev/cd* and /dev/xpt* should be set by other code
-    chmod 6755 /usr/local/bin/cdrecord /usr/local/bin/cdrdao
+    chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
 }
 
 
@@ -1978,11 +1982,11 @@ EOM
 	    install_packages security/sudo sysutils/mcweject
 	    cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
 	    chmod 600 ${LOCALBASE}/etc/eject.allow
-	    gamin_dir='/usr/local/etc/gamin'
+	    gamin_dir="$LOCALBASE/etc/gamin"
 	    mkdir -p $gamin_dir
 	    rm -f $gamin_dir/gaminrc
 	    
-	    sudoers=/usr/local/etc/sudoers.d/mount
+	    sudoers=$LOCALBASE/etc/sudoers.d/mount
 	    printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
 	    chmod 440 $sudoers
 	    
@@ -2071,7 +2075,7 @@ START_DIR=`pwd`
 LOCALBASE='/usr/local'
 DATADIR="$LOCALBASE/share/desktop-installer"
 PORTSDIR="/usr/ports"
-X11BASE="/usr/local"
+X11BASE="$LOCALBASE"
 RCDIR='/etc/rc.d'
 SSHDIR='/etc/ssh'
 
