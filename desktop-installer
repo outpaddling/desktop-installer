@@ -93,7 +93,7 @@ install_packages()
 delete_packages()
 {
     if [ $# -lt 1 ]; then
-	printf "Usage: $0 pkg [pkg ...]\n"
+	printf "Usage: $0 [flags] pkg [pkg ...]\n"
 	exit 1
     fi
     
@@ -149,87 +149,6 @@ update_devfs_rules()
 	fi
     done
     $RCDIR/devfs restart
-}
-
-
-##########################################################################
-#   Update the base system and ports tree
-##########################################################################
-
-update_system()
-{
-    # It's a good idea to start with all the latest base system patches installed.
-    printf "Update FreeBSD base? (requires reboot) (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0y ]; then
-	freebsd-update fetch
-	freebsd-update install
-	printf "Updates complete.  Press return to reboot..."
-	read resp
-	shutdown -r now
-    fi
-    
-    # Install ports tree
-    if [ ! -e $PORTSDIR/Makefile ]; then
-	portsnap fetch
-	portsnap extract
-    fi
-
-    # If updating a previously configured system, wipe the slate clean.
-    line
-    cat << EOM
-If any currently installed packages are more than a few months old,
-they may not be compatible with latest packages on the servers.
-In this case, you may be better off removing all installed packages
-and starting over with the latest.
-
-This does not apply if you are using RELEASE ports and packages (ports
-tree installed via sysinstall).  It only matters if you are using a ports
-tree installed via portsnap or CVS, or a non-RELEASE version of FreeBSD.
-
-You should manually clean up rc.conf after removing packages.
-EOM
-    line
-    printf "Remove old packages? (requires reboot) (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0y ]; then
-	delete_packages -a
-	shutdown -r now
-    fi
-    
-    line
-    if ! auto-using-pkgng; then
-	cat << EOM
-The new pkgng package management system does a much better job working with
-the latest packages.  If you are using the old pkg_add command, using the
--RELEASE ports tree is recommended to maintain compatibility between
-binary packages and ports built from source.  With pkgng, you can install
-the latest binary packages and keep your ports tree up-to-date using
-portsnap.
-
-EOM
-	use_pkgng=`auto-ask use-pkgng 'Switch to pkgng?' y`
-	if [ $use_pkgng = 'y' ]; then
-	    auto-enable-pkgng
-	fi
-    fi
-    
-    # Update ports
-    line
-    if auto-using-pkgng; then
-	update_packages=`auto-ask update-packages "Update installed packages with pkg upgrade?" y`
-	if [ $update_packages = 'y' ]; then
-	    pkg upgrade -y
-	fi
-
-	update_ports=`auto-ask update-ports "Update to latest ports with portsnap?" y`
-	if [ $update_ports = 'y' ]; then
-	    portsnap fetch
-	    if ! portsnap update; then
-		portsnap extract
-	    fi
-	fi
-    fi
 }
 
 
@@ -307,6 +226,9 @@ xorg_config()
     else
 	display_manager=$1
     fi
+    
+    # Lumina does not have hal as a dep
+    install_packages sysutils/hal
     
     resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" y`
     if [ "$resp" != y ]; then
@@ -571,6 +493,9 @@ startup_scripts()
     KDE4)
 	session='startkde4'
 	;;
+    LUMINA)
+	session='$LOCALBASE/bin/Lumina-DE'
+	;;
     LXDE)
 	session="$LOCALBASE/bin/startlxde"
 	;;
@@ -736,10 +661,27 @@ slim_config()
 {
     # Graphical login screen
     install_packages x11/slim
-    cp $LOCALBASE/share/desktop-installer/MATE/xinitrc \
-	$LOCALBASE/etc/X11/xinit/xinitrc.mate
-    sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.mate|g" \
-	$LOCALBASE/etc/slim.conf
+    case $DESKTOP in
+    mate)
+	# FIXME: Doesn't work for previously altered slim.conf
+	cp $LOCALBASE/share/desktop-installer/MATE/xinitrc \
+	    $LOCALBASE/etc/X11/xinit/xinitrc.mate
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.mate|g" \
+	    $LOCALBASE/etc/slim.conf
+	;;
+    lumina)
+	# FIXME: Doesn't work for previously altered slim.conf
+	cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
+	    $LOCALBASE/etc/X11/xinit/xinitrc.lumina
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.lumina|g" \
+	    $LOCALBASE/etc/slim.conf
+	;;
+    *)
+	printf "slim_config(): Invalid desktop: $DESKTOP\n"
+	exit 1
+	;;
+    esac
+    
     line
     cat << EOM
 Warning:
@@ -962,7 +904,6 @@ EOM
 	    
 	    # nspluginwrapper for Linux plugins in native Firefox
 	    if ! auto-package-installed www/nspluginwrapper; then
-		export AUTO_BUILD_FROM_SOURCE=fall-back
 		install_packages ftp/curl
 		cd $PORTSDIR/www/nspluginwrapper
 		make -DBATCH install
@@ -1026,13 +967,6 @@ gtk2_cups()
 
 common_packages()
 {
-    if [ $# != 1 ]; then
-	printf "Usage: $0 desktop\n"
-	exit 1
-    else
-	desktop=$1
-    fi
-    
     ##################################################################
     # Don't make pdflib a requirement unless it's really necessary.
     # There is no binary package, and distfiles are taken away without
@@ -1148,10 +1082,10 @@ mplayer_plugin_install()
 transcode_install()
 {
     # No package for lame
-    if ! auto-package-installed audio/lame; then
-	(cd $PORTSDIR/audio/lame; make -DBATCH install)
-    fi
-    install_packages multimedia/transcode
+    #if ! auto-package-installed audio/lame; then
+    #    (cd $PORTSDIR/audio/lame; make -DBATCH install)
+    #fi
+    install_packages audio/lame multimedia/transcode
     
     #if ! auto-package-installed transcode; then
     #    cd $PORTSDIR/multimedia/transcode
@@ -1207,7 +1141,8 @@ xfce4_packages()
     install_packages math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xscreensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2
+	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2 \
+	graphics/atril
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
@@ -1534,6 +1469,17 @@ usb_serial_config()
 
 ##########################################################################
 #   Function description:
+#       Enable firewire in loader.conf
+##########################################################################
+
+firewire_config()
+{
+    auto-append-line firewire_load 'firewire_load="YES"' $LOADER_CONF desktop-installer
+}
+
+
+##########################################################################
+#   Function description:
 #       Configure system for bluetooth
 #
 #   History:
@@ -1614,8 +1560,26 @@ xfce4_xdm_config()
     # XFCE 4.8 no longer uses HAL
     # From x11-wm/xfce4-session/pkg-message:
     install_packages sysutils/polkit
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
+    
+    # Allow members of operator group to shut down and restart from
+    # XFCE logout panel
+    
+    # Apparently obsolete
+    # cp ${DATADIR}/org.freedesktop.consolekit.pkla \
+    #    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
+    
+    # New method
+    local rules_file="${LOCALBASE}/etc/polkit-1/rules.d/51-xfce.rules"
+	cat << EOM >> $rules_file
+polkit.addRule(function (action, subject) {
+  if (action.id == "org.freedesktop.consolekit.system.restart" ||
+      action.id == "org.freedesktop.consolekit.system.stop"
+      && subject.isInGroup("operator")) {
+    return polkit.Result.YES;
+  }
+});
+EOM
+    chown -Rh polkitd ${LOCALBASE}/etc/polkit-1
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 
     install_packages x11-wm/xfce4
@@ -1690,6 +1654,35 @@ gnome2_config()
     startup_scripts GNOME2
     xorg_config gdm2
     auto-enable-hal-mount
+}
+
+
+##########################################################################
+#   Install packages useful to XFCE users.  These packages will have
+#   alternatives under KDE and Gnome2.
+##########################################################################
+
+lumina_packages()
+{
+    # Packages specific to xfce4
+    # FIXME: librsvg2 should be a depend for the xfce4 port
+    install_packages math/kcalc sysutils/k3b-kde4 \
+	graphics/okular x11/konsole
+    k3b_perms
+}
+
+
+##########################################################################
+#   Configure the system to run the Lumina desktop.
+##########################################################################
+
+lumina_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/lumina
+    startup_scripts LUMINA
+    xorg_config slim
+    lumina_packages
 }
 
 
@@ -1956,32 +1949,49 @@ mount_dist()
 
 usermount_config()
 {
-    if [ ! -e ${LOCALBASE}/etc/sudoers.d/mount ]; then
+    #if [ ! -e ${LOCALBASE}/etc/sudoers.d/mount ]; then
 	line
 	cat << EOM
+
 You may configure sudo to allow users to mount and unmount removable media,
 without entering a password, using commands such as
 
-    sudo mount /media/cdrom0
-    sudo mount /media/flash_msdosfs
+    sudo mount /removable/cdrom0
+    sudo auto-mount-any /removable/flash0
 
 It also enables the use of the xfce4-mount-plugin.
 
 If you are using AMD or an automounter provided by your desktop, answer 'n'
 here.
 
-Note: Only members of the "operator" group are granted this privilege.
+Note:
 
-Important note: Unplugging a mounted USB or Firewire drive can cause
-filesystem damage and even system crashes.  Do not grant mount privileges
-to untrusted users.
+    This will only grant members of the "operator" group rights to mount
+    specific devices.  It will not grant anyone rights to run arbitrary
+    commands.
+    
+    XFCE mount plugin should be configured with the following commands:
+    
+	sudo auto-mount-any %d %m
+	sudo umount %m
+
+    This will configure typical mount points for CD/DVD and USB flash
+    devices.  To add more options, edit /etc/fstab and add another drop-in
+    file similar to $LOCALBASE/etc/sudoers.d/mount.
+
+Important note:
+
+    Unplugging a mounted USB or Firewire drive can cause
+    filesystem damage and even system crashes.  Do not grant mount privileges
+    to untrusted users.
 
 EOM
 	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
 	if [ 0$resp = 0y ]; then
-	    install_packages security/sudo sysutils/mcweject
-	    cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
-	    chmod 600 ${LOCALBASE}/etc/eject.allow
+	    # DEPRECATE: Use scontrol eject
+	    #install_packages security/sudo sysutils/mcweject
+	    #cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
+	    #chmod 600 ${LOCALBASE}/etc/eject.allow
 	    gamin_dir="$LOCALBASE/etc/gamin"
 	    mkdir -p $gamin_dir
 	    rm -f $gamin_dir/gaminrc
@@ -1990,58 +2000,48 @@ EOM
 	    printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
 	    chmod 440 $sudoers
 	    
-	    for mount_point in cdrom0 cdrom1 flash_ufs flash_fat flash_ntfs; do
-		# Create mount points
-		mkdir -p /media/$mount_point
-		chgrp operator /media/$mount_point
-		chmod 770 /media/$mount_point
-		
-		# Update fstab
-		case $mount_point in
-		cdrom0)
-		    dev='/dev/cd0'
-		    type='cd9660'
-		    options='ro,noauto'
-		    ;;
-		cdrom1)
-		    dev='/dev/cd1'
-		    type='cd9660'
-		    options='ro,noauto'
-		    ;;
-		flash_ufs)
-		    dev='/dev/da0a'
-		    type='ufs'
-		    options='rw,noauto,sync'
-		    ;;
-		flash_fat)
-		    dev='/dev/da0s1'
-		    type='msdosfs'
-		    options='rw,noauto,sync'
-		    ;;
-		flash_ntfs)
-		    dev='/dev/da0s1'
-		    type='ntfs'
-		    options='rw,noauto,sync'
-		    ;;
-		*)
-		    ;;
-		esac
-		#printf "$dev\t$mount_point\t$type\t$options\t0\t0"
-		auto-append-line "$mount_point" "$dev\t/media/$mount_point\t$type\t$options\t0\t0" \
-		   /etc/fstab desktop-installer
-		
-		# Update sudoers drop-in
-		printf " /sbin/mount $dev, /sbin/umount $dev, /sbin/mount /media/$mount_point, /sbin/umount /media/$mount_point," >> $sudoers
-		
-		# Add custom commands
-		# Where do we put this to make it global default?
-		# From .config/xfce4/panel/xfce4-mount-plugin-24.rc
-		#mount_command=sudo mount %m
-		#umount_command=sudo umount -f %m
-		
-		# Prevent gam_server from accessing mount points
-		printf "poll /media/$mount_point\n" >> $gamin_dir/gaminrc
+	    printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
+	    for device in cdrom flash; do
+		for num in 0 1 2; do
+		    
+		    # Create mount points
+		    mount_point=/removable/${device}${num}
+		    mkdir -p $mount_point
+		    chown root:operator $mount_point
+		    chmod 770 $mount_point
+		    
+		    # Update fstab
+		    case $device in
+		    cdrom)
+			dev="/dev/cd${num}"
+			type='cd9660'
+			options='ro,noauto'
+			;;
+		    flash)
+			dev="/dev/da${num}s1"
+			type='msdosfs'
+			options='rw,noauto'
+			;;
+		    *)
+			;;
+		    esac
+		    auto-append-line "$mount_point" "$dev\t$mount_point\t$type\t$options\t0\t0" \
+		       /etc/fstab nocomment
+		    
+		    # Update sudoers drop-in
+		    printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
+		    
+		    # Add custom commands
+		    # Where do we put this to make it global default?
+		    # From .config/xfce4/panel/xfce4-mount-plugin-24.rc
+		    #mount_command=sudo mount %m
+		    #umount_command=sudo umount -f %m
+		    
+		    # Prevent gam_server from accessing mount points
+		    printf "poll $mount_point\n" >> $gamin_dir/gaminrc
+		done
 	    done
+	    printf "# End auto-admin addition\n" >> /etc/fstab
 	    
 	    # Remove trailing comma
 	    sed -i '' -e 's|,$||g' $sudoers
@@ -2053,9 +2053,9 @@ EOM
 	fi
 	printf "poll /dist\n" >> $gamin_dir/gaminrc
 	line
-    else
-	printf "Sudo mount already configured.\n"
-    fi
+    #else
+    #    printf "Sudo mount already configured.\n"
+    #fi
 }
 
 
@@ -2143,7 +2143,7 @@ check_inodes
 mount_dist
 
 # Update base system and ports
-update_system
+auto-update-system
 auto-enable-passwdqc
 
 clear
@@ -2188,9 +2188,10 @@ while [ $valid_selection = 0 ]; do
     printf "2.. Gnome2 Desktop\n"
     printf "3.. Gnome2 Lite Desktop\n"
     printf "4.. KDE 4 Desktop\n"
-    printf "5.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
-    printf "6.. MATE Desktop + SLiM login manager\n"
-    printf "7.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "5.. Lumina Desktop\n"
+    printf "6.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "7.. MATE Desktop + SLiM login manager\n"
+    printf "8.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2201,7 +2202,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 7 ]; then
+       [ $desktop_selection -gt 8 ]; then
 	valid_selection=0
     fi
 done
@@ -2233,6 +2234,7 @@ procfs_config
 ntp_config
 nfs_client_config
 usb_serial_config
+firewire_config
 serial_config
 bluetooth_config
 
@@ -2283,31 +2285,35 @@ cups_config
 
 case $desktop_selection in
 1)
-    desktop=none
+    DESKTOP=none
     ;;
 2)
+    DESKTOP=gnome2
     gnome2_config full
-    desktop=gnome2
     ;;
 3)
+    DESKTOP=gnome2
     gnome2_config lite
-    desktop=gnome2
     ;;
 4)
+    DESKTOP=kde4
     kde4_config
-    desktop=kde4
     ;;
 5)
-    lxde_xdm_config
-    desktop=lxde
+    DESKTOP=lumina
+    lumina_config
     ;;
 6)
-    mate_config
-    desktop=mate
+    DESKTOP=lxde
+    lxde_xdm_config
     ;;
 7)
+    DESKTOP=mate
+    mate_config
+    ;;
+8)
+    DESKTOP=xfce
     xfce4_xdm_config
-    desktop=xfce
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
@@ -2317,7 +2323,7 @@ usermount_config    # Must come after desktop installation.  Configured gamin.
 samba_config
 
 # After network_config
-common_packages $desktop
+common_packages
 
 # Additional package installs may have added fonts, etc.
 if [ -e $XORG_CONF ]; then
