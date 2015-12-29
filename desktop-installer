@@ -563,7 +563,7 @@ xdm_config()
     cat << EOM
 
 If you want to install multiple desktops, such as Gnome, KDE, etc., another
-display manager such as gdm, kdm, or slim may be easier to set up and use.
+display manager such as gdm, kdm, or SLiM may be easier to set up and use.
 
 XDM is appropriate for a single-desktop system running lightweight
 desktops such as XFCE or LXDE.
@@ -654,7 +654,7 @@ EOM
 
 
 ##########################################################################
-#   Enable SLIM display manager.
+#   Enable SLiM display manager.
 ##########################################################################
 
 slim_config()
@@ -685,11 +685,11 @@ slim_config()
     line
     cat << EOM
 Warning:
-Enabling slim will terminate any sessions running under other display
+Enabling SLiM will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
-    printf "Enable SLIM graphical login screen? (y/n) [n] "
+    printf "Enable SLiM graphical login screen? (y/n) [n] "
     read resp
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
@@ -2188,7 +2188,7 @@ while [ $valid_selection = 0 ]; do
     printf "2.. Gnome2 Desktop\n"
     printf "3.. Gnome2 Lite Desktop\n"
     printf "4.. KDE 4 Desktop\n"
-    printf "5.. Lumina Desktop\n"
+    printf "5.. Lumina Desktop + SLiM login manager\n"
     printf "6.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
     printf "7.. MATE Desktop + SLiM login manager\n"
     printf "8.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
