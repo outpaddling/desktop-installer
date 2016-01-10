@@ -462,7 +462,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME2|KDE4|LXDE|MATE|XFCE4\n"
+	printf "Usage: startup_scripts GNOME2|KDE4|LUMINA|LXDE|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -1446,8 +1446,8 @@ nfs_client_config()
     # Needed for some applications (like OpenOffice) to access files on
     # NFS servers.
     auto-enable-service nfs_client desktop-installer
-    auto-enable-service rpc_statd desktop-installer
-    auto-enable-service rpc_lockd desktop-installer
+    auto-enable-service -s statd rpc_statd desktop-installer
+    auto-enable-service -s lockd rpc_lockd desktop-installer
 }
 
 
@@ -1667,7 +1667,8 @@ lumina_packages()
     # Packages specific to xfce4
     # FIXME: librsvg2 should be a depend for the xfce4 port
     install_packages math/kcalc sysutils/k3b-kde4 \
-	graphics/okular x11/konsole
+	graphics/okular x11/konsole graphics/qt4-imageformats \
+	x11-themes/kde-gtk-config
     k3b_perms
 }
 
@@ -1683,6 +1684,7 @@ lumina_config()
     startup_scripts LUMINA
     xorg_config slim
     lumina_packages
+    auto-enable-service mixer desktop-installer
 }
 
 
@@ -1988,7 +1990,10 @@ Important note:
 EOM
 	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
 	if [ 0$resp = 0y ]; then
-	    install_packages security/sudo
+	    # DEPRECATE: Use scontrol eject
+	    #install_packages security/sudo sysutils/mcweject
+	    #cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
+	    #chmod 600 ${LOCALBASE}/etc/eject.allow
 	    gamin_dir="$LOCALBASE/etc/gamin"
 	    mkdir -p $gamin_dir
 	    rm -f $gamin_dir/gaminrc
