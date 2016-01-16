@@ -1350,8 +1350,6 @@ java_config()
 	    if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 		# Icedtea installs default jdk as a dependency
 		install_packages java/openjdk6
-		# Needed by openjdk6
-		fdescfs_config
 	    else
 		printf "No Java available for this platform yet.\n"
 	    fi
@@ -1376,26 +1374,6 @@ procfs_config()
 	mount proc
     else
 	printf "/proc is already mounted.\n"
-    fi
-}
-
-
-##########################################################################
-#   Enable procfs.  This is required by Gnome2, and various other
-#   packages.
-##########################################################################
-
-fdescfs_config()
-{
-    # procfs
-    # proc                    /proc           procfs  rw              0       0
-    auto-append-line fdescfs "fdesc\t\t\t/dev/fd\t\tfdescfs\trw\t\t0\t0" $FSTAB desktop-installer
-    
-    # Mount if not already mounted
-    if ! df | fgrep -qw /fdesc; then
-	mount fdesc
-    else
-	printf "/fdesc is already mounted.\n"
     fi
 }
 
@@ -2147,6 +2125,9 @@ mount_dist
 # Update base system and ports
 auto-update-system
 auto-enable-passwdqc
+
+# Needed by openjdk, bash, etc.
+auto-add-fdesc-mount
 
 clear
 cat << EOM
