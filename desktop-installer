@@ -1969,9 +1969,10 @@ EOM
 	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
 	if [ 0$resp = 0y ]; then
 	    # DEPRECATE: Use scontrol eject
-	    #install_packages security/sudo sysutils/mcweject
+	    #install_packages sysutils/mcweject
 	    #cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
 	    #chmod 600 ${LOCALBASE}/etc/eject.allow
+	    install_packages security/sudo
 	    gamin_dir="$LOCALBASE/etc/gamin"
 	    mkdir -p $gamin_dir
 	    rm -f $gamin_dir/gaminrc
@@ -2123,7 +2124,10 @@ check_inodes
 mount_dist
 
 # Update base system and ports
-auto-update-system
+update_system=`auto-ask update-system 'Update base system and packages before proceeding?' y`
+if [ $update_system = y ]; then
+    auto-update-system
+fi
 auto-enable-passwdqc
 
 # Needed by openjdk, bash, etc.
@@ -2322,6 +2326,13 @@ that the system comes back up cleanly following changes like these.
 ========================================================================
 
 EOM
+
+if [ 0$enable_wireless = 0'y' ]; then
+    lagg=`auto-ask use-lagg 'Configure wifi interface as a failover Ethernet?' y`
+    if [ $lagg = y ]; then
+	auto-wifi-failover
+    fi
+fi
 
 printf 'Reboot now? (y/n) [n] '
 read resp
