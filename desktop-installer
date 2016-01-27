@@ -1058,8 +1058,11 @@ common_packages()
     fi
 
     # Do this after selected packages are installed
+    # Causes KDE apps to have white on white text under Lumina,
+    # maybe others.
+    # x11-themes/qt4-style-float; do
     if auto-package-installed devel/qt4-corelib; then
-	for pkg in x11-themes/qt4-style-phase x11-themes/qt4-style-float; do
+	for pkg in x11-themes/qt4-style-phase; do
 	    install_packages $pkg
 	done
     fi
