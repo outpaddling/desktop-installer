@@ -661,6 +661,8 @@ slim_config()
 {
     # Graphical login screen
     install_packages x11/slim
+    cp ${DATADIR}/XFCE4/bsd_background.jpg \
+	$LOCALBASE/share/slim/themes/default/background.jpg
     case $DESKTOP in
     mate)
 	# FIXME: Doesn't work for previously altered slim.conf
