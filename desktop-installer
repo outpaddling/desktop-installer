@@ -221,7 +221,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm2|kdm4\n"
+	printf "Usage: xorg_config xdm|gdm2|kdm4|slim\n"
 	exit 1
     else
 	display_manager=$1
@@ -313,7 +313,7 @@ EOM
     fi
     
     # Patch for VirtualBox guest additions
-    if vbox_guest; then
+    if vbox_guest && [ -e /etc/X11/xorg.conf ]; then
 	awk '
 	{
 	    if ( $1 == "Driver" && $2 == "\"mouse\"" )
@@ -494,7 +494,7 @@ startup_scripts()
 	session='startkde4'
 	;;
     LUMINA)
-	session='$LOCALBASE/bin/Lumina-DE'
+	session="$LOCALBASE/bin/Lumina-DE"
 	;;
     LXDE)
 	session="$LOCALBASE/bin/startlxde"
@@ -581,16 +581,16 @@ EOM
 	    install_packages x11-toolkits/tk85
 	fi
 	xdmdir=$LOCALBASE/lib/X11/xdm
-	install -m 0755 ${DATADIR}/XFCE4/xdmshutdown $LOCALBASE/sbin
-	auto-replace-file ${DATADIR}/XFCE4/Xsetup_0 $xdmdir/Xsetup_0
+	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
+	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdmdir/Xsetup_0
 	# Xstartup does not get executed on FreeBSD 7.2 or 8.0
-	# auto-replace-file ${DATADIR}/XFCE4/Xstartup $xdmdir/Xstartup
-	auto-replace-file ${DATADIR}/XFCE4/GiveConsole $xdmdir/GiveConsole
+	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdmdir/Xstartup
+	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdmdir/GiveConsole
 	
 	# Pretty up the login screen
 	install_packages graphics/xv     # Used for login splash image
-	cp ${DATADIR}/XFCE4/bsd_background.jpg $xdmdir/pixmaps
-	cp ${DATADIR}/XFCE4/beastie.xpm $xdmdir/pixmaps
+	cp ${DATADIR}/XDM/bsd_background.jpg $xdmdir/pixmaps
+	cp ${DATADIR}/XDM/beastie.xpm $xdmdir/pixmaps
 	# Put FreeBSD logo on login window
 	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdmdir/Xresources
 	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdmdir/Xresources
@@ -661,22 +661,31 @@ slim_config()
 {
     # Graphical login screen
     install_packages x11/slim
-    cp ${DATADIR}/XFCE4/bsd_background.jpg \
+    cp ${DATADIR}/XDM/bsd_background.jpg \
 	$LOCALBASE/share/slim/themes/default/background.jpg
+    local slim_conf=$LOCALBASE/etc/slim.conf
+    if [ ! -e $slim_conf.orig ]; then
+	cp $slim_conf $slim_conf.orig
+    fi
+    # Restore original for sed command below
+    cp -f $slim_conf.orig $slim_conf
     case $DESKTOP in
     mate)
 	# FIXME: Doesn't work for previously altered slim.conf
 	cp $LOCALBASE/share/desktop-installer/MATE/xinitrc \
 	    $LOCALBASE/etc/X11/xinit/xinitrc.mate
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.mate|g" \
-	    $LOCALBASE/etc/slim.conf
+	    $slim_conf
 	;;
     lumina)
 	# FIXME: Doesn't work for previously altered slim.conf
 	cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
 	    $LOCALBASE/etc/X11/xinit/xinitrc.lumina
+	# Make GTK2 apps look nice
+	cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
+	    $LOCALBASE/etc/gtk-2.0
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.lumina|g" \
-	    $LOCALBASE/etc/slim.conf
+	    $slim_conf
 	;;
     *)
 	printf "slim_config(): Invalid desktop: $DESKTOP\n"
@@ -799,7 +808,8 @@ firefox_flash()
 flash_config()
 {
     # Test for last item installed in selection
-    if auto-package-installed graphics/gnash || auto-package-installed www/nspluginwrapper; then
+    if auto-package-installed graphics/gnash || \
+	    auto-package-installed www/nspluginwrapper; then
 	printf "Flash already installed.\n"
     else
 	# Gnash or Flash?
@@ -861,7 +871,23 @@ EOM
 	    
 	    # Install linux_base
 	    linux_base=c6
-	    pkg install -y linux_base-$linux_base
+	    if [ `uname -m` = amd64 ]; then
+		linux64=`auto-ask linux64 'Use 64-bit Linux emulation?' n`
+	    else
+		linux64=n
+	    fi
+	    pkg delete linux\*
+	    if [ $linux64 = y ]; then
+		auto-append-line OVERRIDE_LINUX_BASE_PORT=c6_64 /etc/make.conf $0
+		auto-append-line OVERRIDE_LINUX_NONBASE_PORTS=c6_64 /etc/make.conf $0
+		kldload linux64 || true
+		cd /usr/ports/emulators/linux_base-$linux_base
+		make deinstall reinstall
+	    else
+		sed -i '.bak' -e 's|OVERRIDE_LINUX_BASE_PORT=c6_64||' /etc/make.conf
+		sed -i '.bak' -e 's|OVERRIDE_LINUX_NONBASE_PORTS=c6_64||' /etc/make.conf
+		pkg install -y linux_base-$linux_base
+	    fi
 	    
 	    # Use the latest flash plugin
 	    for version in 11 10; do
@@ -909,9 +935,9 @@ EOM
 		install_packages ftp/curl
 		cd $PORTSDIR/www/nspluginwrapper
 		make -DBATCH install
-		if [ ! -e ${LOCALBASE}/bin/nspluginwrapper ]; then
-		    install_packages www/nspluginwrapper
-		fi
+		#if [ ! -e ${LOCALBASE}/bin/nspluginwrapper ]; then
+		#    install_packages www/nspluginwrapper
+		#fi
 	    fi
     
 	    # No longer needed as of 8.2 (maybe 8.1)
@@ -1068,6 +1094,10 @@ common_packages()
 	    install_packages $pkg
 	done
     fi
+    
+    # In case someone installs chromium later
+    auto-append-line relax_mmap 'kern.ipc.shm_allow_removed=1' $SYSCTL_CONF desktop-installer
+    sysctl kern.ipc.shm_allow_removed=1
 }
 
 
@@ -1147,7 +1177,7 @@ xfce4_packages()
 	x11/xlockmore x11/xscreensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
 	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2 \
-	graphics/atril
+	graphics/evince
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
@@ -1175,11 +1205,7 @@ xfce4_packages()
 	#pause
 	#mkdir -p /var/db/ports/xfce4-print
 	
-	# Automatic methods
-	# 1) Dangerous hack that could be easily broken by port update
-	# cp $DATADIR/xfce4-print-options /var/db/ports/xfce4-print/options
-	
-	# 2) Command line flags to override defaults
+	# Command line flags to override defaults
 	# FIXME: -DWITH_CUPS has been replaced by ${PORT_OPTIONS:MCUPS}
 	
 	# New port uses PORT_OPTIONS.  Change default to cups.
@@ -1202,8 +1228,6 @@ xfce4_packages()
 	cd $PORTSDIR/*/epdfview
 	printf "Rebuilding epdfview to enable CUPS.\n"
 	install_packages devel/libtool devel/cppunit
-	#mkdir -p /var/db/ports/epdfview
-	#cp $DATADIR/epdfview-options /var/db/ports/epdfview/options
 	make -DBATCH -DWITH_CUPS clean deinstall reinstall
 	cd $START_DIR
     fi
@@ -1281,6 +1305,7 @@ EOM
     
     update_devfs_rules cups unlpt ulpt lpt
     
+    # FIXME: Is this still necessary?
     # Older ports have lpt-cupsd.conf, newer ulpt-cupsd.conf
     if [ -f ${LOCALBASE}/share/examples/cups/ulpt-cupsd.conf ]; then
 	if [ ! -f ${LOCALBASE}/etc/devd/ulpt-cupsd.conf ]; then
@@ -1292,18 +1317,19 @@ EOM
 	if [ -e $LOCALBASE/etc/devd/ulpt-cupsd.conf ]; then
 	    sed -i '' -e 's|}$|};|g' $LOCALBASE/etc/devd/ulpt-cupsd.conf
 	fi
-    else
+    elif [ -f ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ]; then
 	if [ ! -f ${LOCALBASE}/etc/devd/lpt-cupsd.conf ]; then
 	    mkdir -p ${LOCALBASE}/etc/devd
 	    cp ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ${LOCALBASE}/etc/devd/
 	fi
     fi
 
+    # FIXME: mime.types is no longer installed
     # Uncomment octet-stream line
-    sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-	${LOCALBASE}/etc/cups/mime.types
-    sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-	${LOCALBASE}/etc/cups/mime.convs
+    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
+    #    ${LOCALBASE}/etc/cups/mime.types
+    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
+    #    ${LOCALBASE}/etc/cups/mime.convs
     
     auto-enable-service cupsd desktop-installer
 }
@@ -1394,11 +1420,6 @@ ntp_config()
 	printf "Skipping NTP configuration for guest OS.\n"
 	return
     fi
-    
-    # Format may change over time, making this a time bomb.
-    #if [ ! -f /etc/ntp.conf ]; then
-    #    cp ${DATADIR}/ntp.conf /etc
-    #fi
     
     # ntpdate at startup
     if [ -e /var/run/ntpd.pid ]; then
@@ -1534,19 +1555,9 @@ samba_config()
 }
 
 
-##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
-##########################################################################
+enable_user_shutdown()
 
-xfce4_xdm_config()
 {
-    # XFCE 4.8 no longer uses HAL
-    # From x11-wm/xfce4-session/pkg-message:
-    install_packages sysutils/polkit
-    
-    # Allow members of operator group to shut down and restart from
-    # XFCE logout panel
-    
     # Apparently obsolete
     # cp ${DATADIR}/org.freedesktop.consolekit.pkla \
     #    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
@@ -1564,7 +1575,23 @@ polkit.addRule(function (action, subject) {
 EOM
     chown -Rh polkitd ${LOCALBASE}/etc/polkit-1
     printf "Users must be in the operator group to use shutdown, restart, etc.\n"
+}
 
+
+##########################################################################
+#   Configure the system to run the XFCE4 lightweight desktop.
+##########################################################################
+
+xfce4_xdm_config()
+{
+    # XFCE 4.8 no longer uses HAL
+    # From x11-wm/xfce4-session/pkg-message:
+    install_packages sysutils/polkit
+    
+    # Allow members of operator group to shut down and restart from
+    # XFCE logout panel
+
+    enable_user_shutdown
     install_packages x11-wm/xfce4
     startup_scripts XFCE4
     xorg_config xdm
@@ -1578,11 +1605,7 @@ EOM
 
 lxde_xdm_config()
 {
-    # Same as XFCE 4.8 for shutdown, reboot, etc.
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
-
+    enable_user_shutdown
     install_packages x11/lxde-meta
     startup_scripts LXDE
     xorg_config xdm
@@ -1650,9 +1673,18 @@ lumina_packages()
     # Packages specific to xfce4
     # FIXME: librsvg2 should be a depend for the xfce4 port
     install_packages math/kcalc sysutils/k3b-kde4 \
-	graphics/okular x11/konsole graphics/qt4-imageformats \
-	x11-themes/kde-gtk-config
+	graphics/okular graphics/qt4-imageformats graphics/qiviewer \
+	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
+	x11-themes/qtcurve-qt5 x11-themes/lxappearance
     k3b_perms
+    cat << EOM
+
+QT4 and GTK2 appearance can be controlled with qt4-qtconfig and lxappearance.
+
+Both support the qtcurve theme.
+
+EOM
+    pause
 }
 
 
@@ -2069,7 +2101,6 @@ JAVA_VERSION='16'
 ARCH=`uname -m`
 
 # Config files
-POLKIT_ETC='etc/PolicyKit'
 XORG_CONF='/etc/X11/xorg.conf'
 DEVFS_CONF='/etc/devfs.conf'
 DEVFS_RULES='/etc/devfs.rules'
@@ -2180,10 +2211,10 @@ while [ $valid_selection = 0 ]; do
     printf "2.. Gnome2 Desktop\n"
     printf "3.. Gnome2 Lite Desktop\n"
     printf "4.. KDE 4 Desktop\n"
-    printf "5.. Lumina Desktop + SLiM login manager\n"
-    printf "6.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "5.. Lumina Lightweight Desktop + SLiM login manager\n"
+    printf "6.. LXDE Lightweight Desktop + XDM\n"
     printf "7.. MATE Desktop + SLiM login manager\n"
-    printf "8.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "8.. XFCE Lightweight Desktop + XDM\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df

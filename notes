@@ -3,34 +3,4 @@ timecounter issue with VirtualBox guest
     kern.timecounter.hardware=i8254
     http://alastair.d-silva.org/time-running-slow-freebsd-x64-guest-under-virtualbox
 
-No more ntpdate?  Slows boot where network not immediately available.
-
-No PolicyKit.conf changes for gnome?  KDE?
-
-Make sure that the freetype module is loaded.  If it is not, add the following
-line to the "Modules" section of your X Windows configuration file:
-
-	Load "freetype"
-
-Add the following line to the "Files" section of X Windows configuration file:
-
-	FontPath "/usr/local/lib/X11/fonts/dejavu/"
-
-Note: your X Windows configuration file is typically /etc/X11/XF86Config
-if you are using XFree86, and /etc/X11/xorg.conf if you are using X.Org.
-
-
-======================================================================
-
-This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd.
-
-If you have not done it yet, please do the following:
-
-	mount -t fdescfs fdesc /dev/fd
-
-To make it permanent, you need the following line in /etc/fstab:
-
-	fdesc   /dev/fd         fdescfs         rw      0       0
-
-======================================================================
-
+Uncomment application/octet-stream line in cups/mime.convs to allow printing from Mac
