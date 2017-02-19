@@ -97,11 +97,7 @@ delete_packages()
 	exit 1
     fi
     
-    if auto-using-pkgng; then
-	pkg delete $@
-    else
-	pkg_delete $@
-    fi
+    pkg delete $@
 }
 
 
@@ -237,6 +233,9 @@ xorg_config()
 	return
     fi
     
+    # Intel GPUs require xf86-video-intel and i915kms kernel module
+    auto-detect-intel-gpu
+    
     if [ $ARCH = 'powerpc' ]; then
 	cat << EOM
 	
@@ -302,8 +301,8 @@ followed by Ctrl+Alt+Del.
 
 EOM
 
-    probe_x=`auto-ask probe-x 'Generate new xorg.conf?' y`
-    if [ $probe_x = 'y' ]; then
+    generate_xorg=`auto-ask generate-xorg 'Generate new xorg.conf? (y/n)' n`
+    if [ $generate_xorg = 'y' ]; then
 	Xorg -configure
 	if [ 0$use_moused != 0'y' ]; then
 	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
@@ -375,9 +374,11 @@ EOM
 EOM
 	fi
     
-	resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
-	if [ "$resp" = 'y' ]; then
-	    vi $XORG_CONF
+	if [ $generate_xorg = y ]; then
+	    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
+	    if [ "$resp" = 'y' ]; then
+		vi $XORG_CONF
+	    fi
 	fi
     
 	cat << EOM
@@ -481,7 +482,7 @@ startup_scripts()
 	cp $subdir/xinitrc $xinitrc
     else
 	printf "$xinitrc already exists.\n"
-	printf "Overwrite? (y/[n]) "
+	printf "Overwrite? (y/n) [n] "
 	read overwrite
 	if [ 0$overwrite = 0y ]; then
 	    cp $subdir/xinitrc $xinitrc
@@ -561,7 +562,7 @@ EOM
 xdm_config()
 {
     
-    # Graphical login screen
+    # Graphical login
     cat << EOM
 
 If you want to install multiple desktops, such as Gnome, KDE, etc., another
@@ -571,7 +572,7 @@ XDM is appropriate for a single-desktop system running lightweight
 desktops such as XFCE or LXDE.
 
 EOM
-    resp=`auto-ask enable-xdm "Enable XDM graphical login screen? (y/n)" n`
+    resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	# Disable gdm2 and kdm
 	gdm2_disable
@@ -589,7 +590,7 @@ EOM
 	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdmdir/Xstartup
 	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdmdir/GiveConsole
 	
-	# Pretty up the login screen
+	# Pretty up the login
 	install_packages graphics/xv     # Used for login splash image
 	cp ${DATADIR}/XDM/bsd_background.jpg $xdmdir/pixmaps
 	cp ${DATADIR}/XDM/beastie.xpm $xdmdir/pixmaps
@@ -631,7 +632,7 @@ xdm_disable()
 
 gdm2_config()
 {
-    # Graphical login screen
+    # Graphical login
     install_packages x11/gdm
     line
     cat << EOM
@@ -640,8 +641,7 @@ Enabling gdm2 will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
-    printf "Enable GDM2 graphical login screen? (y/n) [n] "
-    read resp
+    resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
@@ -661,7 +661,7 @@ EOM
 
 slim_config()
 {
-    # Graphical login screen
+    # Graphical login
     install_packages x11/slim
     cp ${DATADIR}/XDM/bsd_background.jpg \
 	$LOCALBASE/share/slim/themes/default/background.jpg
@@ -681,11 +681,6 @@ slim_config()
 	;;
     lumina)
 	# FIXME: Doesn't work for previously altered slim.conf
-	cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
-	    $LOCALBASE/etc/X11/xinit/xinitrc.lumina
-	# Make GTK2 apps look nice
-	cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
-	    $LOCALBASE/etc/gtk-2.0
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.lumina|g" \
 	    $slim_conf
 	;;
@@ -702,8 +697,7 @@ Enabling SLiM will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
-    printf "Enable SLiM graphical login screen? (y/n) [n] "
-    read resp
+    resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
@@ -754,16 +748,16 @@ Enabling kdm will terminate any sessions running under other display
 managers such as xdm or gdm2.
 EOM
     line
-    printf "Enable KDM graphical login screen? (y/n) [n] "
-    read resp
+    resp=`auto-ask enable-kdm "Enable KDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
 	gdm2_disable
 	slim_disable
-	auto-append-line $LOCALBASE/kde4$RCDIR \
-	    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
-	    $RC_CONF desktop-installer
+	# Obsolete: kde4 now in /usr/local
+	#auto-append-line $LOCALBASE/kde4$RCDIR \
+	#    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
+	#    $RC_CONF desktop-installer
 	auto-enable-service kdm4 desktop-instaler
 	exit 0
     fi
@@ -811,7 +805,7 @@ flash_config()
 {
     # Test for last item installed in selection
     if auto-package-installed graphics/gnash || \
-	    auto-package-installed www/nspluginwrapper; then
+	    auto-pkg-installed www/flashplayer; then
 	printf "Flash already installed.\n"
     else
 	# Gnash or Flash?
@@ -853,7 +847,8 @@ EOM
 	    install_packages graphics/gnash
 	    ;;
 	2)
-	    allow_vuln=`auto-ask vuln-flash 'Allow vulnerable linux RPMs?' n`
+	    printf "Flash plugin may not install unless some vulnerable linux RPMs are allowed.\n"
+	    allow_vuln=`auto-ask vuln-flash 'Allow vulnerable linux RPMs? (y/n)' n`
 	    if [ $allow_vuln = y ]; then
 		linux_install_flags='DISABLE_VULNERABILITIES=1'
 	    fi
@@ -881,65 +876,60 @@ EOM
 	    minor=`uname -r | cut -d . -f 2 | cut -d - -f 1`
 	    if [ `uname -m` = amd64 ]; then
 		if [ $major -ge 11 ]; then
-		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation?' y`
+		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation? (y/n)' y`
 		elif [ $major = 10 ] && [ $minor -ge 3 ]; then
-		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation?' y`
+		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation? (y/n)' y`
 		else
 		    linux64=n
 		fi
 	    else
 		linux64=n
 	    fi
-	    pkg delete linux_base\* || true
+	    pkg delete -y linux_base\* || true
 	    if [ $linux64 = y ]; then
-		#auto-append-line OVERRIDE_LINUX_BASE_PORT=c6_64 /etc/make.conf $0
-		#auto-append-line OVERRIDE_LINUX_NONBASE_PORTS=c6_64 /etc/make.conf $0
+		#auto-append-line OVERRIDE_LINUX_BASE_PORT=c6_64 $MAKE_CONF $0
+		#auto-append-line OVERRIDE_LINUX_NONBASE_PORTS=c6_64 $MAKE_CONF $0
 		auto-append-line DEFAULT_VERSIONS+=linux=c6_64 \
-		    /etc/make.conf $0
+		    $MAKE_CONF $0
+		kldload linux || true
 		kldload linux64 || true
 		cd /usr/ports/emulators/linux_base-$linux_base
 		make deinstall reinstall
 	    else
-		#sed -i '.bak' -e 's|OVERRIDE_LINUX_BASE_PORT=c6_64||' /etc/make.conf
-		#sed -i '.bak' -e 's|OVERRIDE_LINUX_NONBASE_PORTS=c6_64||' /etc/make.conf
-		sed -i '.bak' -e '/DEFAULT_VERSIONS+=linux=c6_64/d' /etc/make.conf
+		touch $MAKE_CONF    # Prevent no such file error below
+		#sed -i '.bak' -e 's|OVERRIDE_LINUX_BASE_PORT=c6_64||' $MAKE_CONF
+		#sed -i '.bak' -e 's|OVERRIDE_LINUX_NONBASE_PORTS=c6_64||' $MAKE_CONF
+		sed -i '.bak' -e '/DEFAULT_VERSIONS+=linux=c6_64/d' $MAKE_CONF
 		pkg install -y linux_base-$linux_base
 	    fi
 	    
 	    # Use the latest flash plugin
-	    for version in 11 10; do
-		if [ -e $PORTSDIR/www/linux-$linux_base-flashplugin$version ]; then
-		    flash=linux-$linux_base-flashplugin$version
-		    break
-		fi
-	    done
+	    #for version in 11 10; do
+	    #    if [ -e $PORTSDIR/www/linux-$linux_base-flashplugin$version ]; then
+	    #        flash=linux-$linux_base-flashplugin$version
+	    #        break
+	    #    fi
+	    #done
+	    
+	    # Use www/flashplayer now.  Will install linux-flashplayer as dep
+	    flash=flashplayer
 	    
 	    if ! auto-package-installed www/$flash; then
 		# Remove old versions first
-		if auto-using-pkgng; then
-		    if pkg delete linux-\*-flashplugin; then
-			printf 'Old flash removed.\n'
-		    fi
-		else
-		    if pkg delete linux-\*-flashplugin*; then
-			printf 'Old flash removed.\n'
-		    fi
+		if pkg delete -y '*flashplayer'; then
+		    printf 'Old flash removed.\n'
 		fi
 		rm -f $LOCALBASE/lib/firefox/plugins/libflash*
 		rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
 		rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
 		
-		# Normally running make makesum is considered a security
-		# risk, but this distfile comes from a trusted
-		# site, and Macromedia annoyingly changes the distfile
-		# without changing the filename.
 		cd $PORTSDIR/www/$flash
-		make -DBATCH $linux_install_flags clean deinstall makesum install
+		make -DBATCH $linux_install_flags clean deinstall reinstall
 		
 		# Old location for browser plugins.  May be obsolete.
-		mkdir -p $LOCALBASE/lib/browser_plugins
-		ln -sf $LOCALBASE/lib/npapi/*/libflashplayer.so \
-		    $LOCALBASE/lib/browser_plugins/
+		#mkdir -p $LOCALBASE/lib/browser_plugins
+		#ln -sf $LOCALBASE/lib/npapi/*/libflashplayer.so \
+		#    $LOCALBASE/lib/browser_plugins/
 	    fi
 	    cd $START_DIR
 	    
@@ -948,14 +938,15 @@ EOM
 	    mount linproc
 	    
 	    # nspluginwrapper for Linux plugins in native Firefox
-	    if ! auto-package-installed www/nspluginwrapper; then
-		install_packages ftp/curl
-		cd $PORTSDIR/www/nspluginwrapper
-		make -DBATCH $linux_install_flags install
+	    # Dependency of flashplayer now
+	    #if ! auto-package-installed www/nspluginwrapper; then
+	    #    install_packages ftp/curl
+	    #    cd $PORTSDIR/www/nspluginwrapper
+	    #    make -DBATCH $linux_install_flags install
 		#if [ ! -e ${LOCALBASE}/bin/nspluginwrapper ]; then
 		#    install_packages www/nspluginwrapper
 		#fi
-	    fi
+	    #fi
     
 	    # No longer needed as of 8.2 (maybe 8.1)
 	    # Add nspluginwrapper -v -a -i to startup scripts for all users
@@ -975,33 +966,8 @@ EOM
 	    # Do before firefox_flash, which links to it
 	    nspluginwrapper -v -a -i
 	fi
-	firefox_flash
-    fi
-}
-
-
-gtk2_cups()
-{
-    # Make sure gtk20 and libgnomecups packages are installed
-    install_packages print/libgnomecups
-    
-    # Make sure port is same version as installed package
-    
-    # Enable cups in gtk2 apps, per
-    # http://freebsdwiki.org/index.php/CUPS
-    if ! fgrep -q 'WITH_CUPS="YES"' $MAKE_CONF; then
-	printf "The following should not be necessary on FreeBSD 8.2 or later.\n"
-	printf "Enable CUPS printing from gtk2 apps (e.g. firefox)? (y/n) [n] "
-	read resp
-	if [ 0"$resp" = 0y ]; then
-	    auto-append-line WITH_CUPS 'WITH_CUPS="YES"' $MAKE_CONF desktop-installer
-	    
-	    cd $PORTSDIR/print/libgnomeprint
-	    make && make deinstall && make reinstall
-	    
-	    cd $PORTSDIR/x11-toolkits/gtk20
-	    make && make deinstall && make reinstall
-	fi
+	# Obsolete?
+	# firefox_flash
     fi
 }
 
@@ -1035,9 +1001,6 @@ common_packages()
     # Daemon and software for USB web cams
     webcam_config
 
-    # Fix gtk2/cups interface
-    # gtk2_cups
-    
     # Install some sort of flash player
     flash_config
 
@@ -1390,7 +1353,7 @@ java_config()
     # if ! auto-package-installed java/icedtea-web; then
     if ! auto-package-installed java/openjdk6 && \
        ! auto-package-installed java/openjdk7; then
-	resp=`auto-ask install-java "Install Java? (y/n):" n`
+	resp=`auto-ask install-java "Install Java? (y/n)" n`
 	if [ "$resp" = 'y' ]; then
 	    line
 	    # As of Nov 2010, openjdk6 does not have a working browser
@@ -1660,19 +1623,6 @@ gnome2_config()
 	install_packages x11/gnome2
     fi
     
-    # 8.2: gpk-update-icon torrent overloads system
-    # Work around by removing packagekit
-    if ! auto-using-pkgng; then
-	for bad_pkg in /var/db/pkg/gnome-packagekit-* /var/db/pkg/PackageKit-*; do
-	    if [ -e $bad_pkg ]; then
-		delete_packages -f $bad_pkg
-	    fi
-	done
-    else
-	# FIXME: Delete packagekit packages with pkgng, assuming this
-	# is still necessary
-    fi
-
     install_packages print/gnome-print
     startup_scripts GNOME2
     xorg_config gdm2
@@ -1689,9 +1639,10 @@ lumina_packages()
 {
     # Packages specific to Lumina
     install_packages \
-	graphics/qpdfview graphics/qt4-imageformats graphics/phototonic \
+	print/qpdfview graphics/qt4-imageformats graphics/phototonic \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
-	x11-themes/qtcurve-qt5 x11-themes/lxappearance x11/qterminal
+	x11-themes/qtcurve-qt5 x11-themes/lxappearance x11/qterminal \
+	math/galculator
     cat << EOM
 
 QT4 and GTK2 appearance can be controlled with qt4-qtconfig and lxappearance.
@@ -1720,8 +1671,7 @@ lumina_config()
 2.. SLiM login manager
 
 EOM
-	printf "Selection? "
-	read lm
+	lm=`auto-ask login-manager "Selection?" 1`
     done
     case $lm in
     1)
@@ -1731,6 +1681,11 @@ EOM
 	xorg_config slim
 	;;
     esac
+    cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
+	$LOCALBASE/etc/X11/xinit/xinitrc.lumina
+    # Make GTK2 apps look nice
+    cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
+	$LOCALBASE/etc/gtk-2.0
     lumina_packages
     auto-enable-service mixer desktop-installer
 }
@@ -1783,7 +1738,7 @@ power_config()
     # If CPU frequency is controllable, enable powerd.
     if sysctl dev.cpu.0.freq 2> /dev/null; then
 	auto-enable-service powerd desktop-installer
-	auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
+	# auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
     fi
 
     if sysctl -a | fgrep -q dev.acpi_lid.0; then
@@ -2193,7 +2148,7 @@ check_inodes
 mount_dist
 
 # Update base system and ports
-update_system=`auto-ask update-system 'Update base system and packages before proceeding?' y`
+update_system=`auto-ask update-system 'Update base system and packages before proceeding? (y/n)' y`
 if [ $update_system = y ]; then
     auto-update-system
 fi
@@ -2318,7 +2273,7 @@ external_drive_config
 # run unattended
 if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
     install_guest_additions=`auto-ask guest-additions \
-    'Install VirtualBox guest additions?' y`
+    'Install VirtualBox guest additions? (y/n)' y`
 fi
 
 # Install GUI
@@ -2375,8 +2330,9 @@ case $desktop_selection in
     printf "Invalid desktop selection.\n\n"
 esac
 
-usermount_config    # Must come after desktop installation.  Configured gamin.
-samba_config
+usermount_config    # Must come after desktop installation.  Configures gamin.
+
+# Broken and of questionable value samba_config
 
 # After network_config
 common_packages
@@ -2397,7 +2353,7 @@ that the system comes back up cleanly following changes like these.
 EOM
 
 if [ 0$enable_wireless = 0'y' ]; then
-    lagg=`auto-ask use-lagg 'Configure wifi interface as a failover Ethernet?' y`
+    lagg=`auto-ask use-lagg 'Configure wifi interface as a failover Ethernet? (y/n)' y`
     if [ $lagg = y ]; then
 	auto-wifi-failover
     fi

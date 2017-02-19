@@ -24,4 +24,4 @@ if [ -f "$usermodmap" ]; then
     xmodmap "$usermodmap"
 fi
 
-/usr/local/bin/Lumina-DE
+/usr/local/bin/start-lumina-desktop
