@@ -1053,7 +1053,7 @@ common_packages()
     fi
     
     if auto-package-installed emulators/virtualbox-ose; then
-	auto-append-line vboxdrv 'vboxdrv_load="YES"' $LOADER_CONF desktop-installer
+	auto-append-line vboxdrv_load 'vboxdrv_load="YES"' $LOADER_CONF desktop-installer
 	auto-enable-service vboxnet desktop-installer
 	sync
 	if ! kldstat | fgrep -q vboxdrv; then
@@ -1771,13 +1771,13 @@ EOM
 	lid_state=`auto-ask lid-state 'Action to take when laptop is closed?' 3`
 	case $lid_state in
 	1)
-	    auto-set-suspend-mode S3
+	    auto-set-lid-switch-mode S3
 	    ;;
 	2)
-	    auto-set-suspend-mode NONE
+	    auto-set-lid-switch-mode NONE
 	    ;;
 	3)
-	    auto-set-suspend-mode S5
+	    auto-set-lid-switch-mode S5
 	    ;;
 	esac
     fi
