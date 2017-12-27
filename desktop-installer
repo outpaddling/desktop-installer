@@ -512,24 +512,27 @@ startup_scripts()
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
 	exit 1
     esac
+
+    # Moved from $X11BASE/lib/X11/xdm in xdm 1.1.11_8
+    xdm_base=$X11BASE/etc/X11/xdm
     
     # Update default xsession to start selected desktop
     printf "Updating Xsession...\n"
-    if [ -e $X11BASE/lib/X11/xdm/Xsession ]; then
+    if [ -e $xdm_base/Xsession ]; then
 	# Revert to original so sed command will work
-	if [ -e $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer ]; then
-	    cp $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer \
-		$X11BASE/lib/X11/xdm/Xsession
+	if [ -e $xdm_base/Xsession.pre-desktop-installer ]; then
+	    cp $xdm_base/Xsession.pre-desktop-installer \
+		$xdm_base/Xsession
 	else
 	    # Never overwrite Xsession.pre-desktop-installer
-	    cp $X11BASE/lib/X11/xdm/Xsession \
-		$X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
+	    cp $xdm_base/Xsession \
+		$xdm_base/Xsession.pre-desktop-installer
 	fi
 	sed -i '' \
 	    -e "s|/usr/local/bin/xsm|$session|g" \
-	    $X11BASE/lib/X11/xdm/Xsession
+	    $xdm_base/Xsession
     else
-	printf "Internal error: $X11BASE/lib/X11/xdm/Xsession is missing!\n"
+	printf "Internal error: $xdm_base/Xsession is missing!\n"
 	exit 1
     fi
 }
@@ -583,22 +586,22 @@ EOM
 	if [ ! -e /var/db/pkg/tk-8.5* ]; then
 	    install_packages x11-toolkits/tk85
 	fi
-	xdmdir=$LOCALBASE/lib/X11/xdm
+	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
-	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdmdir/Xsetup_0
+	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
 	# Xstartup does not get executed on FreeBSD 7.2 or 8.0
-	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdmdir/Xstartup
-	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdmdir/GiveConsole
+	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdm_base/Xstartup
+	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
 	# Pretty up the login
 	install_packages graphics/xv     # Used for login splash image
-	cp ${DATADIR}/XDM/bsd_background.jpg $xdmdir/pixmaps
-	cp ${DATADIR}/XDM/beastie.xpm $xdmdir/pixmaps
+	cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
+	cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
 	# Put FreeBSD logo on login window
-	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdmdir/Xresources
-	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdmdir/Xresources
+	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
+	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
 	# Login window is too big on SVGA screens
-	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdmdir/Xresources
+	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
 	
 	# Fix login problem on 9.2-RELEASE with XFCE
 	# Error: XDM authorization key matches an existing client
@@ -1017,7 +1020,7 @@ common_packages()
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
     common_pkgs=" \
-	security/keepassx \
+	security/keepassx2 \
 	sysutils/bsdstats"
     
     for pkg in $common_pkgs; do
@@ -1270,7 +1273,7 @@ EOM
     
     install_packages \
 	print/cups \
-	print/hpijs \
+	print/hplip \
 	print/foomatic-db-engine \
 	print/gutenprint
 
@@ -1638,11 +1641,17 @@ gnome2_config()
 lumina_packages()
 {
     # Packages specific to Lumina
+    # qterminal is buggy and now depends on lxqt, so not including it anymore
+    # lilyterm is a good alternative, although not QT based
     install_packages \
 	print/qpdfview graphics/qt4-imageformats graphics/phototonic \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
-	x11-themes/qtcurve-qt5 x11-themes/lxappearance x11/qterminal \
-	math/galculator
+	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
+	x11-themse/lumina-themes \
+	math/galculator sysutils/k3b-kde4 x11/lilyterm
+
+    k3b_perms
+
     cat << EOM
 
 QT4 and GTK2 appearance can be controlled with qt4-qtconfig and lxappearance.
@@ -1821,7 +1830,7 @@ network_config()
     else
 	default_wireless='n'
     fi
-    enable_wireless=`auto-ask install-wireless "Enable wireless networking? (y/n)" $default_wireless`
+    enable_wireless=`auto-ask install-wireless "[Re]configure wireless networking? (y/n)" $default_wireless`
     if [ 0"$enable_wireless" = 0y ]; then
 	# add wlans_{dev}0="wlan0" to rc.conf
 	# FIXME: The real solution should detect all wireless devices,
