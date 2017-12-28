@@ -1646,7 +1646,7 @@ lumina_packages()
 	print/qpdfview graphics/qt4-imageformats graphics/phototonic \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
-	x11-themse/lumina-themes \
+	x11-themes/lumina-themes \
 	math/galculator sysutils/k3b-kde4 x11/lilyterm
 
     k3b_perms
