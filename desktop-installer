@@ -1671,24 +1671,7 @@ lumina_config()
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/lumina
     startup_scripts LUMINA
-    local lm=0
-    while [ 0$lm != 01 ] && [ 0$lm != 02 ]; do
-	cat << EOM
-
-1.. XDM login manager
-2.. SLiM login manager
-
-EOM
-	lm=`auto-ask login-manager "Selection?" 1`
-    done
-    case $lm in
-    1)
-	xorg_config xdm
-	;;
-    2)
-	xorg_config slim
-	;;
-    esac
+    xorg_config xdm
     cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
 	$LOCALBASE/etc/X11/xinit/xinitrc.lumina
     # Make GTK2 apps look nice
