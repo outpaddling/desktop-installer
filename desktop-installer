@@ -1766,15 +1766,15 @@ EOM
 	case $lid_state in
 	1)
 	    auto-set-lid-switch-mode S3
-	    chmod 4555 /usr/bin/acpiconf
+	    chmod 4555 /usr/sbin/acpiconf
 	    ;;
 	2)
 	    auto-set-lid-switch-mode NONE
-	    chmod 555 /usr/bin/acpiconf
+	    chmod 555 /usr/sbin/acpiconf
 	    ;;
 	3)
 	    auto-set-lid-switch-mode S5
-	    chmod 555 /usr/bin/acpiconf
+	    chmod 555 /usr/sbin/acpiconf
 	    ;;
 	esac
     fi
