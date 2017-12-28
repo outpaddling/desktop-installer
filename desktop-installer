@@ -219,7 +219,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm2|kdm4|slim\n"
+	printf "Usage: xorg_config xdm|gdm|kdm4|slim\n"
 	exit 1
     else
 	display_manager=$1
@@ -453,6 +453,15 @@ EOM
     fi
 
     # Install display manager
+    cat << EOM
+
+Display managers should not be reconfigured from a running X11 session.
+If you are running this under X11 now and plan to enable a new display
+manager (gdm, kdm, slim, xdm), please terminate now or answer 'n' to
+the following question and rerun desktop-installer from a virtual terminal.
+
+EOM
+    pause
     ${display_manager}_config
 }
 
@@ -465,7 +474,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME2|KDE4|LUMINA|LXDE|MATE|XFCE4\n"
+	printf "Usage: startup_scripts GNOME3|KDE4|LUMINA|LXDE|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -490,7 +499,7 @@ startup_scripts()
     fi
     
     case $1 in
-    GNOME2)
+    GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     KDE4)
@@ -558,7 +567,7 @@ EOM
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome2 uses gdm2, so this is
+#   Enable XDM.  Note that KDE uses kdm and Gnome3 uses gdm, so this is
 #   for XFCE and other lightweight desktops.
 ##########################################################################
 
@@ -577,8 +586,8 @@ desktops such as XFCE or LXDE.
 EOM
     resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
-	# Disable gdm2 and kdm
-	gdm2_disable
+	# Disable gdm and kdm
+	gdm_disable
 	slim_disable
 	kdm4_disable
 
@@ -619,39 +628,29 @@ EOM
 }
 
 
-xdm_disable()
-{
-    auto-xdm-toggle off
-    kill -HUP 1
-    if ! killall xdm; then
-	printf "INFO: No xdm found running.\n"
-    fi
-}
-
-
 ##########################################################################
-#   Enable GDM2.
+#   Enable GDM.
 ##########################################################################
 
-gdm2_config()
+gdm_config()
 {
     # Graphical login
     install_packages x11/gdm
     line
     cat << EOM
 Warning:
-Enabling gdm2 will terminate any sessions running under other display
+Enabling gdm will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
     resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
-	xdm_disable
+	auto-xdm-toggle off
 	slim_disable
 	kdm4_disable
-	# Mouse may not work in gdm2 unless we restart HAL
-	$LOCALBASE/etc/rc.d/hald restart
+	# Mouse may not work in gdm unless we restart HAL
+	service hald restart
 	auto-enable-service gdm desktop-installer
 	exit 0
     fi
@@ -703,11 +702,11 @@ EOM
     resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
-	xdm_disable
-	gdm2_disable
+	auto-xdm-toggle off
+	gdm_disable
 	kdm4_disable
-	# Mouse may not work in gdm2 unless we restart HAL
-	$LOCALBASE/etc/rc.d/hald restart
+	# Mouse may not work in gdm unless we restart HAL
+	service hald restart
 	auto-enable-service slim desktop-installer
 	exit 0
     fi
@@ -716,7 +715,7 @@ EOM
 
 ##########################################################################
 #   Function description:
-#       Disable gdm2, if running.
+#       Disable gdm, if running.
 #       Needs more testing.
 #
 #   History:
@@ -724,11 +723,11 @@ EOM
 #   2012-08-04  J Bacon     Begin
 ##########################################################################
 
-gdm2_disable()
+gdm_disable()
 {
     if fgrep -q 'gdm_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/gdm ]; then
-	$LOCALBASE/etc/rc.d/gdm stop
+	service gdm stop || true
     fi
     auto-disable-service gdm
 }
@@ -737,7 +736,7 @@ slim_disable()
 {
     if fgrep -q 'slim_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/slim ]; then
-	$LOCALBASE/etc/rc.d/slim stop
+	service slim stop || true
     fi
     auto-disable-service slim
 }
@@ -748,14 +747,14 @@ kdm4_config()
     cat << EOM
 Warning:
 Enabling kdm will terminate any sessions running under other display
-managers such as xdm or gdm2.
+managers such as xdm or gdm.
 EOM
     line
     resp=`auto-ask enable-kdm "Enable KDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
-	xdm_disable
-	gdm2_disable
+	auto-xdm-toggle off
+	gdm_disable
 	slim_disable
 	# Obsolete: kde4 now in /usr/local
 	#auto-append-line $LOCALBASE/kde4$RCDIR \
@@ -781,7 +780,7 @@ kdm4_disable()
 {
     if fgrep -q 'kdm4_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/kdm4 ]; then
-	$LOCALBASE/etc/rc.d/kdm4 stop
+	service kdm4 stop || true
     fi
     auto-disable-service kdm4
 }
@@ -808,7 +807,7 @@ flash_config()
 {
     # Test for last item installed in selection
     if auto-package-installed graphics/gnash || \
-	    auto-pkg-installed www/flashplayer; then
+	    auto-package-installed www/flashplayer; then
 	printf "Flash already installed.\n"
     else
 	# Gnash or Flash?
@@ -1114,7 +1113,7 @@ transcode_install()
 
 ##########################################################################
 #   Install packages useful to KDE4 users.  These packages will have
-#   alternatives under KDE and Gnome2.
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 kde4_packages()
@@ -1149,7 +1148,7 @@ k3b_perms()
 
 ##########################################################################
 #   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome2.
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 xfce4_packages()
@@ -1237,7 +1236,7 @@ xfce4_packages()
 
 ##########################################################################
 #   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome2.
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 lxde_packages()
@@ -1373,7 +1372,7 @@ java_config()
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome2, and various other
+#   Enable procfs.  This is required by Gnome3, and various other
 #   packages.
 ##########################################################################
 
@@ -1614,28 +1613,28 @@ kde4_config()
 
 
 ##########################################################################
-#   Configure the system to run the Gnome2 desktop.
+#   Configure the system to run the Gnome3 desktop.
 ##########################################################################
 
-gnome2_config()
+gnome3_config()
 {
-    # Gnome2
+    # Gnome3
     if [ $1 = 'lite' ]; then
-	install_packages x11/gnome2-lite
+	install_packages x11/gnome3-lite
     else
-	install_packages x11/gnome2
+	install_packages x11/gnome3
     fi
     
     install_packages print/gnome-print
-    startup_scripts GNOME2
-    xorg_config gdm2
+    startup_scripts GNOME3
+    xorg_config gdm
     auto-enable-hal-mount
 }
 
 
 ##########################################################################
 #   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome2.
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 lumina_packages()
@@ -1778,15 +1777,21 @@ ACPI web sites for more information.
 
 EOM
 	lid_state=`auto-ask lid-state 'Action to take when laptop is closed?' 3`
+	
+	# Set perms on acpiconf to enable/disable sleep button on exit
+	# panel as well, until we know how to make the button disappear
 	case $lid_state in
 	1)
 	    auto-set-lid-switch-mode S3
+	    chmod 4555 /usr/bin/acpiconf
 	    ;;
 	2)
 	    auto-set-lid-switch-mode NONE
+	    chmod 555 /usr/bin/acpiconf
 	    ;;
 	3)
 	    auto-set-lid-switch-mode S5
+	    chmod 555 /usr/bin/acpiconf
 	    ;;
 	esac
     fi
@@ -2205,8 +2210,8 @@ while [ $valid_selection = 0 ]; do
     printf "\n"
     line
     printf "1.. No desktop software.\n"
-    printf "2.. Gnome2 Desktop\n"
-    printf "3.. Gnome2 Lite Desktop\n"
+    printf "2.. Gnome3 Desktop\n"
+    printf "3.. Gnome3 Lite Desktop\n"
     printf "4.. KDE 4 Desktop\n"
     printf "5.. Lumina Lightweight Desktop\n"
     printf "6.. LXDE Lightweight Desktop\n"
@@ -2308,12 +2313,12 @@ case $desktop_selection in
     DESKTOP=none
     ;;
 2)
-    DESKTOP=gnome2
-    gnome2_config full
+    DESKTOP=gnome3
+    gnome3_config full
     ;;
 3)
-    DESKTOP=gnome2
-    gnome2_config lite
+    DESKTOP=gnome3
+    gnome3_config lite
     ;;
 4)
     DESKTOP=kde4
