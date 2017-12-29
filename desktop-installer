@@ -225,6 +225,9 @@ xorg_config()
 	display_manager=$1
     fi
     
+    # Pretty up xterm
+    cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
+    
     # Lumina does not have hal as a dep
     install_packages sysutils/hal
     
