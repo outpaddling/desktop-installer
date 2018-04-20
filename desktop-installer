@@ -167,7 +167,8 @@ install_xorg()
     
     # Is this really of any use?
     # x11-drivers/xf86-video-fbdev
-    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-mga
+    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-video-ati
 
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
