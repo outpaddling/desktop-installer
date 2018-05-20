@@ -1648,11 +1648,13 @@ lumina_packages()
     # qterminal is buggy and now depends on lxqt, so not including it anymore
     # lilyterm is a good alternative, although not QT based
     install_packages \
-	print/qpdfview graphics/qt4-imageformats graphics/phototonic \
+	print/qpdfview \
+	graphics/qt4-imageformats graphics-qt5-imageformats \
+	graphics/phototonic \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
 	x11-themes/lumina-themes \
-	math/galculator sysutils/k3b-kde4 x11/lilyterm
+	math/galculator sysutils/k3b x11/lilyterm
 
     k3b_perms
 
