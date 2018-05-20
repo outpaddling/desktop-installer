@@ -165,10 +165,11 @@ install_xorg()
     # Install Xorg by itself.  Installing as a dependency may not get all the
     # modules we want.
     
-    # Is this really of any use?
-    # x11-drivers/xf86-video-fbdev
-    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-mga \
-	x11-drivers/xf86-video-ati
+    # video-intel is superseded by the modesetting driver
+    install_packages x11/xorg x11/xdm x11/xsm \
+	x11-drivers/xf86-video-mga x11-drivers/xf86-video-ati \
+	x11-drivers/xf86-video-vesa x11-drivers/xf86-video-nv \
+	x11-drivers/xf86-input-wacom x11-drivers/xf86-input-synaptics
 
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
