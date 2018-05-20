@@ -479,7 +479,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME3|KDE4|LUMINA|LXDE|MATE|XFCE4\n"
+	printf "Usage: startup_scripts GNOME3|KDE4|KDE5|LUMINA|LXDE|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -509,6 +509,9 @@ startup_scripts()
 	;;
     KDE4)
 	session='startkde4'
+	;;
+    KDE5)
+	session='startkde5'
 	;;
     LUMINA)
 	session="$LOCALBASE/bin/start-lumina-desktop"
@@ -595,6 +598,7 @@ EOM
 	gdm_disable
 	slim_disable
 	kdm4_disable
+	kdm5_disable
 
 	# Install xdmshutdown
 	if [ ! -e /var/db/pkg/tk-8.5* ]; then
@@ -654,6 +658,7 @@ EOM
 	auto-xdm-toggle off
 	slim_disable
 	kdm4_disable
+	kdm5_disable
 	# Mouse may not work in gdm unless we restart HAL
 	service hald restart
 	auto-enable-service gdm desktop-installer
@@ -710,6 +715,7 @@ EOM
 	auto-xdm-toggle off
 	gdm_disable
 	kdm4_disable
+	kdm5_disable
 	# Mouse may not work in gdm unless we restart HAL
 	service hald restart
 	auto-enable-service slim desktop-installer
@@ -755,17 +761,43 @@ Enabling kdm will terminate any sessions running under other display
 managers such as xdm or gdm.
 EOM
     line
-    resp=`auto-ask enable-kdm "Enable KDM graphical login? (y/n)" y`
+    resp=`auto-ask enable-kdm4 "Enable KDM4 graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	auto-xdm-toggle off
 	gdm_disable
 	slim_disable
+	kdm5_disable
 	# Obsolete: kde4 now in /usr/local
 	#auto-append-line $LOCALBASE/kde4$RCDIR \
 	#    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
 	#    $RC_CONF desktop-installer
 	auto-enable-service kdm4 desktop-instaler
+	exit 0
+    fi
+}
+
+
+kdm5_config()
+{
+    cat << EOM
+Warning:
+Enabling kdm will terminate any sessions running under other display
+managers such as xdm or gdm.
+EOM
+    line
+    resp=`auto-ask enable-kdm5 "Enable KDM5 graphical login? (y/n)" y`
+    if [ 0"$resp" = 0'y' ]; then
+	dm_msg
+	auto-xdm-toggle off
+	gdm_disable
+	slim_disable
+	kdm4_disable
+	# Obsolete: kde4 now in /usr/local
+	#auto-append-line $LOCALBASE/kde4$RCDIR \
+	#    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
+	#    $RC_CONF desktop-installer
+	auto-enable-service kdm5 desktop-instaler
 	exit 0
     fi
 }
@@ -788,6 +820,26 @@ kdm4_disable()
 	service kdm4 stop || true
     fi
     auto-disable-service kdm4
+}
+
+
+##########################################################################
+#   Function description:
+#       Disable kdm4, if running.
+#       Needs more testing.
+#
+#   History:
+#   Date        Name        Modification
+#   2012-08-04  J Bacon     Begin
+##########################################################################
+
+kdm5_disable()
+{
+    if fgrep -q 'kdm5_enable="YES"' /etc/rc.conf && \
+	[ -e $LOCALBASE/etc/rc.d/kdm5 ]; then
+	service kdm5 stop || true
+    fi
+    auto-disable-service kdm5
 }
 
 
@@ -1123,8 +1175,32 @@ transcode_install()
 
 kde4_packages()
 {
+    # Is k3b missing a cdrdao dep?
     install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer sysutils/k3b-kde4 \
+	www/gecko-mediaplayer sysutils/k3b-kde4 sysutils/cdrdao \
+	x11-themes/kde-gtk-config
+    
+    k3b_perms
+    
+    transcode_install
+    
+    # Prevent nepomuk startup errors
+    # Should this be a dependency for something in the KDE4 collection?
+    # Does not run on i386
+    # install_packages databases/virtuoso
+}
+
+
+##########################################################################
+#   Install packages useful to KDE4 users.  These packages will have
+#   alternatives under KDE and Gnome3.
+##########################################################################
+
+kde5_packages()
+{
+    # Is k3b missing a cdrdao dep?
+    install_packages multimedia/kaffeine \
+	www/gecko-mediaplayer sysutils/k3b sysutils/cdrdao \
 	x11-themes/kde-gtk-config
     
     k3b_perms
@@ -1618,6 +1694,23 @@ kde4_config()
 
 
 ##########################################################################
+#   Configure the system to run the KDE4 desktop.
+##########################################################################
+
+kde5_config()
+{
+    PATH=${PATH}:${LOCALBASE}/kde5/bin
+    export PATH
+    
+    install_packages x11/kde5
+    startup_scripts KDE5
+    xorg_config kdm5
+    auto-enable-hal-mount
+    kde5_packages
+}
+
+
+##########################################################################
 #   Configure the system to run the Gnome3 desktop.
 ##########################################################################
 
@@ -1647,14 +1740,15 @@ lumina_packages()
     # Packages specific to Lumina
     # qterminal is buggy and now depends on lxqt, so not including it anymore
     # lilyterm is a good alternative, although not QT based
+    # Is k3b missing a cdrdao dep?
     install_packages \
 	print/qpdfview \
-	graphics/qt4-imageformats graphics-qt5-imageformats \
+	graphics/qt4-imageformats graphics/qt5-imageformats \
 	graphics/phototonic \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
 	x11-themes/lumina-themes \
-	math/galculator sysutils/k3b x11/lilyterm
+	math/galculator sysutils/k3b sysutils/cdrdao x11/lilyterm
 
     k3b_perms
 
@@ -2203,10 +2297,11 @@ while [ $valid_selection = 0 ]; do
     printf "2.. Gnome3 Desktop\n"
     printf "3.. Gnome3 Lite Desktop\n"
     printf "4.. KDE 4 Desktop\n"
-    printf "5.. Lumina Lightweight Desktop\n"
-    printf "6.. LXDE Lightweight Desktop\n"
-    printf "7.. MATE Desktop\n"
-    printf "8.. XFCE Lightweight Desktop\n"
+    printf "5.. KDE 5 Desktop (Experimental)\n"
+    printf "6.. Lumina Lightweight Desktop\n"
+    printf "7.. LXDE Lightweight Desktop\n"
+    printf "8.. MATE Desktop\n"
+    printf "9.. XFCE Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2315,18 +2410,22 @@ case $desktop_selection in
     kde4_config
     ;;
 5)
+    DESKTOP=kde5
+    kde5_config
+    ;;
+6)
     DESKTOP=lumina
     lumina_config
     ;;
-6)
+7)
     DESKTOP=lxde
     lxde_xdm_config
     ;;
-7)
+8)
     DESKTOP=mate
     mate_config
     ;;
-8)
+9)
     DESKTOP=xfce
     xfce4_xdm_config
     ;;
