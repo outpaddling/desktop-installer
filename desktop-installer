@@ -2245,10 +2245,16 @@ EOM
 check_inodes
 mount_dist
 
-# Update base system and ports
-update_system=`auto-ask update-system 'Update base system and packages before proceeding? (y/n)' y`
-if [ $update_system = y ]; then
-    auto-update-system
+latest_packages=`auto-ask latest-packages 'Use latest binary packages instead of quarterly snapshot? (y/n)' y`
+if [ $latest_packages = y ]; then
+    # Runs auto-update-system unconditionally
+    auto-pkg-latest
+else
+    # Update base system and ports
+    update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
+    if [ $update_system = y ]; then
+	auto-update-system
+    fi
 fi
 auto-enable-passwdqc
 
