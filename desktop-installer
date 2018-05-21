@@ -1065,7 +1065,7 @@ common_packages()
 
     # Install JDK
     # Let it be installed as a prereq for something else
-    # java_config
+    java_config
     
     # Common packages for desktop systems
     # bsdstats should be last, since it has an interactive
@@ -1177,7 +1177,7 @@ kde4_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer sysutils/k3b-kde4 \
+	sysutils/k3b-kde4 \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
@@ -1201,7 +1201,7 @@ kde5_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
-	www/gecko-mediaplayer sysutils/k3b \
+	sysutils/k3b \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
@@ -1253,9 +1253,6 @@ xfce4_packages()
     
     if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 	install_packages sysutils/xfce4-battery-plugin
-    fi
-    if [ $ARCH != 'powerpc' ]; then
-	install_packages www/gecko-mediaplayer
     fi
     install_packages x11/xfce4-screenshooter-plugin
     
@@ -1326,7 +1323,7 @@ lxde_packages()
 {
     # Packages specific to xfce4
     install_packages math/galculator \
-	x11/xlockmore www/gecko-mediaplayer
+	x11/xlockmore
 }
 
 
@@ -1432,23 +1429,20 @@ external_drive_config()
 
 java_config()
 {
-    # FIXME: Can't have gecko-mediaplayer with icedtea-web
-    # icedtea-web requires libxul-1.9, which conflicts with libxul,
-    # which is required by gecko-mediaplayer
-    # if ! auto-package-installed java/icedtea-web; then
-    if ! auto-package-installed java/openjdk6 && \
-       ! auto-package-installed java/openjdk7; then
-	resp=`auto-ask install-java "Install Java? (y/n)" n`
+    if ! auto-package-installed java/icedtea-web; then
+	cat << EOM
+
+If you are running on a mainstream hardware platform with Java support,
+you can install the icedtea-web plugin for running Java programs from
+the web.  Check the openjdk ports for the latest supported platforms.
+If you are not sure your platform supports Java, answer 'n' here.
+
+EOM
+	resp=`auto-ask install-java "Install Java plugin? (y/n)" n`
 	if [ "$resp" = 'y' ]; then
 	    line
-	    # As of Nov 2010, openjdk6 does not have a working browser
-	    # plugin, so use the old diablo jdk with seamonkey for now.
-	    if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
-		# Icedtea installs default jdk as a dependency
-		install_packages java/openjdk6
-	    else
-		printf "No Java available for this platform yet.\n"
-	    fi
+	    # Icedtea installs default jdk as a dependency
+	    install_packages java/icedtea-web
 	fi
     fi
 }
