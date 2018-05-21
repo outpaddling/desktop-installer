@@ -1175,9 +1175,10 @@ transcode_install()
 
 kde4_packages()
 {
-    # Is k3b missing a cdrdao dep?
+    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer sysutils/k3b-kde4 sysutils/cdrdao \
+	www/gecko-mediaplayer sysutils/k3b-kde4 \
+	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
     k3b_perms
@@ -1198,9 +1199,10 @@ kde4_packages()
 
 kde5_packages()
 {
-    # Is k3b missing a cdrdao dep?
+    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
-	www/gecko-mediaplayer sysutils/k3b sysutils/cdrdao \
+	www/gecko-mediaplayer sysutils/k3b \
+	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
     k3b_perms
@@ -1740,7 +1742,7 @@ lumina_packages()
     # Packages specific to Lumina
     # qterminal is buggy and now depends on lxqt, so not including it anymore
     # lilyterm is a good alternative, although not QT based
-    # Is k3b missing a cdrdao dep?
+    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
 	print/qpdfview \
 	graphics/qt4-imageformats graphics/qt5-imageformats \
@@ -1748,7 +1750,8 @@ lumina_packages()
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
 	x11-themes/lumina-themes \
-	math/galculator sysutils/k3b sysutils/cdrdao x11/lilyterm
+	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
+	math/galculator sysutils/k3b x11/lilyterm
 
     k3b_perms
 
@@ -2245,7 +2248,7 @@ EOM
 check_inodes
 mount_dist
 
-latest_packages=`auto-ask latest-packages 'Use latest binary packages instead of quarterly snapshot? (y/n)' y`
+latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' y`
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
     auto-pkg-latest
