@@ -24,4 +24,4 @@ if [ -f "$usermodmap" ]; then
     xmodmap "$usermodmap"
 fi
 
-startkde5
+startkde
