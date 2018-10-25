@@ -1111,19 +1111,6 @@ common_packages()
 	mtools_config
     fi
     
-    if auto-package-installed emulators/virtualbox-ose; then
-	auto-append-line vboxdrv_load 'vboxdrv_load="YES"' $LOADER_CONF desktop-installer
-	auto-enable-service vboxnet desktop-installer
-	sync
-	if ! kldstat | fgrep -q vboxdrv; then
-	    kldload vboxdrv
-	fi
-	line
-	printf "Remember to add users to the vboxusers group.\n"
-	printf "pw groupmod vboxusers -m username\n"
-	pause
-    fi
-
     # Do this after selected packages are installed
     # Causes KDE apps to have white on white text under Lumina,
     # maybe others.
@@ -1153,18 +1140,15 @@ mplayer_plugin_install()
 }
 
 
-transcode_install()
+##########################################################################
+#   lame cannot be packaged due to patent issues
+##########################################################################
+
+lame_install()
 {
-    # No package for lame
-    #if ! auto-package-installed audio/lame; then
-    #    (cd $PORTSDIR/audio/lame; make -DBATCH install)
-    #fi
-    install_packages audio/lame multimedia/transcode
-    
-    #if ! auto-package-installed transcode; then
-    #    cd $PORTSDIR/multimedia/transcode
-    #    make -DBATCH install
-    #fi
+    if ! auto-package-installed audio/lame; then
+	(cd /usr/ports/audio/lame && make -DBATCH clean install)
+    fi
 }
 
 
@@ -1176,14 +1160,14 @@ transcode_install()
 kde4_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
+    lame_install
     install_packages multimedia/kaffeine \
+	multimedia/transcode \
 	sysutils/k3b-kde4 \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
     k3b_perms
-    
-    transcode_install
     
     # Prevent nepomuk startup errors
     # Should this be a dependency for something in the KDE4 collection?
@@ -1200,14 +1184,14 @@ kde4_packages()
 kde5_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
+    lame_install
     install_packages \
+	multimedia/transcode \
 	sysutils/k3b \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
     k3b_perms
-    
-    transcode_install
     
     # Prevent nepomuk startup errors
     # Should this be a dependency for something in the KDE4 collection?
@@ -1737,7 +1721,9 @@ lumina_packages()
     # qterminal is buggy and now depends on lxqt, so not including it anymore
     # lilyterm is a good alternative, although not QT based
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
+    lame_install
     install_packages \
+	multimedia/transcode \
 	print/qpdfview \
 	graphics/qt4-imageformats graphics/qt5-imageformats \
 	graphics/phototonic \
