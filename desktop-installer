@@ -1952,22 +1952,20 @@ network_config()
 	    fi
 	done
 	
-	wlan=0
 	for driver in $drivers; do
 	    # Strip off _usb or _pci to get device name
-	    driver_base=${driver%_*}
-	    if grep -q "^${driver_base}0" /var/run/dmesg.boot || \
+	    WIFI_DEVICE=${driver%_*}0
+	    if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
 		# FIXME: Check also for ${driver}1, ${driver}2, etc.
 		# Also could use a better test than this simple grep.
-		dmesg | grep -q "^${driver_base}0"; then
-		printf "Found wireless device ${driver_base}0.\n"
-		auto-append-line "wlans_${driver_base}0" "wlans_${driver_base}0=\"wlan$wlan\"" $RC_CONF desktop-installer
+		dmesg | grep -q "^$WIFI_DEVICE"; then
+		printf "Found wireless device $WIFI_DEVICE.\n"
+		auto-append-line "wlans_$WIFI_DEVICE" "wlans_$WIFI_DEVICE=\"wlan0\"" $RC_CONF desktop-installer
 		# Not necessary for drivers which are in the GENERIC kernel, but
 		# it shouldn't hurt.
 		auto-append-line "if_${driver}_load=\"YES\"" \
 		    "if_${driver}_load=\"YES\"" $LOADER_CONF desktop-installer
-		wlan=$(($wlan + 1))
-		# break   # Configure only one wireless device!
+		break   # Configure only one wireless device!
 	    fi
 	done
 	auto-append-line 'ifconfig_wlan0' 'ifconfig_wlan0="WPA DHCP"' $RC_CONF desktop-installer
@@ -2475,6 +2473,7 @@ EOM
 if [ 0$enable_wireless = 0'y' ]; then
     lagg=`auto-ask use-lagg 'Configure wifi interface as a failover Ethernet? (y/n)' y`
     if [ $lagg = y ]; then
+	printf "\nDetected WiFi device: $WIFI_DEVICE\n\n"
 	auto-wifi-failover
     fi
 fi
