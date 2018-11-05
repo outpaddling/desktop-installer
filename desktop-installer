@@ -166,10 +166,17 @@ install_xorg()
     # modules we want.
     
     # video-intel is superseded by the modesetting driver
-    install_packages x11/xorg x11/xdm x11/xsm \
-	x11-drivers/xf86-video-mga x11-drivers/xf86-video-ati \
-	x11-drivers/xf86-video-vesa x11-drivers/xf86-video-nv \
-	x11-drivers/xf86-input-wacom x11-drivers/xf86-input-synaptics
+    install_packages \
+	x11/xorg \
+	x11/xdm \
+	x11/xsm \
+	x11-drivers/xf86-video-amdgpu \
+	x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-video-ati \
+	x11-drivers/xf86-video-vesa \
+	x11-drivers/xf86-video-nv \
+	x11-drivers/xf86-input-wacom \
+	x11-drivers/xf86-input-synaptics
 
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
@@ -415,22 +422,35 @@ X11 seems to have failed to start.  Viewing your Xorg log...
 EOM
 		pause
 		$EDITOR /var/log/Xorg.0.log
+		line
 		cat << EOM
 Your chipset is
 
 $(grep Chipset /var/log/Xorg.0.log)
 
+If you are using a newer video chipset, you may want to try installing
+graphics/drm-kmod, which supports newer devices than th base DRM..
+
 If you are using an older video chipset (as many server motherboards do),
 you may need an Xorg video driver that is not installed by default.
+
 EOM
 
+		drm_kmod=`auto-ask drm-kmod "Install drm-kmod? (y/n)" y`
+		if [ $drm_kmod != n ]; then
+		    pkg remove -y drm-\*-kmod || true
+		    install_packages "graphics/drm-kmod"
+		    printf "Update $RC_CONF as described above, reboot, and run desktop-installer again.\n"
+		    exit
+		fi
+
 		more_drivers=`auto-ask more-drivers \
-		    "Would you like to try installing additional drivers? (y/n)" y`
+		    "Would you like to try installing additional drivers? (y/n)" n`
 		if [ $more_drivers = 'y' ]; then
 		    save_cwd=`pwd`
 		    cd /usr/ports/x11-drivers/xorg-drivers
 		    make config
-		    make install
+		    make deinstall clean reinstall
 		    cd $save_cwd
 		fi
 	    fi
@@ -1922,7 +1942,10 @@ network_config()
 	cd $start_cwd
 	# Check bwi before bwn.  They support the same devices, but
 	# bwi seems to work better.
-	drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw urtwn wpi zyd"
+	# Driver name must not contain _ unless it's a variant as in
+	# rtwn_pci.  We'll have to recode this section otherwise.
+	# Both rtwn_pci and rtwn_usb appear as device rtwn0.
+	drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
 	for driver in $drivers; do
 	    if kldload if_${driver} > /dev/null 2>&1; then
 		printf "Loaded $driver.\n"
@@ -1931,12 +1954,14 @@ network_config()
 	
 	wlan=0
 	for driver in $drivers; do
-	    if grep -q "^${driver}0" /var/run/dmesg.boot || \
+	    # Strip off _usb or _pci to get device name
+	    driver_base=${driver%_*}
+	    if grep -q "^${driver_base}0" /var/run/dmesg.boot || \
 		# FIXME: Check also for ${driver}1, ${driver}2, etc.
 		# Also could use a better test than this simple grep.
-		dmesg | grep -q "^${driver}0"; then
-		printf "Found wireless device ${driver}0.\n"
-		auto-append-line "wlans_${driver}0" "wlans_${driver}0=\"wlan$wlan\"" $RC_CONF desktop-installer
+		dmesg | grep -q "^${driver_base}0"; then
+		printf "Found wireless device ${driver_base}0.\n"
+		auto-append-line "wlans_${driver_base}0" "wlans_${driver_base}0=\"wlan$wlan\"" $RC_CONF desktop-installer
 		# Not necessary for drivers which are in the GENERIC kernel, but
 		# it shouldn't hurt.
 		auto-append-line "if_${driver}_load=\"YES\"" \
@@ -2157,6 +2182,9 @@ fi
 
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
+
+# Prevent dialogs in auto-install-packages
+export BATCH=yes
 
 START_DIR=`pwd`
 LOCALBASE='/usr/local'
