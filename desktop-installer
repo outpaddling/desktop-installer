@@ -1886,7 +1886,7 @@ EOM
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
 	auto-append-line battery_shutdown.sh $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
-	cp $DATADIR/Scripts/battery_shutdown.sh $LOCALBASE/sbin
+	# Prolong battery life slightly
 	auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
     fi
     
