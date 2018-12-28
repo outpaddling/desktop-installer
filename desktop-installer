@@ -248,6 +248,9 @@ xorg_config()
     # Intel GPUs require xf86-video-intel and i915kms kernel module
     auto-detect-intel-gpu
     
+    # nVidia GPUs require a commercial driver and kernel mod
+    auto-detect-nvidia-gpu
+    
     if [ $ARCH = 'powerpc' ]; then
 	cat << EOM
 	
@@ -949,38 +952,8 @@ EOM
 	    major=`uname -r | cut -d '.' -f 1`
 	    # Let flash port install the default linux_base as a depend
 	    
-	    # Install linux_base.  Can use 64-bit for 10.3 and later.
-	    linux_base=c6
-	    major=`uname -r | cut -d . -f 1`
-	    minor=`uname -r | cut -d . -f 2 | cut -d - -f 1`
-	    if [ `uname -m` = amd64 ]; then
-		if [ $major -ge 11 ]; then
-		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation? (y/n)' y`
-		elif [ $major = 10 ] && [ $minor -ge 3 ]; then
-		    linux64=`auto-ask linux64 'Use 64-bit Linux emulation? (y/n)' y`
-		else
-		    linux64=n
-		fi
-	    else
-		linux64=n
-	    fi
-	    pkg delete -y linux_base\* || true
-	    if [ $linux64 = y ]; then
-		#auto-append-line OVERRIDE_LINUX_BASE_PORT=c6_64 $MAKE_CONF $0
-		#auto-append-line OVERRIDE_LINUX_NONBASE_PORTS=c6_64 $MAKE_CONF $0
-		auto-append-line DEFAULT_VERSIONS+=linux=c6_64 \
-		    $MAKE_CONF $0
-		kldload linux || true
-		kldload linux64 || true
-		cd /usr/ports/emulators/linux_base-$linux_base
-		make deinstall reinstall
-	    else
-		touch $MAKE_CONF    # Prevent no such file error below
-		#sed -i '.bak' -e 's|OVERRIDE_LINUX_BASE_PORT=c6_64||' $MAKE_CONF
-		#sed -i '.bak' -e 's|OVERRIDE_LINUX_NONBASE_PORTS=c6_64||' $MAKE_CONF
-		sed -i '.bak' -e '/DEFAULT_VERSIONS+=linux=c6_64/d' $MAKE_CONF
-		pkg install -y linux_base-$linux_base
-	    fi
+	    # Install linux_base.  Flash requires c6 as of 2018-12
+	    auto-install-linux_base 6
 	    
 	    # Use the latest flash plugin
 	    #for version in 11 10; do
