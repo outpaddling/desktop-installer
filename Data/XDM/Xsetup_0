@@ -5,7 +5,9 @@
 #/usr/local/bin/xsetroot -solid steelblue
 width=`xwininfo -root | awk '$1 == "Width:" { print $2 }'`
 height=`xwininfo -root | awk '$1 == "Height:" { print $2 }'`
-/usr/local/bin/xv -root -quit /usr/local/share/pixmaps/bsd_background.jpg
+/usr/local/bin/xli -onroot -fillscreen /usr/local/share/pixmaps/bsd_background.jpg
+# Cannot stretch 
+# /usr/local/bin/xv -root -quit /usr/local/share/pixmaps/bsd_background.jpg
 x=`expr \( $width - 150 \) / 2`
 y=`expr \( $height - 10 \) / 2 + 120`
 #echo $x $y

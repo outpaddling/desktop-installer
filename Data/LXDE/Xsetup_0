@@ -3,6 +3,8 @@
 
 # put me in /usr/local/lib/X11/xdm
 #/usr/local/bin/xsetroot -solid steelblue
-/usr/local/bin/xv -root -quit /usr/local/lib/X11/xdm/pixmaps/bsd_background.jpg
+/usr/local/bin/xli -onroot -fillscreen /usr/local/share/pixmaps/bsd_background.jpg
+# Cannot stretch 
+# /usr/local/bin/xv -root -quit /usr/local/share/pixmaps/bsd_background.jpg
 /usr/local/sbin/xdmshutdown -geometry +50+680 &
 echo $! > /var/run/xdmshutdown.pid

@@ -170,7 +170,6 @@ install_xorg()
 	x11/xorg \
 	x11/xdm \
 	x11/xsm \
-	x11-drivers/xf86-video-amdgpu \
 	x11-drivers/xf86-video-mga \
 	x11-drivers/xf86-video-ati \
 	x11-drivers/xf86-video-vesa \
@@ -178,6 +177,16 @@ install_xorg()
 	x11-drivers/xf86-input-wacom \
 	x11-drivers/xf86-input-synaptics
 
+    # FIXME: Do this in install_packages for all ports?
+    if fgrep ONLY_FOR_ARCHS /usr/ports/x11-drivers/xf86-video-amdgpu; then
+	archs=$(auto-print-make-variable x11-drivers/xf86-video-amdgpu ONLY_FOR_ARCHS)
+	for arch in $archs; do
+	    if [ $(uname -p) = $arch ]; then
+		install_packages x11-drivers/xf86-video-amdgpu
+	    fi
+	done
+    fi
+    
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
@@ -228,7 +237,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|kdm4|slim\n"
+	printf "Usage: xorg_config xdm|gdm|slim\n"
 	exit 1
     else
 	display_manager=$1
@@ -246,10 +255,12 @@ xorg_config()
     fi
     
     # Intel GPUs require xf86-video-intel and i915kms kernel module
-    auto-detect-intel-gpu
+    # auto-detect-intel-gpu
     
     # nVidia GPUs require a commercial driver and kernel mod
-    auto-detect-nvidia-gpu
+    # auto-detect-nvidia-gpu
+
+    auto-detect-gpu
     
     if [ $ARCH = 'powerpc' ]; then
 	cat << EOM
@@ -502,7 +513,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME3|KDE4|KDE5|LUMINA|LXDE|MATE|XFCE4\n"
+	printf "Usage: startup_scripts GNOME3|KDE5|LUMINA|LXDE|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -529,9 +540,6 @@ startup_scripts()
     case $1 in
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
-	;;
-    KDE4)
-	session='startkde4'
 	;;
     KDE5)
 	session='startkde'
@@ -620,7 +628,6 @@ EOM
 	# Disable gdm and kdm
 	gdm_disable
 	slim_disable
-	kdm4_disable
 	sddm_disable
 
 	# Install xdmshutdown
@@ -635,7 +642,7 @@ EOM
 	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
 	# Pretty up the login
-	install_packages graphics/xv     # Used for login splash image
+	install_packages graphics/xli   # Display stretched background image
 	cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
 	cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
 	# Put FreeBSD logo on login window
@@ -680,7 +687,6 @@ EOM
 	dm_msg
 	auto-xdm-toggle off
 	slim_disable
-	kdm4_disable
 	sddm_disable
 	# Mouse may not work in gdm unless we restart HAL
 	service hald restart
@@ -737,7 +743,6 @@ EOM
 	dm_msg
 	auto-xdm-toggle off
 	gdm_disable
-	kdm4_disable
 	sddm_disable
 	# Mouse may not work in gdm unless we restart HAL
 	service hald restart
@@ -776,31 +781,6 @@ slim_disable()
 }
 
 
-kdm4_config()
-{
-    cat << EOM
-Warning:
-Enabling kdm will terminate any sessions running under other display
-managers such as xdm or gdm.
-EOM
-    line
-    resp=`auto-ask enable-kdm4 "Enable KDM4 graphical login? (y/n)" y`
-    if [ 0"$resp" = 0'y' ]; then
-	dm_msg
-	auto-xdm-toggle off
-	gdm_disable
-	slim_disable
-	sddm_disable
-	# Obsolete: kde4 now in /usr/local
-	#auto-append-line $LOCALBASE/kde4$RCDIR \
-	#    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
-	#    $RC_CONF desktop-installer
-	auto-enable-service kdm4 desktop-instaler
-	exit 0
-    fi
-}
-
-
 sddm_config()
 {
     cat << EOM
@@ -815,11 +795,7 @@ EOM
 	auto-xdm-toggle off
 	gdm_disable
 	slim_disable
-	kdm4_disable
-	# Obsolete: kde4 now in /usr/local
-	#auto-append-line $LOCALBASE/kde4$RCDIR \
-	#    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
-	#    $RC_CONF desktop-installer
+	kdm5_disable
 	auto-enable-service sddm desktop-instaler
 	exit 0
     fi
@@ -828,27 +804,7 @@ EOM
 
 ##########################################################################
 #   Function description:
-#       Disable kdm4, if running.
-#       Needs more testing.
-#
-#   History:
-#   Date        Name        Modification
-#   2012-08-04  J Bacon     Begin
-##########################################################################
-
-kdm4_disable()
-{
-    if fgrep -q 'kdm4_enable="YES"' /etc/rc.conf && \
-	[ -e $LOCALBASE/etc/rc.d/kdm4 ]; then
-	service kdm4 stop || true
-    fi
-    auto-disable-service kdm4
-}
-
-
-##########################################################################
-#   Function description:
-#       Disable kdm4, if running.
+#       Disable sddm (kde5), if running.
 #       Needs more testing.
 #
 #   History:
@@ -954,14 +910,6 @@ EOM
 	    
 	    # Install linux_base.  Flash requires c6 as of 2018-12
 	    auto-install-linux_base 6
-	    
-	    # Use the latest flash plugin
-	    #for version in 11 10; do
-	    #    if [ -e $PORTSDIR/www/linux-$linux_base-flashplugin$version ]; then
-	    #        flash=linux-$linux_base-flashplugin$version
-	    #        break
-	    #    fi
-	    #done
 	    
 	    # Use www/flashplayer now.  Will install linux-flashplayer as dep
 	    flash=flashplayer
@@ -1146,31 +1094,7 @@ lame_install()
 
 
 ##########################################################################
-#   Install packages useful to KDE4 users.  These packages will have
-#   alternatives under KDE and Gnome3.
-##########################################################################
-
-kde4_packages()
-{
-    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
-    lame_install
-    install_packages multimedia/kaffeine \
-	multimedia/transcode \
-	sysutils/k3b-kde4 \
-	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	x11-themes/kde-gtk-config
-    
-    k3b_perms
-    
-    # Prevent nepomuk startup errors
-    # Should this be a dependency for something in the KDE4 collection?
-    # Does not run on i386
-    # install_packages databases/virtuoso
-}
-
-
-##########################################################################
-#   Install packages useful to KDE4 users.  These packages will have
+#   Install packages useful to KDE5 users.  These packages will have
 #   alternatives under KDE and Gnome3.
 ##########################################################################
 
@@ -1187,7 +1111,7 @@ kde5_packages()
     k3b_perms
     
     # Prevent nepomuk startup errors
-    # Should this be a dependency for something in the KDE4 collection?
+    # Should this be a dependency for something in the KDE5 collection?
     # Does not run on i386
     # install_packages databases/virtuoso
 }
@@ -1311,22 +1235,6 @@ lxde_packages()
 cups_config()
 {
     printf "Configuring cups...\n"
-    # CUPS
-    
-    if [ $ARCH != 'i386' ] && [ $ARCH != 'amd64' ] && ! auto-package-installed print/ghostscript9; then
-	line
-	cat << EOM
-Some ghostscript ports attempt to build SVGAlib drivers on architectures
-that do not support them. You are using an architecture that does not
-support SVGAlib, so the SVGAlib options must be disabled.
-
-When the menu appears, disable all SVGAlib options and then select OK.
-EOM
-	line
-	pause
-	(cd $PORTSDIR/print/ghostscript9 && make config)
-    fi
-    
     install_packages \
 	print/cups \
 	print/hplip \
@@ -1650,24 +1558,7 @@ lxde_xdm_config()
 
 
 ##########################################################################
-#   Configure the system to run the KDE4 desktop.
-##########################################################################
-
-kde4_config()
-{
-    PATH=${PATH}:${LOCALBASE}/kde4/bin
-    export PATH
-    
-    install_packages x11/kde4
-    startup_scripts KDE4
-    xorg_config kdm4
-    auto-enable-hal-mount
-    kde4_packages
-}
-
-
-##########################################################################
-#   Configure the system to run the KDE4 desktop.
+#   Configure the system to run the KDE5 desktop.
 ##########################################################################
 
 kde5_config()
@@ -2223,6 +2114,17 @@ You may want to install the latest version available from:
 Note that you may need to upgrade both desktop-installer and auto-admin.
 ---------------------------------------------------------------------------
 EOM
+pause
+
+cat << EOM
+
+-----------------------------------------------------------------------------------------
+FreeBSD by default installs packages from quarterly snapshots.  If you would prefer to
+use the latest bleeding-edge packages, answer yes here.  Before doing so, make sure your
+platform supports this.  Some second-tier platforms may only provide quarterly packages.
+-----------------------------------------------------------------------------------------
+
+EOM
 
 check_inodes
 mount_dist
@@ -2284,12 +2186,11 @@ while [ $valid_selection = 0 ]; do
     printf "1.. No desktop software.\n"
     printf "2.. Gnome3 Desktop\n"
     printf "3.. Gnome3 Lite Desktop\n"
-    printf "4.. KDE 4 Desktop\n"
-    printf "5.. KDE 5 Desktop\n"
-    printf "6.. Lumina Lightweight Desktop\n"
-    printf "7.. LXDE Lightweight Desktop\n"
-    printf "8.. MATE Desktop\n"
-    printf "9.. XFCE Lightweight Desktop\n"
+    printf "4.. KDE 5 Desktop\n"
+    printf "5.. Lumina Lightweight Desktop\n"
+    printf "6.. LXDE Lightweight Desktop\n"
+    printf "7.. MATE Desktop\n"
+    printf "8.. XFCE Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2394,26 +2295,22 @@ case $desktop_selection in
     gnome3_config lite
     ;;
 4)
-    DESKTOP=kde4
-    kde4_config
-    ;;
-5)
     DESKTOP=kde5
     kde5_config
     ;;
-6)
+5)
     DESKTOP=lumina
     lumina_config
     ;;
-7)
+6)
     DESKTOP=lxde
     lxde_xdm_config
     ;;
-8)
+7)
     DESKTOP=mate
     mate_config
     ;;
-9)
+8)
     DESKTOP=xfce
     xfce4_xdm_config
     ;;
