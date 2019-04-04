@@ -873,11 +873,7 @@ EOM
 	line
 	resp='0'
 	while [ "$resp" != 1 -a "$resp" != 2 -a "$resp" != 3 ]; do
-	    if [ $ARCH = i386 -o $ARCH = amd64 ]; then
-		resp=`auto-ask flash "Your choice?" 2`
-	    else
-		resp=`auto-ask flash "Your choice?" 1`
-	    fi
+	    resp=`auto-ask flash "Your choice?" 3`
 	done
 	
 	case "$resp" in
