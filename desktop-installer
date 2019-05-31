@@ -1104,7 +1104,7 @@ kde5_packages()
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/kde-gtk-config
     
-    k3b_perms
+    cdrecord_perms
     
     # Prevent nepomuk startup errors
     # Should this be a dependency for something in the KDE5 collection?
@@ -1119,7 +1119,7 @@ kde5_packages()
 #       See k3b pkg-message for details.
 ##########################################################################
 
-k3b_perms()
+cdrecord_perms()
 {
     # /dev/cd* and /dev/xpt* should be set by other code
     chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
@@ -1611,9 +1611,9 @@ lumina_packages()
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
 	x11-themes/lumina-themes \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	math/galculator sysutils/k3b x11/lilyterm
+	math/galculator x11/lilyterm
 
-    k3b_perms
+    cdrecord_perms
 
     cat << EOM
 
