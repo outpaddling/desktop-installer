@@ -881,75 +881,7 @@ EOM
 	    install_packages graphics/gnash
 	    ;;
 	2)
-	    printf "Flash plugin may not install unless some vulnerable linux RPMs are allowed.\n"
-	    allow_vuln=`auto-ask vuln-flash 'Allow vulnerable linux RPMs? (y/n)' n`
-	    if [ $allow_vuln = y ]; then
-		linux_install_flags='DISABLE_VULNERABILITIES=1'
-	    fi
-	    start_dir=`pwd`
-	    if ! kldstat | grep -q linux; then
-		kldload linux
-	    fi
-	    
-	    # Speed things up by installing prereqs
-	    install_packages devel/m4
-	    
-	    # add linux to rc.conf
-	    if ! fgrep -q linux $RC_CONF; then
-		auto-enable-service linux desktop-installer
-		# auto-append-line linux_load 'linux_load="YES"' $LOADER_CONF desktop-installer
-	    fi
-	    
-	    # Install the appropriate linux_base
-	    major=`uname -r | cut -d '.' -f 1`
-	    # Let flash port install the default linux_base as a depend
-	    
-	    # Install linux_base.  Flash requires c6 as of 2018-12
-	    auto-install-linux_base 6
-	    
-	    # Use www/flashplayer now.  Will install linux-flashplayer as dep
-	    flash=flashplayer
-	    
-	    if ! auto-package-installed www/$flash; then
-		# Remove old versions first
-		if pkg delete -y '*flashplayer'; then
-		    printf 'Old flash removed.\n'
-		fi
-		rm -f $LOCALBASE/lib/firefox/plugins/libflash*
-		rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
-		rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
-		
-		cd $PORTSDIR/www/$flash
-		make -DBATCH $linux_install_flags clean deinstall reinstall
-		
-		# Old location for browser plugins.  May be obsolete.
-		#mkdir -p $LOCALBASE/lib/browser_plugins
-		#ln -sf $LOCALBASE/lib/npapi/*/libflashplayer.so \
-		#    $LOCALBASE/lib/browser_plugins/
-	    fi
-	    cd $START_DIR
-	    
-	    # fstab: linproc    /compat/linux/proc  linprocfs   rw  0   0
-	    auto-append-line linproc "linproc\t\t/compat/linux/proc\tlinprocfs\trw\t0\t0" $FSTAB desktop-installer
-	    mount linproc
-	    
-	    # nspluginwrapper for Linux plugins in native Firefox
-	    # Dependency of flashplayer now
-	    #if ! auto-package-installed www/nspluginwrapper; then
-	    #    install_packages ftp/curl
-	    #    cd $PORTSDIR/www/nspluginwrapper
-	    #    make -DBATCH $linux_install_flags install
-		#if [ ! -e ${LOCALBASE}/bin/nspluginwrapper ]; then
-		#    install_packages www/nspluginwrapper
-		#fi
-	    #fi
-    
-	    # No longer needed as of 8.2 (maybe 8.1)
-	    # Add nspluginwrapper -v -a -i to startup scripts for all users
-	    # to install npwrapper.libflashplayer.so in $HOME/.mozilla/plugins
-	    #for file in /etc/profile /etc/csh.cshrc; do
-	    #    auto-append-line nspluginwrapper "nspluginwrapper -v -a -i" $file desktop-installer
-	    #done
+	    auto-install-linux-flash
 	    ;;
 	*)
 	    ;;
