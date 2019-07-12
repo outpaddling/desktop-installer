@@ -795,7 +795,6 @@ EOM
 	auto-xdm-toggle off
 	gdm_disable
 	slim_disable
-	kdm5_disable
 	auto-enable-service sddm desktop-instaler
 	exit 0
     fi
