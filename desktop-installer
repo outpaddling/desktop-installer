@@ -926,7 +926,9 @@ common_packages()
     fi
     
     # Daemon and software for USB web cams
-    webcam_config
+    # As of 2019-07 interferes with uhid
+    # Also switch to auto-webcam-setup when it's ready
+    # webcam_config
 
     # Install some sort of flash player
     flash_config
@@ -1761,16 +1763,6 @@ network_config()
 	done
 	auto-append-line 'ifconfig_wlan0' 'ifconfig_wlan0="WPA DHCP"' $RC_CONF desktop-installer
     fi
-}
-
-
-webcam_config()
-{
-    install_packages multimedia/v4l_compat \
-	multimedia/libv4l \
-	multimedia/pwcview
-    auto-append-line cuse4bsd_load 'cuse4bsd_load="YES"' $LOADER_CONF desktop-installer
-    auto-append-line webcamd_enable 'webcamd_enable="YES"' $RC_CONF desktop-installer
 }
 
 
