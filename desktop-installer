@@ -964,25 +964,8 @@ common_packages()
 	fi
     done
 
-    for pkg in $selected_packages; do
-	install_packages $pkg
-	if [ $pkg = 'gnucash' ]; then
-	    install_packages gnucash-docs
-	fi
-    done
-
     if auto-package-installed emulators/mtools; then
 	mtools_config
-    fi
-    
-    # Do this after selected packages are installed
-    # Causes KDE apps to have white on white text under Lumina,
-    # maybe others.
-    # x11-themes/qt4-style-float; do
-    if auto-package-installed devel/qt4-corelib; then
-	for pkg in x11-themes/qt4-style-phase; do
-	    install_packages $pkg
-	done
     fi
     
     # In case someone installs chromium later
@@ -1146,8 +1129,7 @@ xfce4_packages()
 lxde_packages()
 {
     # Packages specific to xfce4
-    install_packages math/galculator \
-	x11/xlockmore
+    install_packages math/galculator x11/xlockmore
 }
 
 
@@ -1532,11 +1514,10 @@ lumina_packages()
     install_packages \
 	multimedia/transcode \
 	print/qpdfview \
-	graphics/qt4-imageformats graphics/qt5-imageformats \
+	graphics/qt5-imageformats \
 	graphics/phototonic \
-	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt4 misc/qt4-qtconfig \
+	x11-themes/qtcurve-gtk2 \
 	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
-	x11-themes/lumina-themes \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	math/galculator x11/lilyterm
 
@@ -1544,7 +1525,7 @@ lumina_packages()
 
     cat << EOM
 
-QT4 and GTK2 appearance can be controlled with qt4-qtconfig and lxappearance.
+GTK2 appearance can be controlled with lxappearance.
 
 Both support the qtcurve theme.
 
@@ -1560,7 +1541,7 @@ EOM
 lumina_config()
 {
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
-    install_packages x11/lumina
+    install_packages x11/lumina x11-themes/lumina-themes
     startup_scripts LUMINA
     xorg_config xdm
     cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
