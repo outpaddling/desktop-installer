@@ -171,9 +171,9 @@ install_xorg()
 	x11/xdm \
 	x11/xsm \
 	x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-video-amdgpu \
 	x11-drivers/xf86-video-ati \
 	x11-drivers/xf86-video-vesa \
-	x11-drivers/xf86-video-nv \
 	x11-drivers/xf86-input-wacom \
 	x11-drivers/xf86-input-synaptics
 
@@ -254,12 +254,6 @@ xorg_config()
 	return
     fi
     
-    # Intel GPUs require xf86-video-intel and i915kms kernel module
-    # auto-detect-intel-gpu
-    
-    # nVidia GPUs require a commercial driver and kernel mod
-    # auto-detect-nvidia-gpu
-
     auto-detect-gpu
     
     if [ $ARCH = 'powerpc' ]; then
