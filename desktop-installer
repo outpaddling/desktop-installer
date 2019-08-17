@@ -248,12 +248,21 @@ xorg_config()
     
     # Lumina does not have hal as a dep
     install_packages sysutils/hal
-    
-    resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" y`
-    if [ "$resp" != y ]; then
-	return
+
+    # Default n if X already running
+    if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
+	printf "X11 is already running.\n"
+	read -p "Reconfigure X11? (y/n) [n] " resp
+	if [ 0"$resp" != 0y ]; then
+	    return
+	fi
+    else
+	read -p "Reconfigure X11? (y/n) [y] " resp
+	if [ 0"$resp" = 0n ]; then
+	    return
+	fi
     fi
-    
+
     auto-detect-gpu
     
     if [ $ARCH = 'powerpc' ]; then
@@ -408,14 +417,14 @@ system creates all new configuration files.
     
 EOM
 	if [ -e /tmp/.X0-lock ]; then
-	    default_resp='n'
+	    printf "X11 is currently running, cannot test.\n"
+	    resp='n'
 	else
-	    default_resp='y'
-	fi
-	printf "Test X11? (y/n) [$default_resp] "
-	read resp
-	if [ 0$resp = 0 ]; then
-	    resp=$default_resp
+	    printf "Test X11? (y/n) [y] "
+	    read resp
+	    if [ 0$resp = 0 ]; then
+		resp=y
+	    fi
 	fi
 	if [ 0"$resp" = 0'y' ]; then
 	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
@@ -462,12 +471,12 @@ EOM
 		    cd $save_cwd
 		fi
 	    fi
+	    clear   # Switch back to VT might leave a mess
 	else
 	    success=1
 	fi
     done
     
-    clear   # Switch back to VT might leave a mess
     resp=`auto-ask forward-x11 "Forward X11 DISPLAY to other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
 	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
@@ -520,9 +529,17 @@ startup_scripts()
     # installation to overwrite if appropriate
     xinitrc=/root/.xinitrc
     if [ ! -e $xinitrc ]; then
-	printf "Updating xinitrc...\n"
+	printf "Installing $xinitrc...\n"
 	cp $subdir/xinitrc $xinitrc
     else
+	cat << EOM
+
+The .xinitrc file controls which window manager / desktop system is run when
+starting X11 manually (not from a diusplay manager / graphical login screen).
+If you are switching to a different desktop system, you may want to answer 'y'
+here.
+
+EOM
 	printf "$xinitrc already exists.\n"
 	printf "Overwrite? (y/n) [n] "
 	read overwrite
@@ -606,7 +623,11 @@ EOM
 
 xdm_config()
 {
-    
+    if ps axw | fgrep 'bin/xdm' | fgrep -qv grep; then
+	printf "xdm is already enabled.\n"
+	return
+    fi
+
     # Graphical login
     cat << EOM
 
@@ -932,6 +953,8 @@ common_packages()
     java_config
     
     # Common packages for desktop systems
+    
+    # bsdstats.org is an expired domain as of 2019-08-17. Is the idea dead?
     # bsdstats should be last, since it has an interactive
     # post-install script and we want the installs to run unattended
     # as much as possible.  Also, it reports installed software, so
@@ -939,9 +962,7 @@ common_packages()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs=" \
-	security/keepassx2 \
-	sysutils/bsdstats"
+    common_pkgs="security/keepassxc"
     
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
@@ -991,8 +1012,12 @@ mplayer_plugin_install()
 #   lame cannot be packaged due to patent issues
 ##########################################################################
 
-lame_install()
+faac_lame_install()
 {
+    pkg install -y libtool automake help2man mp4v2 gmake
+    if ! auto-package-installed audio/faac; then
+	(cd /usr/ports/audio/faac && make -DBATCH clean install)
+    fi
     if ! auto-package-installed audio/lame; then
 	(cd /usr/ports/audio/lame && make -DBATCH clean install)
     fi
@@ -1007,7 +1032,6 @@ lame_install()
 kde5_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
-    lame_install
     install_packages \
 	multimedia/transcode \
 	sysutils/k3b \
@@ -1510,7 +1534,6 @@ lumina_packages()
     # qterminal is buggy and now depends on lxqt, so not including it anymore
     # lilyterm is a good alternative, although not QT based
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
-    lame_install
     install_packages \
 	multimedia/transcode \
 	print/qpdfview \
@@ -1526,8 +1549,6 @@ lumina_packages()
     cat << EOM
 
 GTK2 appearance can be controlled with lxappearance.
-
-Both support the qtcurve theme.
 
 EOM
     pause
@@ -1599,7 +1620,7 @@ sound_config()
 power_config()
 {
     # If CPU frequency is controllable, enable powerd.
-    if sysctl dev.cpu.0.freq 2> /dev/null; then
+    if sysctl dev.cpu.0.freq 2> /dev/null && ! fgrep powerd /etc/rc.conf; then
 	auto-enable-service powerd desktop-installer
 	# auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
     fi
@@ -1611,8 +1632,8 @@ Some ACPI functions such as suspend/resume are not standardized across all
 hardware, and therefore may or may not function on open source systems such
 as BSD and Linux.
 
-Enabling suspend/resume when a laptop is closed/opened may cause system
-lock-up on some systems.
+Enabling suspend/resume when a laptop is closed/opened may cause problems
+on some hardware.
 
 On the other hand, allowing a laptop to run while closed may lead to
 overheating and hardware damage.
@@ -1690,7 +1711,7 @@ network_config()
     else
 	default_wireless='n'
     fi
-    enable_wireless=`auto-ask install-wireless "[Re]configure wireless networking? (y/n)" $default_wireless`
+    enable_wireless=`auto-ask install-wireless "Configure wireless networking? (y/n)" $default_wireless`
     if [ 0"$enable_wireless" = 0y ]; then
 	# add wlans_{dev}0="wlan0" to rc.conf
 	# FIXME: The real solution should detect all wireless devices,
@@ -1751,7 +1772,7 @@ check_inodes()
 	df -i
 	cat << EOM
     
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 			    *** WARNING ***
 
@@ -1765,7 +1786,7 @@ This system has $inodes.
 You can increase the number of inodes by reformatting the partition
 with newfs using -f to reduce the fragment size and/or -i to reduce
 the number of bytes/inode.  Run "man newfs" for more information.
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
     
 EOM
 	resp=`auto-ask inodes-ok 'Continue with installation? (y/n)' n`
@@ -1816,9 +1837,8 @@ mount_dist()
 
 usermount_config()
 {
-    #if [ ! -e ${LOCALBASE}/etc/sudoers.d/mount ]; then
-	line
-	cat << EOM
+    line
+    cat << EOM
 
 You may configure sudo to allow users to mount and unmount removable media,
 without entering a password, using commands such as
@@ -1828,102 +1848,102 @@ without entering a password, using commands such as
 
 It also enables the use of the xfce4-mount-plugin.
 
-If you are using AMD or an automounter provided by your desktop, answer 'n'
-here.
+If you are using an automounter, answer 'n' here.
 
 Note:
 
     This will only grant members of the "operator" group rights to mount
     specific devices.  It will not grant anyone rights to run arbitrary
     commands.
-    
-    XFCE mount plugin should be configured with the following commands:
-    
-	sudo auto-mount-any %d %m
-	sudo umount %m
-
-    This will configure typical mount points for CD/DVD and USB flash
-    devices.  To add more options, edit /etc/fstab and add another drop-in
-    file similar to $LOCALBASE/etc/sudoers.d/mount.
-
-Important note:
-
-    Unplugging a mounted USB or Firewire drive can cause
-    filesystem damage and even system crashes.  Do not grant mount privileges
-    to untrusted users.
 
 EOM
-	resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
-	if [ 0$resp = 0y ]; then
-	    # DEPRECATE: Use scontrol eject
-	    #install_packages sysutils/mcweject
-	    #cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
-	    #chmod 600 ${LOCALBASE}/etc/eject.allow
-	    install_packages security/sudo
-	    gamin_dir="$LOCALBASE/etc/gamin"
-	    mkdir -p $gamin_dir
-	    rm -f $gamin_dir/gaminrc
-	    
-	    sudoers=$LOCALBASE/etc/sudoers.d/mount
-	    printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
-	    chmod 440 $sudoers
-	    
-	    printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
-	    for device in cdrom flash; do
-		for num in 0 1 2; do
-		    
-		    # Create mount points
-		    mount_point=/removable/${device}${num}
-		    mkdir -p $mount_point
-		    chown root:operator $mount_point
-		    chmod 770 $mount_point
-		    
-		    # Update fstab
-		    case $device in
-		    cdrom)
-			dev="/dev/cd${num}"
-			type='cd9660'
-			options='ro,noauto'
-			;;
-		    flash)
-			dev="/dev/da${num}s1"
-			type='msdosfs'
-			options='rw,noauto'
-			;;
-		    *)
-			;;
-		    esac
-		    auto-append-line "$mount_point" "$dev\t$mount_point\t$type\t$options\t0\t0" \
-		       /etc/fstab nocomment
-		    
-		    # Update sudoers drop-in
-		    printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
-		    
-		    # Add custom commands
-		    # Where do we put this to make it global default?
-		    # From .config/xfce4/panel/xfce4-mount-plugin-24.rc
-		    #mount_command=sudo mount %m
-		    #umount_command=sudo umount -f %m
-		    
-		    # Prevent gam_server from accessing mount points
-		    printf "poll $mount_point\n" >> $gamin_dir/gaminrc
-		done
+
+    pause
+    cat << EOM
+
+XFCE mount plugin should be configured with the following commands:
+
+    sudo auto-mount-any %d %m
+    sudo umount %m
+
+This will configure typical mount points for CD/DVD and USB flash
+devices.  To add more options, edit /etc/fstab and add another drop-in
+file similar to $LOCALBASE/etc/sudoers.d/mount.
+
+Important notes:
+
+    Unplugging a mounted USB or Firewire drive can cause filesystem damage.
+    Do not grant mount privileges to untrusted users.
+
+EOM
+    resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
+    if [ 0$resp = 0y ]; then
+	# DEPRECATE: Use scontrol eject
+	#install_packages sysutils/mcweject
+	#cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
+	#chmod 600 ${LOCALBASE}/etc/eject.allow
+	install_packages security/sudo
+	gamin_dir="$LOCALBASE/etc/gamin"
+	mkdir -p $gamin_dir
+	rm -f $gamin_dir/gaminrc
+	
+	sudoers=$LOCALBASE/etc/sudoers.d/mount
+	printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
+	chmod 440 $sudoers
+	
+	printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
+	for device in cdrom flash; do
+	    for num in 0 1 2; do
+		
+		# Create mount points
+		mount_point=/removable/${device}${num}
+		mkdir -p $mount_point
+		chown root:operator $mount_point
+		chmod 770 $mount_point
+		
+		# Update fstab
+		case $device in
+		cdrom)
+		    dev="/dev/cd${num}"
+		    type='cd9660'
+		    options='ro,noauto'
+		    ;;
+		flash)
+		    dev="/dev/da${num}s1"
+		    type='msdosfs'
+		    options='rw,noauto'
+		    ;;
+		*)
+		    ;;
+		esac
+		auto-append-line "$mount_point" "$dev\t$mount_point\t$type\t$options\t0\t0" \
+		   /etc/fstab nocomment
+		
+		# Update sudoers drop-in
+		printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
+		
+		# Add custom commands
+		# Where do we put this to make it global default?
+		# From .config/xfce4/panel/xfce4-mount-plugin-24.rc
+		#mount_command=sudo mount %m
+		#umount_command=sudo umount -f %m
+		
+		# Prevent gam_server from accessing mount points
+		printf "poll $mount_point\n" >> $gamin_dir/gaminrc
 	    done
-	    printf "# End auto-admin addition\n" >> /etc/fstab
-	    
-	    # Remove trailing comma
-	    sed -i '' -e 's|,$||g' $sudoers
-	    
-	    # Restart gam_server
-	    if ! killall gam_server; then
-		printf "Note: gam_server was not running.\n"
-	    fi
+	done
+	printf "# End auto-admin addition\n" >> /etc/fstab
+	
+	# Remove trailing comma
+	sed -i '' -e 's|,$||g' $sudoers
+	
+	# Restart gam_server
+	if ! killall gam_server; then
+	    printf "Note: gam_server was not running.\n"
 	fi
-	printf "poll /dist\n" >> $gamin_dir/gaminrc
-	line
-    #else
-    #    printf "Sudo mount already configured.\n"
-    #fi
+    fi
+    printf "poll /dist\n" >> $gamin_dir/gaminrc
+    line
 }
 
 
@@ -1968,7 +1988,7 @@ NASD_CONF="$LOCALBASE/etc/nasd.conf"
 
 cat << EOM
 
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Desktop-installer automates the configuration of a FreeBSD desktop/laptop
 system.  You will be guided through the process and asked some basic
 questions, as well as a few that may require some thought and research.
@@ -1978,52 +1998,58 @@ in the base system since the last release of desktop-installer.  If this
 happens, you can manually fix the issue and simply run desktop-installer
 again.
 
-*** Please report any failures of this nature to the maintainer,
-and send a patch if possible.
+Please report any failures of this nature to the maintainer, and send a patch
+if possible.
 
 When asked whether to install software or enable a service, answering
-"no" will not deinstall previously installed software or disable previously
-enabled services.  Once you have answered "yes" to a question posed by
+'n' will not deinstall previously installed software or disable previously
+enabled services.  Once you have answered 'y' to a question posed by
 desktop-installer, you will need to manually reverse the decision by editing
-the appropriate system file(s).
+the appropriate system file(s), which will contain comments enclosing options
+added by desktop-installer.
 
 Answers to most configuration questions will be saved in the file
-"./auto-ask-responses.txt".  If this file is present in the current directory
+./auto-ask-responses.txt.  If this file is present in the current directory
 when you run desktop-installer again, your previous responses will be
 the defaults.
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 EOM
 pause
 
     cat << EOM
 
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Note: Desktop-installer is evolving rapidly, as it faces huge challenges
 in keeping up with the evolution of FreeBSD and the many ports it installs.
 
-You may want to install the latest version available from:
+You may want to try the latest development version available from:
 
-    svn  co  http://svn.code.sf.net/p/freebsdwip/code/  wip
+    https://github.com/outpaddling/freebsd-ports-wip
 
 Note that you may need to upgrade both desktop-installer and auto-admin.
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 EOM
 pause
 
 cat << EOM
 
------------------------------------------------------------------------------------------
-FreeBSD by default installs packages from quarterly snapshots.  If you would prefer to
-use the latest bleeding-edge packages, answer yes here.  Before doing so, make sure your
-platform supports this.  Some second-tier platforms may only provide quarterly packages.
------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+FreeBSD by default installs packages from quarterly snapshots.  If you would
+prefer to use the latest bleeding-edge packages, answer 'y' here.  Before
+doing so, make sure your platform supports this.  Some second-tier platforms
+may only provide quarterly packages.
+-------------------------------------------------------------------------------
 
 EOM
 
 check_inodes
 mount_dist
 
-latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' y`
+if [ ! -e /usr/local/etc/pkg/repos/bleeding-edge.conf ]; then
+    latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' y`
+else
+    latest_packages=n
+fi
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
     auto-pkg-latest
@@ -2046,12 +2072,9 @@ cat << EOM
 Source or packages
 ==================
 
-Building from source allows you to build from the latest ports snapshot, but
-it takes a lot longer (possibly a full day or more for the entire
-desktop setup).
-
-Using binary packages is much faster, but binary package versions are
-sometimes a little behind what's in the ports tree.
+Building from source is not necessary on architectures for which binary
+packages are maintained and it takes a lot longer (possibly a full day or more
+for the entire desktop setup).
 
 In any case, make sure that BOTH your installed binary packages and ports
 are kept up-to-date with "pkg update" and "portsnap".
@@ -2161,17 +2184,18 @@ fi
 # Install GUI
 cat << EOM
 
-Installation of Xorg and your chosen desktop will now begin.  This can
-be a very long process, depending on the speed of your Internet connection
-and disk.  On a modern machine, using binary packages (not installing from
-source), this will generally take less than  an hour.  Installing from
-source on a slow machine could take a day or more.
+Installation of Xorg and your chosen desktop will now begin.  This can be a
+very long process, depending on the speed of your Internet connection and disk.
+On a modern machine, using binary packages (not installing from source), this
+may take less than 15 minutes.  Installing from source on a slow machine could
+take a day or more.
 
 EOM
 
 pause
 
 install_xorg
+faac_lame_install
 
 # Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
 cups_config
@@ -2224,6 +2248,27 @@ if [ -e $XORG_CONF ]; then
     auto-update-xorg.conf
 fi
 
+if [ 0$enable_wireless = 0'y' ]; then
+    cat << EOM
+
+FreeBSD's lagg (link aggregation) driver can be used to configure your WiFi
+interface as a failover for an Ethernet interface.  This will enable automatic
+switching between WiFi and Ethernet when you plug/unplug a network cable.
+
+Problems with lagg are uncommon, but tricky to debug.  We recommend enabling
+this only if you really plan to use Ethernet sometimes.  If you will only use
+WiFi on this machine, answer 'n' here.
+
+Enabling lagg will update your $RC_CONF and requires a reboot.
+
+EOM
+    lagg=`auto-ask use-lagg 'Configure lagg for WiFi? (y/n)' n`
+    if [ $lagg = y ]; then
+	printf "\nDetected WiFi device: $WIFI_DEVICE\n\n"
+	auto-wifi-failover
+    fi
+fi
+
 cat << EOM
 
 ========================================================================
@@ -2233,14 +2278,6 @@ that the system comes back up cleanly following changes like these.
 ========================================================================
 
 EOM
-
-if [ 0$enable_wireless = 0'y' ]; then
-    lagg=`auto-ask use-lagg 'Configure wifi interface as a failover Ethernet? (y/n)' y`
-    if [ $lagg = y ]; then
-	printf "\nDetected WiFi device: $WIFI_DEVICE\n\n"
-	auto-wifi-failover
-    fi
-fi
 
 printf 'Reboot now? (y/n) [n] '
 read resp
