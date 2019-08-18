@@ -535,7 +535,7 @@ startup_scripts()
 	cat << EOM
 
 The .xinitrc file controls which window manager / desktop system is run when
-starting X11 manually (not from a diusplay manager / graphical login screen).
+starting X11 manually (not from a display manager / graphical login screen).
 If you are switching to a different desktop system, you may want to answer 'y'
 here.
 
