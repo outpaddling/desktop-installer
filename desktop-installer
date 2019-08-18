@@ -962,7 +962,7 @@ common_packages()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs="security/keepassxc"
+    common_pkgs="security/keepassxc sysutils/bsdstats"
     
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
