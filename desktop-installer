@@ -1893,7 +1893,7 @@ EOM
 	
 	printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
 	for device in cdrom flash; do
-	    for num in 0 1 2; do
+	    for num in 0 1; do
 		
 		# Create mount points
 		mount_point=/removable/${device}${num}
@@ -1909,7 +1909,7 @@ EOM
 		    options='ro,noauto'
 		    ;;
 		flash)
-		    dev="/dev/da${num}s1"
+		    dev="# /dev/da${num}s1"
 		    type='msdosfs'
 		    options='rw,noauto'
 		    ;;
@@ -2236,7 +2236,8 @@ case $desktop_selection in
     printf "Invalid desktop selection.\n\n"
 esac
 
-usermount_config    # Must come after desktop installation.  Configures gamin.
+# Broken sudo config
+# usermount_config    # Must come after desktop installation.  Configures gamin.
 
 # Broken and of questionable value samba_config
 
