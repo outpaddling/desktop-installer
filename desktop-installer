@@ -64,15 +64,30 @@ log_cmd()
 
 install_packages()
 {
+    local install
+    
+    log_dir=$START_DIR/desktop-installer-log
+    if [ ! -e $log_dir ]; then
+	mkdir $log_dir
+    fi
     for pkg in $@; do
-	log_dir=$START_DIR/desktop-installer-log
-	if [ ! -e $log_dir ]; then
-	    mkdir $log_dir
+	install=no
+	if fgrep -q ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile; then
+	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
+	    for arch in $archs; do
+		if [ $(uname -p) = $arch ]; then
+		    install=yes
+		fi
+	    done
+	else
+	    install=yes
 	fi
-	log_cmd auto-install-packages -l $pkg
-	if [ $? != 0 ]; then
-	    printf "install failed.\n"
-	    exit $?
+	if [ $install = yes ]; then
+	    log_cmd auto-install-packages -l $pkg
+	    if [ $? != 0 ]; then
+		printf "install failed.\n"
+		exit $?
+	    fi
 	fi
     done
 }
@@ -170,23 +185,13 @@ install_xorg()
 	x11/xorg \
 	x11/xdm \
 	x11/xsm \
-	x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-input-synaptics \
+	x11-drivers/xf86-input-wacom \
 	x11-drivers/xf86-video-amdgpu \
 	x11-drivers/xf86-video-ati \
-	x11-drivers/xf86-video-vesa \
-	x11-drivers/xf86-input-wacom \
-	x11-drivers/xf86-input-synaptics
+	x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-video-vesa
 
-    # FIXME: Do this in install_packages for all ports?
-    if fgrep ONLY_FOR_ARCHS /usr/ports/x11-drivers/xf86-video-amdgpu; then
-	archs=$(auto-print-make-variable x11-drivers/xf86-video-amdgpu ONLY_FOR_ARCHS)
-	for arch in $archs; do
-	    if [ $(uname -p) = $arch ]; then
-		install_packages x11-drivers/xf86-video-amdgpu
-	    fi
-	done
-    fi
-    
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
@@ -196,10 +201,7 @@ install_xorg()
     install_packages archivers/cabextract
 
     # Without webfonts, print to PDF will look awful
-    if ! auto-package-installed x11-fonts/webfonts; then
-	save_cwd=`pwd`
-	cd $PORTSDIR/x11-fonts/webfonts && make -DBATCH install && cd $save_cwd
-    fi
+    install_packages x11-fonts/webfonts
     
     # Check for virtualbox guest
     if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
@@ -263,7 +265,21 @@ xorg_config()
 	fi
     fi
 
-    auto-detect-gpu
+    cat << EOM
+
+Graphics drivers must be configured once, followed by a reboot to properly
+load them before attempting to start X11.  If you guess wrong which graphics
+driver/DRM combination to use, you may need to repeat this process and try
+again.  Answer 'y' once, then rerun desktop-installer and answer 'n' to
+attempt X11 startup.
+
+EOM
+    printf "Reconfigure graphics drivers? (y/n) [y] "
+    read configure_graphics
+    if [ 0$configure_graphics != 0n ]; then
+	auto-gpu-setup
+	shutdown -r now
+    fi
     
     if [ $ARCH = 'powerpc' ]; then
 	cat << EOM
@@ -299,7 +315,7 @@ EOM
 	auto-enable-service moused desktop-installer
     
 	# Restart moused after suspend
-	if ! fgrep -q $RCDIR/moused $RC_RESUME; then
+	if ! fgrep -q '$RCDIR/moused' $RC_RESUME; then
 	    sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
 $RCDIR/moused restart \
 \
@@ -321,12 +337,15 @@ exit 0|g' $RC_RESUME
     line
     cat << EOM
 
-Generating an xorg.conf file should only be necessary if you want to
-override the default resolution or other options.
+Xorg is now meant to be configuration-free.  Generating an xorg.conf file
+should only be necessary if you want to override the default resolution or
+other options.
 
-Note that this could cause your display to freeze, but rest assured
-that FreeBSD is still running.  You can restart by typing Ctrl+Alt+F1
-followed by Ctrl+Alt+Del.
+Overrides can also be done with xorg.conf fragments in /etc/X11/xorg.conf.d.
+
+Note that the process of generating xorg.conf could, in rare cases, cause
+your display to freeze, but rest assured that FreeBSD is still running.
+You can restart by typing Ctrl+Alt+F1 followed by Ctrl+Alt+Del.
 
 EOM
 
@@ -465,7 +484,7 @@ EOM
 		    "Would you like to try installing additional drivers? (y/n)" n`
 		if [ $more_drivers = 'y' ]; then
 		    save_cwd=`pwd`
-		    cd /usr/ports/x11-drivers/xorg-drivers
+		    cd $PORTSDIR/x11-drivers/xorg-drivers
 		    make config
 		    make deinstall clean reinstall
 		    cd $save_cwd
@@ -553,7 +572,7 @@ EOM
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     KDE5)
-	session='startkde'
+	session='startplasma-x11'
 	;;
     LUMINA)
 	session="$LOCALBASE/bin/start-lumina-desktop"
@@ -962,7 +981,8 @@ common_packages()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs="security/keepassxc sysutils/bsdstats"
+    common_pkgs="security/keepassxc sysutils/bsdstats \
+	www/firefox www/chromium mail/thunderbird editors/libreoffice"
     
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
@@ -972,7 +992,7 @@ common_packages()
 	    fi
 	    printf '\n'
 	    case $pkg in
-	    'sysutils/bsdstats'|'www/firefox')
+	    'sysutils/bsdstats'|'security/keepassx')
 		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
 		;;
 	    *)
@@ -984,6 +1004,7 @@ common_packages()
 	    fi
 	fi
     done
+    install_packages $selected_packages
 
     if auto-package-installed emulators/mtools; then
 	mtools_config
@@ -1016,10 +1037,10 @@ faac_lame_install()
 {
     pkg install -y libtool automake help2man mp4v2 gmake
     if ! auto-package-installed audio/faac; then
-	(cd /usr/ports/audio/faac && make -DBATCH clean install)
+	(cd $PORTSDIR/audio/faac && make -DBATCH clean install)
     fi
     if ! auto-package-installed audio/lame; then
-	(cd /usr/ports/audio/lame && make -DBATCH clean install)
+	(cd $PORTSDIR/audio/lame && make -DBATCH clean install)
     fi
 }
 
@@ -1176,7 +1197,7 @@ cups_config()
     # *port*, so as much as I hate to work around bugs in other software,
     # we'll install hpijs from source for now.  This print driver is just
     # too important to leave out.
-    #cd /usr/ports/print/hpijs
+    #cd $PORTSDIR/print/hpijs
     #make deinstall reinstall
     
     update_devfs_rules cups unlpt ulpt lpt
@@ -1539,8 +1560,6 @@ lumina_packages()
 	print/qpdfview \
 	graphics/qt5-imageformats \
 	graphics/phototonic \
-	x11-themes/qtcurve-gtk2 \
-	x11-themes/qtcurve-qt5 x11-themes/lxappearance \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	math/galculator x11/lilyterm
 
@@ -1562,7 +1581,8 @@ EOM
 lumina_config()
 {
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
-    install_packages x11/lumina x11-themes/lumina-themes
+    install_packages x11/lumina x11-themes/lumina-themes \
+	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt5 x11-themes/lxappearance
     startup_scripts LUMINA
     xorg_config xdm
     cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
@@ -1620,7 +1640,7 @@ sound_config()
 power_config()
 {
     # If CPU frequency is controllable, enable powerd.
-    if sysctl dev.cpu.0.freq 2> /dev/null && ! fgrep powerd /etc/rc.conf; then
+    if sysctl dev.cpu.0.freq > /dev/null 2>&1 && ! fgrep -q powerd /etc/rc.conf; then
 	auto-enable-service powerd desktop-installer
 	# auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
     fi
@@ -2053,11 +2073,18 @@ fi
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
     auto-pkg-latest
+    # If user has not rebooted, restart with possibly newer desktop-installer
+    printf "Restarting desktop-installer...\n"
+    pause
+    exec desktop-installer
 else
     # Update base system and ports
     update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
     if [ $update_system = y ]; then
-	auto-update-system
+	printf "System will restart following update.\n"
+	printf "Rerun desktop-installer from the same directory after reboot.\n"
+	pause
+	auto-update-system --yes
     fi
 fi
 auto-enable-passwdqc
@@ -2095,6 +2122,23 @@ else
 fi
 export AUTO_BUILD_FROM_SOURCE
 
+line
+cat << EOM
+
+Time to select a desktop environment.
+
+Select "No desktop software" if you plan to use something not listed in the
+menu.
+
+KDE is the most feature-rich and is well-supported on FreeBSD, but it also
+requires a lot of disk and memory.
+
+Lumina desktop is very small and fast and is developed on FreeBSD.
+
+EOM
+line
+pause
+
 desktop_selection='0'
 valid_selection=0
 while [ $valid_selection = 0 ]; do
@@ -2103,8 +2147,8 @@ while [ $valid_selection = 0 ]; do
     printf "1.. No desktop software.\n"
     printf "2.. Gnome3 Desktop\n"
     printf "3.. Gnome3 Lite Desktop\n"
-    printf "4.. KDE 5 Desktop\n"
-    printf "5.. Lumina Lightweight Desktop\n"
+    printf "4.. KDE 5 Desktop (Most feature-rich)\n"
+    printf "5.. Lumina Lightweight Desktop (Developed on BSD)\n"
     printf "6.. LXDE Lightweight Desktop\n"
     printf "7.. MATE Desktop\n"
     printf "8.. XFCE Lightweight Desktop\n"
