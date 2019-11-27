@@ -1346,7 +1346,7 @@ nfs_client_config()
     auto-enable-service nfs_client desktop-installer
     auto-enable-service -s statd rpc_statd desktop-installer
     auto-enable-service -s lockd rpc_lockd desktop-installer
-    auto-autofs-nfs-setup
+    auto-autofs-nfs-setup || true
 }
 
 
@@ -1593,7 +1593,7 @@ lumina_config()
 	$LOCALBASE/etc/gtk-2.0
     lumina_packages
     auto-enable-service mixer desktop-installer
-    auto-autofs-media-setup
+    auto-autofs-media-setup || true
 }
 
 
