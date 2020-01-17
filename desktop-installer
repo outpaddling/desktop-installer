@@ -124,7 +124,7 @@ delete_packages()
 update_devfs_conf()
 {
     for dev in $*; do
-	if ! fgrep -qw "${dev}" $DEVFS_CONF; then
+	if ! grep -q "^perm[ $(printf '\t')]*${dev}" $DEVFS_CONF; then
 	    printf "Adding $dev to defvs.conf.\n"
 	    printf "\n# Added by desktop-installer:\n" >> $DEVFS_CONF
 	    printf "perm\t${dev}\t0660\n" >> $DEVFS_CONF
@@ -186,7 +186,6 @@ install_xorg()
 	x11/xdm \
 	x11/xsm \
 	x11-drivers/xf86-input-synaptics \
-	x11-drivers/xf86-input-wacom \
 	x11-drivers/xf86-video-amdgpu \
 	x11-drivers/xf86-video-ati \
 	x11-drivers/xf86-video-mga \
@@ -210,12 +209,12 @@ install_xorg()
 	    auto-enable-service vboxguest desktop-installer
 	    auto-enable-service vboxservice desktop-installer
 	    # From wiki.freebsd.org/VirtualBox
-	    mkdir -p $LOCALBASE/etc/hal/fdi/policy/
-	    cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
+	    # FIXME: Is HAL deprecated here?
+	    # mkdir -p $LOCALBASE/etc/hal/fdi/policy/
+	    # cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
 	fi
     fi
-    
-    hal_config
+    dbus_config
 }
 
 
@@ -239,7 +238,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|slim\n"
+	printf "Usage: xorg_config xdm|gdm|slim|sddm\n"
 	exit 1
     else
 	display_manager=$1
@@ -248,9 +247,6 @@ xorg_config()
     # Pretty up xterm
     cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
     
-    # Lumina does not have hal as a dep
-    install_packages sysutils/hal
-
     # Default n if X already running
     if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	printf "X11 is already running.\n"
@@ -265,7 +261,9 @@ xorg_config()
 	fi
     fi
 
-    cat << EOM
+    # FIXME: Check for any VM guest, not just VirtualBox
+    if ! vbox_guest; then
+	cat << EOM
 
 Graphics drivers must be configured once, followed by a reboot to properly
 load them before attempting to start X11.  If you guess wrong which graphics
@@ -274,11 +272,12 @@ again.  Answer 'y' once, then rerun desktop-installer and answer 'n' to
 attempt X11 startup.
 
 EOM
-    printf "Reconfigure graphics drivers? (y/n) [y] "
-    read configure_graphics
-    if [ 0$configure_graphics != 0n ]; then
-	auto-gpu-setup
-	shutdown -r now
+	printf "Reconfigure graphics drivers? (y/n) [y] "
+	read configure_graphics
+	if [ 0$configure_graphics != 0n ]; then
+	    auto-gpu-setup
+	    shutdown -r now
+	fi
     fi
     
     if [ $ARCH = 'powerpc' ]; then
@@ -449,7 +448,7 @@ EOM
 	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
 	    # hald must be started AFTER moused to function with xorg
 	    ${LOCALBASE}$RCDIR/dbus restart
-	    ${LOCALBASE}$RCDIR/hald restart
+	    # ${LOCALBASE}$RCDIR/hald restart
 	    if startx; then
 		success=1
 	    else
@@ -535,7 +534,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME3|KDE5|LUMINA|LXDE|MATE|XFCE4\n"
+	printf "Usage: startup_scripts GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -579,6 +578,9 @@ EOM
 	;;
     LXDE)
 	session="$LOCALBASE/bin/startlxde"
+	;;
+    LXQT)
+	session="$LOCALBASE/bin/startlxqt"
 	;;
     MATE)
 	session="$LOCALBASE/bin/mate-session"
@@ -654,7 +656,7 @@ If you want to install multiple desktops, such as Gnome, KDE, etc., another
 display manager such as gdm, kdm, or SLiM may be easier to set up and use.
 
 XDM is appropriate for a single-desktop system running lightweight
-desktops such as XFCE or LXDE.
+desktops such as Lumina, LXDE, LXQT, or XFCE.
 
 EOM
     resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
@@ -676,7 +678,7 @@ EOM
 	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
 	# Pretty up the login
-	install_packages graphics/xli   # Display stretched background image
+	install_packages graphics/feh   # Display stretched background image
 	cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
 	cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
 	# Put FreeBSD logo on login window
@@ -749,16 +751,28 @@ slim_config()
     case $DESKTOP in
     mate)
 	# FIXME: Doesn't work for previously altered slim.conf
-	cp $LOCALBASE/share/desktop-installer/MATE/xinitrc \
-	    $LOCALBASE/etc/X11/xinit/xinitrc.mate
-	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.mate|g" \
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/MATE/xinitrc|g" \
 	    $slim_conf
 	;;
+    
     lumina)
 	# FIXME: Doesn't work for previously altered slim.conf
-	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/etc/X11/xinit/xinitrc.lumina|g" \
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LUMINA/xinitrc|g" \
 	    $slim_conf
 	;;
+    
+    lxde)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LXDE/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    lxqt)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LXQT/xinitrc|g" \
+	    $slim_conf
+	;;
+    
     *)
 	printf "slim_config(): Invalid desktop: $DESKTOP\n"
 	exit 1
@@ -779,7 +793,7 @@ EOM
 	gdm_disable
 	sddm_disable
 	# Mouse may not work in gdm unless we restart HAL
-	service hald restart
+	# FIXME: Deprecated? service hald restart || true
 	auto-enable-service slim desktop-installer
 	exit 0
     fi
@@ -982,7 +996,8 @@ common_packages()
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
     common_pkgs="security/keepassxc sysutils/bsdstats \
-	www/firefox www/chromium mail/thunderbird editors/libreoffice"
+	www/firefox www/chromium mail/thunderbird editors/libreoffice \
+	multimedia/vlc multimedia/libdvdcss"
     
     for pkg in $common_pkgs; do
 	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
@@ -1006,10 +1021,6 @@ common_packages()
     done
     install_packages $selected_packages
 
-    if auto-package-installed emulators/mtools; then
-	mtools_config
-    fi
-    
     # In case someone installs chromium later
     auto-append-line relax_mmap 'kern.ipc.shm_allow_removed=1' $SYSCTL_CONF desktop-installer
     sysctl kern.ipc.shm_allow_removed=1
@@ -1167,11 +1178,23 @@ xfce4_packages()
 
 
 ##########################################################################
-#   Install packages useful to XFCE users.  These packages will have
+#   Install packages useful to LXDE users.  These packages will have
 #   alternatives under KDE and Gnome3.
 ##########################################################################
 
 lxde_packages()
+{
+    # Packages specific to xfce4
+    install_packages math/galculator x11/xlockmore
+}
+
+
+##########################################################################
+#   Install packages useful to LXQT users.  These packages will have
+#   alternatives under KDE and Gnome3.
+##########################################################################
+
+lxqt_packages()
 {
     # Packages specific to xfce4
     install_packages math/galculator x11/xlockmore
@@ -1241,15 +1264,14 @@ external_drive_config()
 {
     # CD Burning, per pkg-message
     #[system=10]
-    #add path 'acd*' mode 0666
     #add path 'cd*' mode 0666
     #add path 'pass*' mode 0666
     #add path 'xpt*' mode 0666
-    update_devfs_rules operator acd cd da pass xpt
-    update_devfs_conf acd0 acd1 cd0 cd1 fd0 fd1
+    update_devfs_rules operator cd da pass xpt
+    update_devfs_conf cd0 cd1 fd0 fd1
     
-    if ! fgrep -q '#/dev/acd' $FSTAB; then
-	sed -i pre-desktop-installer 's|/dev/acd|#/dev/acd|g' $FSTAB
+    if ! fgrep -q '#/dev/cd' $FSTAB; then
+	sed -i pre-desktop-installer 's|/dev/cd|#/dev/cd|g' $FSTAB
     fi
     # Required for some removable drive mounting mechanisms
     auto-append-line 'vfs.usermount' 'vfs.usermount=1' $SYSCTL_CONF desktop-installer
@@ -1347,6 +1369,22 @@ nfs_client_config()
     auto-enable-service -s statd rpc_statd desktop-installer
     auto-enable-service -s lockd rpc_lockd desktop-installer
     auto-autofs-nfs-setup || true
+    cat << EOM
+
+NFS shares on the local network should be accessible via autofs under
+/net/<server-hostname>/.
+
+EOM
+}
+
+
+##########################################################################
+#   Enable NFS server if desired.
+##########################################################################
+
+nfs_server_config()
+{
+    # TBD
 }
 
 
@@ -1373,7 +1411,13 @@ usb_serial_config()
 
 firewire_config()
 {
-    auto-append-line firewire_load 'firewire_load="YES"' $LOADER_CONF desktop-installer
+    if dmesg | fgrep -q firewire0; then
+	auto-append-line firewire_load 'firewire_load="YES"' $LOADER_CONF desktop-installer
+	# Firewire disks
+	auto-append-line sbp_load 'sbp_load="YES"' $LOADER_CONF desktop-installe
+	printf "Firewire detected...\n"
+	kldload firewire sbp || true
+    fi
 }
 
 
@@ -1404,19 +1448,6 @@ serial_config()
     # serial ports cuau on 8.x?
     # Serial ports
     update_devfs_conf cuad0 cuad1 cuau0 cuau1
-}
-
-
-##########################################################################
-#   Configure mtools and mtools-fm for floppy disk and USB stick access.
-#   This is safer than mounting, since these media can be removed by
-#   careless users at any moment.  Removing a mounted device can cause
-#   filesystem corruption and even system panics.
-##########################################################################
-
-mtools_config()
-{
-    printf "Configuring mtools...\n"
 }
 
 
@@ -1479,7 +1510,6 @@ EOM
 
 xfce4_xdm_config()
 {
-    # XFCE 4.8 no longer uses HAL
     # From x11-wm/xfce4-session/pkg-message:
     install_packages sysutils/polkit
     
@@ -1495,16 +1525,32 @@ xfce4_xdm_config()
 
 
 ##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
+#   Configure the system to run the LXDE lightweight desktop.
 ##########################################################################
 
-lxde_xdm_config()
+lxde_config()
 {
     enable_user_shutdown
     install_packages x11/lxde-meta
     startup_scripts LXDE
-    xorg_config xdm
+    xorg_config slim
+    auto-automount-setup || true
     lxde_packages
+}
+
+
+##########################################################################
+#   Configure the system to run the LXQT lightweight desktop.
+##########################################################################
+
+lxqt_config()
+{
+    enable_user_shutdown
+    install_packages x11-wm/lxqt
+    startup_scripts LXQT
+    xorg_config slim
+    auto-automount-setup || true
+    lxqt_packages
 }
 
 
@@ -1517,10 +1563,11 @@ kde5_config()
     PATH=${PATH}:${LOCALBASE}/kde5/bin
     export PATH
     
-    install_packages x11/kde5 x11/sddm
+    install_packages x11/kde5 x11/sddm devel/bsdisks
     startup_scripts KDE5
     xorg_config sddm
-    auto-enable-hal-mount
+    # Replaced by bsdisks
+    # auto-enable-service hald desktop-installer
     kde5_packages
 }
 
@@ -1538,9 +1585,12 @@ gnome3_config()
 	install_packages x11/gnome3
     fi
     
-    install_packages print/gnome-print
+    install_packages print/gnome-print sysutils/hal
     startup_scripts GNOME3
     xorg_config gdm
+    dbus_config
+    auto-enable-service hald desktop-installer
+    # FIXME: Is this still necessary?
     auto-enable-hal-mount
 }
 
@@ -1586,14 +1636,12 @@ lumina_config()
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt5 x11-themes/lxappearance
     startup_scripts LUMINA
     xorg_config xdm
-    cp $LOCALBASE/share/desktop-installer/LUMINA/xinitrc \
-	$LOCALBASE/etc/X11/xinit/xinitrc.lumina
+    auto-automount-setup || true
     # Make GTK2 apps look nice
     cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
 	$LOCALBASE/etc/gtk-2.0
     lumina_packages
     auto-enable-service mixer desktop-installer
-    auto-autofs-media-setup || true
 }
 
 
@@ -1607,6 +1655,7 @@ mate_config()
     install_packages x11/mate
     startup_scripts MATE
     xorg_config slim
+    auto-automount-setup || true
 }
 
 
@@ -1628,7 +1677,7 @@ atapicam_config()
 
 sound_config()
 {
-    if ! auto-config-snd-driver; then
+    if ! auto-sound-driver-setup; then
 	printf "Warning: No sound devices detected.\n"
     fi
     # Old method:
@@ -1819,16 +1868,9 @@ EOM
 }
 
 
-hal_config()
+dbus_config()
 {
     auto-enable-service dbus desktop-installer
-    # Installing HAL from binary package has been known to cause problems in
-    # more than one release.
-    # Not necessary, unless using HAL to automount
-    # if auto-package-installed sysutils/hal && [ ! -e $PORTSDIR/sysutils/hal/work ]; then
-    #     (cd ${PORTSDIR}/sysutils/hal && make deinstall reinstall)
-    # fi
-    auto-enable-service hald desktop-installer
 }
 
 
@@ -1837,7 +1879,7 @@ mount_dist()
     if df | grep -q /dist; then
 	return 0
     fi
-    for dev in acd0 cd0 acd1 cd1; do
+    for dev in cd0 cd1; do
 	if mount_cd9660 /dev/$dev /dist 2> /dev/null; then
 	    return 0
 	fi
@@ -2152,8 +2194,9 @@ while [ $valid_selection = 0 ]; do
     printf "4.. KDE 5 Desktop (Most feature-rich)\n"
     printf "5.. Lumina Lightweight Desktop (Developed on BSD)\n"
     printf "6.. LXDE Lightweight Desktop\n"
-    printf "7.. MATE Desktop\n"
-    printf "8.. XFCE Lightweight Desktop\n"
+    printf "7.. LXQT Lightweight Desktop\n"
+    printf "8.. MATE Desktop\n"
+    printf "9.. XFCE Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2170,7 +2213,6 @@ while [ $valid_selection = 0 ]; do
 done
 
 power_config
-auto-append-line kern.maxfiles 'kern.maxfiles="25000"' $LOADER_CONF desktop-installer
 if vbox_guest; then
     auto-append-line kern.timecounter.hardware=i8254 \
 	kern.timecounter.hardware=i8254 /boot/loader.conf desktop-installer
@@ -2194,25 +2236,14 @@ atapicam_config
 sound_config
 procfs_config
 ntp_config
+auto-fusefs-install
 nfs_client_config
+nfs_server_config
 usb_serial_config
 firewire_config
 serial_config
 bluetooth_config
 
-# Use vt instead of syscons if present (10.1 and later)
-if [ -e /usr/share/vt ]; then
-    # vt is necessary for virtual terminal switching on some systems
-    # boot splash screen is not supported in vt as of 2014-10
-    auto-append-line 'kern.vty=vt' /boot/loader.conf desktop-installer
-else
-    # If using syscons, enable boot splash
-    # Does not work with vt console 
-    # Upgrading to 10.1 via freebsd-update or manually enabling
-    # vt i loader.conf without disabling the boot splash could cause
-    # panics at boot time, so disable this for now.
-    # boot_splash_config
-fi
 if [ -e /dev/usb ]; then
     # Make sure /dev/usb/* are accessible to operator
     chgrp operator /dev/usb
@@ -2268,13 +2299,17 @@ case $desktop_selection in
     ;;
 6)
     DESKTOP=lxde
-    lxde_xdm_config
+    lxde_config
     ;;
 7)
+    DESKTOP=lxqt
+    lxqt_config
+    ;;
+8)
     DESKTOP=mate
     mate_config
     ;;
-8)
+9)
     DESKTOP=xfce
     xfce4_xdm_config
     ;;
