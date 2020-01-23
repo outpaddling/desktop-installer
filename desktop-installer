@@ -667,9 +667,7 @@ EOM
 	sddm_disable
 
 	# Install xdmshutdown
-	if [ ! -e /var/db/pkg/tk-8.5* ]; then
-	    install_packages x11-toolkits/tk85
-	fi
+	install_packages x11-toolkits/tk86
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
@@ -1117,63 +1115,7 @@ xfce4_packages()
     if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 	install_packages sysutils/xfce4-battery-plugin
     fi
-    install_packages x11/xfce4-screenshooter-plugin
-    
-    # Reinstall xfce4-print with CUPS
-    if [ ! -e $LOCALBASE/lib/xfce4/xfprint-plugins/cups_plugin.a ]; then
-	cd $PORTSDIR/*/xfce4-print
-	printf "Rebuilding xfce4-print to enable CUPS.\n"
-	install_packages textproc/intltool
-	
-	# Interactive method
-	#printf "Disable LPR and enable CUPS, and enable letter size if you like.\n"
-	#pause
-	#mkdir -p /var/db/ports/xfce4-print
-	
-	# Command line flags to override defaults
-	# FIXME: -DWITH_CUPS has been replaced by ${PORT_OPTIONS:MCUPS}
-	
-	# New port uses PORT_OPTIONS.  Change default to cups.
-	make rmconfig
-	awk ' { if ( $1 == "OPTIONS_DEFAULT=" )
-		    printf("OPTIONS_DEFAULT=\tCUPS\n");
-		else
-		    print $0
-	      }' Makefile > temp
-	mv -f temp Makefile
-	
-	# Old port uses WITH_*.  Use env to select CUPS.
-	make -DBATCH -DWITH_CUPS -DWITHOUT_LPR clean deinstall reinstall
-	cd $START_DIR
-    fi
-    
-    # Reinstall epdfview with CUPS if existing binary was not built with it
-    # Disabled until epdfview matures
-    if false; then #! ldd ${LOCALBASE}/bin/epdfview | fgrep -q cups; then
-	cd $PORTSDIR/*/epdfview
-	printf "Rebuilding epdfview to enable CUPS.\n"
-	install_packages devel/libtool devel/cppunit
-	make -DBATCH -DWITH_CUPS clean deinstall reinstall
-	cd $START_DIR
-    fi
-
-    port=sysutils/xfce4-mount-plugin
-    if ! auto-package-installed $port; then
-	if [ ! -e $PORTSDIR/$port ]; then
-	    auto-update-port-framework -c $port
-	fi
-	
-	# Hack port to use sudo and open Thunar on mount
-	cd $PORTSDIR/$port
-	make patch
-	sed -i '' -e 's|"mount %d"|"sudo mount %d"|g' \
-	    -e 's|"umount %d"|"sudo umount %d"|g' \
-	    work/xfce4-mount-plugin-*/panel-plugin/mount-plugin.h
-	sed -i '' -e \
-	    's|on_mount_cmd = g_strdup("")|on_mount_cmd = g_strdup("thunar %m")|g' \
-	    work/xfce4-mount-plugin-*/panel-plugin/mount-plugin.c
-	make -DBATCH install
-    fi
+    install_packages x11/xfce4-screenshooter-plugin print/xfce4-print
 }
 
 
@@ -1184,7 +1126,7 @@ xfce4_packages()
 
 lxde_packages()
 {
-    # Packages specific to xfce4
+    # Packages specific to lxde
     install_packages math/galculator x11/xlockmore
 }
 
@@ -1196,7 +1138,7 @@ lxde_packages()
 
 lxqt_packages()
 {
-    # Packages specific to xfce4
+    # Packages specific to lxqt
     install_packages math/galculator x11/xlockmore
 }
 
@@ -1508,7 +1450,7 @@ EOM
 #   Configure the system to run the XFCE4 lightweight desktop.
 ##########################################################################
 
-xfce4_xdm_config()
+xfce4_config()
 {
     # From x11-wm/xfce4-session/pkg-message:
     install_packages sysutils/polkit
@@ -1521,6 +1463,7 @@ xfce4_xdm_config()
     startup_scripts XFCE4
     xorg_config xdm
     xfce4_packages
+    auto-automount-setup || true
 }
 
 
@@ -1596,7 +1539,7 @@ gnome3_config()
 
 
 ##########################################################################
-#   Install packages useful to XFCE users.  These packages will have
+#   Install packages useful to Lumina users.  These packages will have
 #   alternatives under KDE and Gnome3.
 ##########################################################################
 
@@ -2108,6 +2051,9 @@ EOM
 
 check_inodes
 mount_dist
+if [ ! -e $PORTSDIR/Makefile ]; then
+    auto-ports-checkout
+fi
 
 if [ ! -e /usr/local/etc/pkg/repos/bleeding-edge.conf ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' y`
@@ -2207,7 +2153,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 8 ]; then
+       [ $desktop_selection -gt 9 ]; then
 	valid_selection=0
     fi
 done
@@ -2311,7 +2257,7 @@ case $desktop_selection in
     ;;
 9)
     DESKTOP=xfce
-    xfce4_xdm_config
+    xfce4_config
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
