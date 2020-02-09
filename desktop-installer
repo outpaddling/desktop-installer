@@ -1690,7 +1690,8 @@ EOM
     if sysctl -a | fgrep -q hw.acpi.battery; then
 	auto-append-line battery_shutdown.sh $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
-	auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
+	# Causes ThinkPad X201 to stall for 20 seconds during resume from sleep
+	# auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
     fi
     
     # Reduce host CPU usage by reducing kernel timer interrupts
