@@ -667,7 +667,7 @@ EOM
 	sddm_disable
 
 	# Install xdmshutdown
-	install_packages x11-toolkits/tk86
+	install_packages x11-toolkits/tk87
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
@@ -1286,7 +1286,7 @@ ntp_config()
 	$RCDIR/ntpd stop
     fi
     # Kill off any rogue daemons
-    killall -9 ntpd || true
+    pkill -9 ntpd || true
     
     auto-append-line 'ntpdate_enable="YES"' $RC_CONF desktop-installer
     auto-append-line ntpdate_flags 'ntpdate_flags="-u pool.ntp.org"' $RC_CONF desktop-installer
@@ -1946,7 +1946,7 @@ EOM
 	sed -i '' -e 's|,$||g' $sudoers
 	
 	# Restart gam_server
-	if ! killall gam_server; then
+	if ! pkill gam_server; then
 	    printf "Note: gam_server was not running.\n"
 	fi
     fi
