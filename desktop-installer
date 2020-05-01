@@ -180,14 +180,11 @@ install_xorg()
     # Install Xorg by itself.  Installing as a dependency may not get all the
     # modules we want.
     
-    # video-intel is superseded by the modesetting driver
+    # auto-gpu-setup will install Intel, AMD/ATI, or nVidia drivers
     install_packages \
 	x11/xorg \
 	x11/xdm \
 	x11/xsm \
-	x11-drivers/xf86-input-synaptics \
-	x11-drivers/xf86-video-amdgpu \
-	x11-drivers/xf86-video-ati \
 	x11-drivers/xf86-video-mga \
 	x11-drivers/xf86-video-vesa
 
@@ -238,14 +235,11 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|slim|sddm\n"
+	printf "Usage: xorg_config xdm|slim|light|gdm|sddm\n"
 	exit 1
     else
 	display_manager=$1
     fi
-    
-    # Pretty up xterm
-    cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
     
     # Default n if X already running
     if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
@@ -261,8 +255,47 @@ xorg_config()
 	fi
     fi
 
+    if [ $display_manager = light ]; then
+	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
+	    cat << EOM
+
+Choose a display manager:
+
+1.. XDM augmented with Shutdown, Reboot, and Restart X11 buttons
+2.. SLiM
+
+EOM
+	    read -p "Selection? " selection
+	    case $selection in
+	    1)
+		display_manager=xdm
+		;;
+	    2)
+		display_manager=slim
+		;;
+	    *)
+		printf "Invalid selection: $selection\n"
+	    esac
+	done
+    fi
+    
+    # Pretty up xterm
+    cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
+
+    # Don't mess with drivers if X already running or this is a VM
     # FIXME: Check for any VM guest, not just VirtualBox
-    if ! vbox_guest; then
+    if vbox_guest; then
+	printf "No graphics drivers needed for VirtualBox guests.\n"
+    elif ps axw | fgrep 'bin/X' | fgrep -qv grep; then
+	cat << EOM
+
+X11 already running, so we won't mess with the graphics drivers.  If you
+want desktop-installer to help you change them, shut down X11 and run
+desktop-installer from a text console.
+
+EOM
+	pause
+    else
 	cat << EOM
 
 Graphics drivers must be configured once, followed by a reboot to properly
@@ -276,38 +309,23 @@ EOM
 	read configure_graphics
 	if [ 0$configure_graphics != 0n ]; then
 	    auto-gpu-setup
-	    shutdown -r now
+	    read -p "Reboot now? (y/n) [y] " reboot
+	    if [ "0$reboot" != 0n ]; then
+		shutdown -r now
+	    fi
 	fi
     fi
     
-    if [ $ARCH = 'powerpc' ]; then
-	cat << EOM
-	
-	ATI Radeon iBooks may require 
-	
-	    sysctl hw.ofwfb.relax_mmap=1
-	    
-EOM
-	resp=`auto-ask ofwfb "Add sysctl hw.ofwfb.relax_mmap=1? (y/n)" n`
-	if [ "$resp" = y ]; then
-	    auto-append-line relax_mmap 'hw.ofwfb.relax_mmap=1' $SYSCTL_CONF desktop-installer
-	    sysctl hw.ofwfb.relax_mmap=1
-	fi
-    fi
-    
-    # Configure mouse.  Do not use moused on PowerPC: It causes X11 display
-    # to sometimes stall until mouse is moved.
     cat << EOM
+    
 Using moused may be useful for text virtual terminals, but is not necessary
-for X11.  
+for X11.  However, on some systems, enabling moused may work around issues
+with Xorg mouse drivers.
 
-On some systems, such as iBooks, using moused with X11 causes the X server
-to freeze occasionally until the mouse is moved.  Using moused is therefore
-not recommended.
 EOM
 
-    use_moused=`auto-ask use-moused "Use moused? (y/n)" n`
-    if [ $use_moused = 'y' ]; then
+    use_moused=`auto-ask use-moused "Use moused? (y/n)" y`
+    if [ $use_moused != 'n' ]; then
 	mouse_port=`get_mouse_port`
 	printf "Adding mouse device: $mouse_port\n"
 	auto-append-line moused_port "moused_port=$mouse_port" $RC_CONF desktop-installer
@@ -340,7 +358,7 @@ Xorg is now meant to be configuration-free.  Generating an xorg.conf file
 should only be necessary if you want to override the default resolution or
 other options.
 
-Overrides can also be done with xorg.conf fragments in /etc/X11/xorg.conf.d.
+Overrides can also be done with xorg.conf fragments in $XORG_CONF_DIR.
 
 Note that the process of generating xorg.conf could, in rare cases, cause
 your display to freeze, but rest assured that FreeBSD is still running.
@@ -358,6 +376,21 @@ EOM
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
 	line
+    else
+	cat << EOM
+
+Hardware mouse cursor support is a feature of Xorg that sometimes interacts
+badly with video drivers and provides no noticeable benefit to typical Unix
+desktop users.  We can avoid hardware cursor issues by turning on software
+cursor support.
+
+EOM
+    fi
+    swcursor=`auto-ask swcursor "Enable software cursor? (y/n)" y`
+    if [ $swcursor != n ]; then
+	mkdir -p $XORG_CONF_DIR
+	cp $DATADIR/20-swcursor.conf $XORG_CONF_DIR
+	chmod -R a+rX $XORG_CONF_DIR
     fi
     
     # Patch for VirtualBox guest additions
@@ -400,26 +433,6 @@ to optimize your display settings, e.g.
 These settings can be found in the monitor manual.
 EOM
 	line
-    
-	# Hacks to make Xorg work on PowerPC systems
-	if [ $ARCH = 'powerpc' ]; then
-	    cat << EOM
-	    In xorg.conf, it may be necessary to add the following to
-	    Section "Device":
-	    
-		Option  "BusType"   "PCI"
-		Option  "Int10"     "False"
-		Option  "MacModel"  "ibook"
-	    
-	    and the following to Section "ServerLayout" to enable
-	    laptop keyboards:
-	    
-		Option "AllowEmptyInput" "off"
-	    
-	    These items are being appended to your xorg.conf as
-	    comments, so you easily can add them.
-EOM
-	fi
     
 	if [ $generate_xorg = y ]; then
 	    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
@@ -639,7 +652,7 @@ EOM
 
 ##########################################################################
 #   Enable XDM.  Note that KDE uses kdm and Gnome3 uses gdm, so this is
-#   for XFCE and other lightweight desktops.
+#   for XFCE4 and other lightweight desktops.
 ##########################################################################
 
 xdm_config()
@@ -649,16 +662,6 @@ xdm_config()
 	return
     fi
 
-    # Graphical login
-    cat << EOM
-
-If you want to install multiple desktops, such as Gnome, KDE, etc., another
-display manager such as gdm, kdm, or SLiM may be easier to set up and use.
-
-XDM is appropriate for a single-desktop system running lightweight
-desktops such as Lumina, LXDE, LXQT, or XFCE.
-
-EOM
     resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	# Disable gdm and kdm
@@ -685,7 +688,7 @@ EOM
 	# Login window is too big on SVGA screens
 	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
 	
-	# Fix login problem on 9.2-RELEASE with XFCE
+	# Fix login problem on 9.2-RELEASE with XFCE4
 	# Error: XDM authorization key matches an existing client
 	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
 	auto-append-line \
@@ -719,7 +722,7 @@ EOM
     resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
-	auto-xdm-toggle off
+	xdm_disable
 	slim_disable
 	sddm_disable
 	# Mouse may not work in gdm unless we restart HAL
@@ -771,6 +774,12 @@ slim_config()
 	    $slim_conf
 	;;
     
+    xfce4)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/XFCE4/xinitrc|g" \
+	    $slim_conf
+	;;
+    
     *)
 	printf "slim_config(): Invalid desktop: $DESKTOP\n"
 	exit 1
@@ -785,13 +794,11 @@ managers such as xdm or kdm.
 EOM
     line
     resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
-    if [ 0"$resp" = 0'y' ]; then
+    if [ 0"$resp" != 0n ]; then
 	dm_msg
-	auto-xdm-toggle off
+	xdm_disable
 	gdm_disable
 	sddm_disable
-	# Mouse may not work in gdm unless we restart HAL
-	# FIXME: Deprecated? service hald restart || true
 	auto-enable-service slim desktop-installer
 	exit 0
     fi
@@ -817,11 +824,20 @@ gdm_disable()
     auto-disable-service gdm
 }
 
+
+xdm_disable()
+{
+    auto-xdm-toggle off
+    pkill xdm || true
+}
+
+
 slim_disable()
 {
     if fgrep -q 'slim_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/slim ]; then
 	service slim stop || true
+	pkill slim || true
     fi
     auto-disable-service slim
 }
@@ -838,7 +854,7 @@ EOM
     resp=`auto-ask enable-sddm "Enable SDDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
-	auto-xdm-toggle off
+	xdm_disable
 	gdm_disable
 	slim_disable
 	auto-enable-service sddm desktop-instaler
@@ -1014,13 +1030,18 @@ common_packages()
 	    esac
 	    if [ "$resp" = y ]; then
 		selected_packages="$selected_packages $pkg"
+		# Pulseaudio needed for microphone as of firefox 75
+		# FIXME: This may change in future versions
+		if [ $pkg = www/firefox ]; then
+		    selected_packages="$selected_packages audio/pulseaudio"
+		fi
 	    fi
 	fi
     done
     install_packages $selected_packages
 
     # In case someone installs chromium later
-    auto-append-line relax_mmap 'kern.ipc.shm_allow_removed=1' $SYSCTL_CONF desktop-installer
+    auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
     sysctl kern.ipc.shm_allow_removed=1
 }
 
@@ -1091,7 +1112,7 @@ cdrecord_perms()
 
 
 ##########################################################################
-#   Install packages useful to XFCE users.  These packages will have
+#   Install packages useful to XFCE4 users.  These packages will have
 #   alternatives under KDE and Gnome3.
 ##########################################################################
 
@@ -1216,7 +1237,7 @@ external_drive_config()
 	sed -i pre-desktop-installer 's|/dev/cd|#/dev/cd|g' $FSTAB
     fi
     # Required for some removable drive mounting mechanisms
-    auto-append-line 'vfs.usermount' 'vfs.usermount=1' $SYSCTL_CONF desktop-installer
+    auto-set-sysctl vfs.usermount 1 desktop-installer
     sysctl vfs.usermount=1
 }
 
@@ -1456,12 +1477,12 @@ xfce4_config()
     install_packages sysutils/polkit
     
     # Allow members of operator group to shut down and restart from
-    # XFCE logout panel
+    # XFCE4 logout panel
 
     enable_user_shutdown
     install_packages x11-wm/xfce4
     startup_scripts XFCE4
-    xorg_config xdm
+    xorg_config light
     xfce4_packages
     auto-automount-setup || true
 }
@@ -1578,7 +1599,7 @@ lumina_config()
     install_packages x11/lumina x11-themes/lumina-themes \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt5 x11-themes/lxappearance
     startup_scripts LUMINA
-    xorg_config xdm
+    xorg_config light
     auto-automount-setup || true
     # Make GTK2 apps look nice
     cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
@@ -1623,11 +1644,6 @@ sound_config()
     if ! auto-sound-driver-setup; then
 	printf "Warning: No sound devices detected.\n"
     fi
-    # Old method:
-    #if ! fgrep -q snd_ $LOADER_CONF && [ $ARCH != 'powerpc' ]; then
-    #    auto-append-line snd_driver 'snd_driver_load="YES"' $LOADER_CONF desktop-installer
-    #    kldload snd_driver
-    #fi
 }
 
 
@@ -1869,7 +1885,7 @@ EOM
     pause
     cat << EOM
 
-XFCE mount plugin should be configured with the following commands:
+XFCE4 mount plugin should be configured with the following commands:
 
     sudo auto-mount-any %d %m
     sudo umount %m
@@ -1983,11 +1999,11 @@ ARCH=`uname -m`
 
 # Config files
 XORG_CONF='/etc/X11/xorg.conf'
+XORG_CONF_DIR='/etc/X11/xorg.conf.d'
 DEVFS_CONF='/etc/devfs.conf'
 DEVFS_RULES='/etc/devfs.rules'
 RC_CONF='/etc/rc.conf'
 LOADER_CONF='/boot/loader.conf'
-SYSCTL_CONF='/etc/sysctl.conf'
 RC_RESUME='/etc/rc.resume'
 TTYS='/etc/ttys'
 FSTAB='/etc/fstab'
@@ -2052,23 +2068,22 @@ EOM
 
 check_inodes
 mount_dist
-if [ ! -e $PORTSDIR/Makefile ]; then
-    auto-ports-checkout
-fi
 
 if [ ! -e /usr/local/etc/pkg/repos/bleeding-edge.conf ]; then
-    latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' y`
+    latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
 else
     latest_packages=n
 fi
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
-    auto-pkg-latest
+    auto-pkg-latest --no-reboot
     # If user has not rebooted, restart with possibly newer desktop-installer
     printf "Restarting desktop-installer...\n"
     pause
     exec desktop-installer
 else
+    auto-check-ports-branch
+    
     # Update base system and ports
     update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
     if [ $update_system = y ]; then
@@ -2119,12 +2134,18 @@ cat << EOM
 Time to select a desktop environment.
 
 Select "No desktop software" if you plan to use something not listed in the
-menu.
+menu and install it manually.  In this case, desktop-installer will still do
+most of the work necessary to produce a functional desktop system.
 
 KDE is the most feature-rich and is well-supported on FreeBSD, but it also
-requires a lot of disk and memory.
+requires the most hardware resources.
 
-Lumina desktop is very small and fast and is developed on FreeBSD.
+Lumina desktop is very small, fast, intuitive, and attractive and is developed
+on FreeBSD.
+
+* As of version 1.6.0, Lumina does not always update the screen properly when
+resizing a VirtualBox window with guest additions installed.  If you are
+running under VirtualBox, another lightweight DE may run more cleanly.
 
 EOM
 line
@@ -2138,12 +2159,12 @@ while [ $valid_selection = 0 ]; do
     printf "1.. No desktop software.\n"
     printf "2.. Gnome3 Desktop\n"
     printf "3.. Gnome3 Lite Desktop\n"
-    printf "4.. KDE 5 Desktop (Most feature-rich)\n"
-    printf "5.. Lumina Lightweight Desktop (Developed on BSD)\n"
-    printf "6.. LXDE Lightweight Desktop\n"
+    printf "4.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "5.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "6.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
     printf "7.. LXQT Lightweight Desktop\n"
     printf "8.. MATE Desktop\n"
-    printf "9.. XFCE Lightweight Desktop\n"
+    printf "9.. XFCE4 Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2257,7 +2278,7 @@ case $desktop_selection in
     mate_config
     ;;
 9)
-    DESKTOP=xfce
+    DESKTOP=xfce4
     xfce4_config
     ;;
 *)
