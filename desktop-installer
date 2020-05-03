@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
+	printf "Usage: startup_scripts CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -580,6 +580,9 @@ EOM
     fi
     
     case $1 in
+    CINNAMON)
+	session="$LOCALBASE/bin/cinammon-session"
+	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
@@ -1623,6 +1626,19 @@ mate_config()
 }
 
 
+##########################################################################
+#   Configure the system to run the Cinnamon desktop.
+##########################################################################
+
+cinnamon_config()
+{
+    install_packages x11/cinnamon
+    startup_scripts CINNAMON
+    xorg_config gdm
+    auto-automount-setup || true
+}
+
+
 atapicam_config()
 {
     # FreeBSD 9 uses options ATA_CAM, which is in the GENERIC kernel
@@ -2157,14 +2173,15 @@ while [ $valid_selection = 0 ]; do
     printf "\n"
     line
     printf "1.. No desktop software.\n"
-    printf "2.. Gnome3 Desktop\n"
-    printf "3.. Gnome3 Lite Desktop\n"
-    printf "4.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
-    printf "5.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "6.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
-    printf "7.. LXQT Lightweight Desktop\n"
-    printf "8.. MATE Desktop\n"
-    printf "9.. XFCE4 Lightweight Desktop\n"
+    printf "2.. Cinnamon Desktop\n"
+    printf "3.. Gnome3 Desktop\n"
+    printf "4.. Gnome3 Lite Desktop\n"
+    printf "5.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "6.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "7.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "8.. LXQT Lightweight Desktop\n"
+    printf "9.. MATE Desktop\n"
+    printf "10. XFCE4 Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2175,7 +2192,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 9 ]; then
+       [ $desktop_selection -gt 10 ]; then
 	valid_selection=0
     fi
 done
@@ -2250,34 +2267,38 @@ case $desktop_selection in
     DESKTOP=none
     ;;
 2)
-    DESKTOP=gnome3
-    gnome3_config full
+    DESKTOP=cinnamon
+    cinnamon_config
     ;;
 3)
     DESKTOP=gnome3
-    gnome3_config lite
+    gnome3_config full
     ;;
 4)
+    DESKTOP=gnome3
+    gnome3_config lite
+    ;;
+5)
     DESKTOP=kde5
     kde5_config
     ;;
-5)
+6)
     DESKTOP=lumina
     lumina_config
     ;;
-6)
+7)
     DESKTOP=lxde
     lxde_config
     ;;
-7)
+8)
     DESKTOP=lxqt
     lxqt_config
     ;;
-8)
+9)
     DESKTOP=mate
     mate_config
     ;;
-9)
+10)
     DESKTOP=xfce4
     xfce4_config
     ;;
