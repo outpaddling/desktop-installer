@@ -1632,10 +1632,10 @@ mate_config()
 
 cinnamon_config()
 {
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/cinnamon
     startup_scripts CINNAMON
     xorg_config gdm
-    auto-automount-setup || true
 }
 
 
