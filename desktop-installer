@@ -235,7 +235,7 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|slim|light|gdm|sddm\n"
+	printf "Usage: xorg_config xdm|slim|light|gdm|sddm|dtlogin\n"
 	exit 1
     else
 	display_manager=$1
@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
 	exit 1
     fi
 
@@ -580,6 +580,9 @@ EOM
     fi
     
     case $1 in
+    CDE)
+	session="$LOCALBASE/dt/bin/dtsession"
+	;;
     CINNAMON)
 	session="$LOCALBASE/bin/cinammon-session"
 	;;
@@ -1639,6 +1642,31 @@ cinnamon_config()
 }
 
 
+cde_config()
+{
+    install_packages x11/cde shells/ksh93
+    # Needed for calendar
+    #auto-enable-service rpcbind desktop-installer
+    #auto-enable-service dtcms desktop-installer
+    auto-enable-service dtspc desktop-installer
+    startup_scripts CDE
+    if ! fgrep $(hostname) /etc/hosts; then
+	sed -i '' -e "s|localhost.my.domain|& $(hostname)|" /etc/hosts
+    fi
+    xorg_config dtlogin
+}
+
+
+dtlogin_config()
+{
+    # FIXME: Cannot start X11
+    # auto-append-line dtlogin '/usr/local/dt/bin/dtlogin -daemon' /etc/rc.local desktop-installer
+    # printf "Reboot to test dtlogin.\n"
+    printf "Run /usr/local/dt/bin/dtlogin as root to start a session.\n"
+    pause
+}
+
+
 atapicam_config()
 {
     # FreeBSD 9 uses options ATA_CAM, which is in the GENERIC kernel
@@ -2183,6 +2211,9 @@ while [ $valid_selection = 0 ]; do
     printf "9.. MATE Desktop\n"
     printf "10. XFCE4 Lightweight Desktop\n"
     line
+    printf "Unsupported desktops:\n\n"
+    printf "11. CDE (For nostalgia only, not fully functional or secure)\n"
+    line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
     # for disk space to make a recommendation.
@@ -2192,7 +2223,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 10 ]; then
+       [ $desktop_selection -gt 11 ]; then
 	valid_selection=0
     fi
 done
@@ -2301,6 +2332,10 @@ case $desktop_selection in
 10)
     DESKTOP=xfce4
     xfce4_config
+    ;;
+11)
+    DESKTOP=cde
+    cde_config
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
