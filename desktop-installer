@@ -1645,10 +1645,17 @@ cinnamon_config()
 cde_config()
 {
     install_packages x11/cde shells/ksh93
-    # Needed for calendar
-    #auto-enable-service rpcbind desktop-installer
-    #auto-enable-service dtcms desktop-installer
-    auto-enable-service dtspc desktop-installer
+    # Needed only for calendar
+    # auto-enable-service rpcbind desktop-installer
+    # auto-enable-service dtcms desktop-installer
+    
+    # Probably not needed and certainly not secure:
+    # https://sourceforge.net/p/cdesktopenv/wiki/Home/
+    # auto-enable-service dtspc desktop-installer
+    # Add these to inetd.conf:
+    # dtspc stream tcp4   nowait  root    /usr/local/dt/bin/dtspcd /usr/local/dt/bin/dtspcd
+    # cmsd/2-5    dgram rpc/udp4 wait root /usr/local/dt/bin/rpc.cmsd rpc.cmsd
+
     startup_scripts CDE
     if ! fgrep $(hostname) /etc/hosts; then
 	sed -i '' -e "s|localhost.my.domain|& $(hostname)|" /etc/hosts
