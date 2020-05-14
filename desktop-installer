@@ -2094,7 +2094,7 @@ ThinkPad X201 before and after write cache was disabled:
 EOM
     disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
     if [ $disable_write_cache != n ]; then
-	auto-append-line 'kern.cam.ada.write_cache=0' /boot/loader.conf desktop-installer
+	auto-disable-write-cache
     fi
     return 0
 }
