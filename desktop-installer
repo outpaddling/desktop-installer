@@ -146,7 +146,7 @@ update_devfs_rules()
 	printf "[system=10]\n" > $DEVFS_RULES
     fi
     auto-enable-service devd desktop-installer
-    auto-append-line devfs_system_ruleset 'devfs_system_ruleset="system"' $RC_CONF desktop-installer
+    auto-set-conf-var devfs_system_ruleset '"system"' $RC_CONF desktop-installer
     
     group=$1
     shift
@@ -328,7 +328,7 @@ EOM
     if [ $use_moused != 'n' ]; then
 	mouse_port=`get_mouse_port`
 	printf "Adding mouse device: $mouse_port\n"
-	auto-append-line moused_port "moused_port=$mouse_port" $RC_CONF desktop-installer
+	auto-set-conf-var moused_port "$mouse_port" $RC_CONF desktop-installer
 	auto-enable-service moused desktop-installer
     
 	# Restart moused after suspend
@@ -1338,8 +1338,8 @@ ntp_config()
     # Kill off any rogue daemons
     pkill -9 ntpd || true
     
-    auto-append-line 'ntpdate_enable="YES"' $RC_CONF desktop-installer
-    auto-append-line ntpdate_flags 'ntpdate_flags="-u pool.ntp.org"' $RC_CONF desktop-installer
+    auto-set-conf-var ntpdate_enable '"YES"' $RC_CONF desktop-installer
+    auto-set-conf-var ntpdate_flags '"-u pool.ntp.org"' $RC_CONF desktop-installer
     ntpdate -u pool.ntp.org
     
     # Do after ntpdate, or it will block the port
@@ -1389,7 +1389,7 @@ usb_serial_config()
 {
     # uplcom
     # Common USB/Serial adapters
-    auto-append-line uplcom_load 'uplcom_load="YES"' $LOADER_CONF desktop-installer
+    auto-set-conf-var uplcom_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
     update_devfs_rules operator ugen cuaU uhid usbctl usb/ video
@@ -1404,9 +1404,9 @@ usb_serial_config()
 firewire_config()
 {
     if dmesg | fgrep -q firewire0; then
-	auto-append-line firewire_load 'firewire_load="YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var firewire_load '"YES"' $LOADER_CONF desktop-installer
 	# Firewire disks
-	auto-append-line sbp_load 'sbp_load="YES"' $LOADER_CONF desktop-installe
+	auto-set-conf-var sbp_load '"YES"' $LOADER_CONF desktop-installer
 	printf "Firewire detected...\n"
 	kldload firewire sbp || true
     fi
@@ -1425,7 +1425,7 @@ firewire_config()
 bluetooth_config()
 {
     # Common USB bluetooth adapters
-    auto-append-line ng_ubt_load 'ng_ubt_load="YES"' $LOADER_CONF desktop-installer
+    auto-set-conf-var ng_ubt_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
     update_devfs_rules operator ng_ubt
@@ -1463,8 +1463,7 @@ samba_config()
 		fi
 	    done
 	    # Necessary with stock samba package on 8.3-RELEASE
-	    auto-append-line winbindd_enable 'winbindd_enable="YES"' \
-		$RC_CONF desktop-installer
+	    auto-set-conf-var winbindd_enable '"YES"' $RC_CONF desktop-installer
 	    auto-enable-service samba desktop-installer
 	fi
     else
@@ -1704,7 +1703,7 @@ atapicam_config()
     # so atapicam is deprecated.
     if [ `uname -r | cut -d '.' -f 1` -lt 9 ]; then
 	# atapicam
-	auto-append-line atapicam 'atapicam_load="YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var atapicam_load '"YES"' $LOADER_CONF desktop-installer
 	if ! kldstat | fgrep -q atapicam; then
 	    if ! kldload atapicam > /dev/null 2>&1 ; then
 		printf "Warning: Failed to load atapicam.\n"
@@ -1727,7 +1726,6 @@ power_config()
     # If CPU frequency is controllable, enable powerd.
     if sysctl dev.cpu.0.freq > /dev/null 2>&1 && ! fgrep -q powerd /etc/rc.conf; then
 	auto-enable-service powerd desktop-installer
-	# auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
     fi
 
     if sysctl -a | fgrep -q dev.acpi_lid.0; then
@@ -1779,15 +1777,16 @@ EOM
     
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
-	auto-append-line battery_shutdown.sh $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
+	auto-append-line battery_shutdown.sh \
+	    $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
 	# Causes ThinkPad X201 to stall for 20 seconds during resume from sleep
-	# auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
+	# auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
     fi
     
     # Reduce host CPU usage by reducing kernel timer interrupts
     if vbox_guest; then
-	auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
+	auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
     fi
 }
 
@@ -1800,10 +1799,10 @@ boot_splash_config()
 	# FIXME: Not all video cards work.  VESA support issue?
 	printf "Configuring boot splash screen...\n"
 	cp ${DATADIR}/splash.bmp /boot
-	auto-append-line vesa_load 'vesa_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line splash_bmp_load 'splash_bmp_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line bitmap_load 'bitmap_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line bitmap_name "bitmap_name=\"/boot/splash.bmp\"" $LOADER_CONF desktop-installer
+	auto-set-conf-var vesa_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var splash_bmp_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var bitmap_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var bitmap_name '"/boot/splash.bmp"' $LOADER_CONF desktop-installer
     fi
 }
 
@@ -1855,15 +1854,15 @@ network_config()
 		# Also could use a better test than this simple grep.
 		dmesg | grep -q "^$WIFI_DEVICE"; then
 		printf "Found wireless device $WIFI_DEVICE.\n"
-		auto-append-line "wlans_$WIFI_DEVICE" "wlans_$WIFI_DEVICE=\"wlan0\"" $RC_CONF desktop-installer
+		auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
+		    $RC_CONF desktop-installer
 		# Not necessary for drivers which are in the GENERIC kernel, but
 		# it shouldn't hurt.
-		auto-append-line "if_${driver}_load=\"YES\"" \
-		    "if_${driver}_load=\"YES\"" $LOADER_CONF desktop-installer
+		auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
 		break   # Configure only one wireless device!
 	    fi
 	done
-	auto-append-line 'ifconfig_wlan0' 'ifconfig_wlan0="WPA DHCP"' $RC_CONF desktop-installer
+	auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
     fi
 }
 
@@ -2015,8 +2014,9 @@ EOM
 		*)
 		    ;;
 		esac
-		auto-append-line "$mount_point" "$dev\t$mount_point\t$type\t$options\t0\t0" \
-		   /etc/fstab nocomment
+		auto-append-line "$mount_point" \
+		    "$dev\t$mount_point\t$type\t$options\t0\t0" \
+		    /etc/fstab nocomment
 		
 		# Update sudoers drop-in
 		printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
@@ -2094,7 +2094,7 @@ ThinkPad X201 before and after write cache was disabled:
 EOM
     disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
     if [ $disable_write_cache != n ]; then
-	auto-disable-write-cache
+	auto-write-cache-toggle off desktop-installer
     fi
     return 0
 }
@@ -2317,8 +2317,7 @@ done
 
 power_config
 if vbox_guest; then
-    auto-append-line kern.timecounter.hardware=i8254 \
-	kern.timecounter.hardware=i8254 /boot/loader.conf desktop-installer
+    auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
     line
     cat << EOM
 Note: You may need to enable I/O APIC in the VirtualBox system settings, or
