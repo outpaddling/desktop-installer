@@ -2046,6 +2046,50 @@ EOM
 }
 
 
+##########################################################################
+#   Function description:
+#       Disable write cache in disk controller to ensure clean filesystem
+#       after a power outage. Otherwise, the journal can be fooled into
+#       thinking the filesystem is clean after a write transaction.
+#       May hurt performance noticeably on older disks.
+#
+#       https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=208691
+#       https://forums.freebsd.org/threads/is-there-a-simple-way-to-disable-write-cache.56367/
+#       man ada
+#
+#   History:
+#   Date        Name        Modification
+#   2020-05-14  Jason Bacon Begin
+##########################################################################
+
+disable_write_cache()
+{
+    cat << EOM
+
+The write cache feature of many hard disks can cause UFS2 filesystems to be
+marked clean after a write transaction when in fact the data have not yet
+been written to the media.  As a result, fsck could leave the filesystem
+dirty following a sudden power outage or other improper shutdown.  This can,
+in rare circumstances, cause kernel panics triggered by normal disk writes.
+
+The manual fix is to boot to single user mode after any improper shutdown
+and run "fsck -fy /path/to/filesystem".
+
+Disabling the disk's write cache feature will prevent this issue, but may hurt
+performance noticeably, especially on older disks.  If performance is more
+important to you than avoiding this issue, then leave write cache enabled.
+For the average desktop user, disabling write cache will not make a noticeable
+difference.  Maximizing disk performance is only likely to be important on
+heavily loaded servers.
+
+EOM
+    disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
+    if [ $disable_write_cache != n ]; then
+	auto-append-line 'kern.cam.ada.write_cache=0' /boot/loader.conf desktop-installer
+    fi
+    return 0
+}
+
 ###########################################################################
 #   Begin main script
 ###########################################################################
@@ -2172,6 +2216,9 @@ auto-enable-passwdqc
 
 # Needed by openjdk, bash, etc.
 auto-add-fdesc-mount
+
+# Ensure disk is clean after a power outage
+disable_write_cache
 
 clear
 cat << EOM
