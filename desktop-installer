@@ -2068,15 +2068,20 @@ disable_write_cache()
 
 The write cache feature of many hard disks can cause UFS2 filesystems to be
 marked clean after a write transaction when in fact the data have not yet
-been written to the media.  As a result, fsck could leave the filesystem
-dirty following a sudden power outage or other improper shutdown.  This can,
-in rare circumstances, cause kernel panics triggered by normal disk writes.
+been written to the media.  As a result, the fsck run at boot time could leave
+the filesystem dirty following a sudden power outage or other improper
+shutdown.  This can, in rare circumstances, lead to loss of files or even
+cause kernel panics triggered by normal disk writes.
 
 The manual fix is to boot to single user mode after any improper shutdown
-and run "fsck -fy /path/to/filesystem".
+and run "fsck -fy /path/to/filesystem".  ( This will not recover lost files. )
+
+Write cache is enabled by default, a setting aimed at servers backed by an
+ininterruptable power supply.  It is generally unsafe for typical desktop
+systems that may experience sudden power outages.
 
 Disabling the disk's write cache feature will prevent this issue, but may hurt
-performance noticeably, especially on older disks.  If performance is more
+performance, especially on older disks.  If maximum performance is more
 important to you than avoiding this issue, then leave write cache enabled.
 For the average desktop user, disabling write cache will not make a noticeable
 difference.  Maximizing disk performance is only likely to be important on
