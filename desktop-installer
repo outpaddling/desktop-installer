@@ -1667,7 +1667,8 @@ cinnamon_config()
 
 cde_config()
 {
-    install_packages x11/cde shells/ksh93
+    # ksh needed for CDE to function, groff needed for man pages
+    install_packages x11/cde shells/ksh93 textproc/groff
     # Needed only for calendar
     # auto-enable-service rpcbind desktop-installer
     # auto-enable-service dtcms desktop-installer
