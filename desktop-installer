@@ -2081,11 +2081,15 @@ ininterruptable power supply.  It is generally unsafe for typical desktop
 systems that may experience sudden power outages.
 
 Disabling the disk's write cache feature will prevent this issue, but may hurt
-performance, especially on older disks.  If maximum performance is more
-important to you than avoiding this issue, then leave write cache enabled.
-For the average desktop user, disabling write cache will not make a noticeable
-difference.  Maximizing disk performance is only likely to be important on
-heavily loaded servers.
+performance, especially on older disks.  If maximum performance is more important
+to you than avoiding this issue, then leave write cache enabled. For the average
+desktop user, disabling write cache will not make a noticeable difference.
+Maximizing disk performance is only likely to be important on heavily loaded
+servers.  Below are sequential write benchmark data (average of 3 trials) from a
+ThinkPad X201 before and after write cache was disabled:
+
+   11.53 GiB write       4.00 MiB blocks    191205.00 ms        61.73 MiB/s
+   11.53 GiB write       4.00 MiB blocks    193898.00 ms        60.87 MiB/s
 
 EOM
     disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
