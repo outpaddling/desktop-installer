@@ -1,0 +1,9 @@
+
+# Some nicer defaults for xterm
+xterm*geometry: 80x30
+xterm*faceName: Monospace
+xterm*faceSize: 12
+xterm*foreground: white
+xterm*background: black
+xterm*saveLines: 1000
+xterm*scrollBar: true

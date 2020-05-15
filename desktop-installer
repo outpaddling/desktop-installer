@@ -64,18 +64,55 @@ log_cmd()
 
 install_packages()
 {
+    local install
+    
+    log_dir=$START_DIR/desktop-installer-log
+    if [ ! -e $log_dir ]; then
+	mkdir $log_dir
+    fi
     for pkg in $@; do
-	log_dir=$START_DIR/desktop-installer-log
-	if [ ! -e $log_dir ]; then
-	    mkdir $log_dir
+	install=no
+	if fgrep -q ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile; then
+	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
+	    for arch in $archs; do
+		if [ $(uname -p) = $arch ]; then
+		    install=yes
+		fi
+	    done
+	else
+	    install=yes
 	fi
-	printf "Installing $pkg...\n"
-	log_cmd auto-install-packages $pkg
-	if [ $? != 0 ]; then
-	    printf "install failed.\n"
-	    exit $?
+	if [ $install = yes ]; then
+	    log_cmd auto-install-packages -l $pkg
+	    if [ $? != 0 ]; then
+		printf "install failed.\n"
+		exit $?
+	    fi
 	fi
     done
+}
+
+
+##########################################################################
+#   Function description:
+#       
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name        Modification
+#   2013-11-09  Charlie &   Begin
+##########################################################################
+
+delete_packages()
+{
+    if [ $# -lt 1 ]; then
+	printf "Usage: $0 [flags] pkg [pkg ...]\n"
+	exit 1
+    fi
+    
+    pkg delete $@
 }
 
 
@@ -87,7 +124,7 @@ install_packages()
 update_devfs_conf()
 {
     for dev in $*; do
-	if ! fgrep -qw "${dev}" $DEVFS_CONF; then
+	if ! grep -q "^perm[ $(printf '\t')]*${dev}" $DEVFS_CONF; then
 	    printf "Adding $dev to defvs.conf.\n"
 	    printf "\n# Added by desktop-installer:\n" >> $DEVFS_CONF
 	    printf "perm\t${dev}\t0660\n" >> $DEVFS_CONF
@@ -109,7 +146,7 @@ update_devfs_rules()
 	printf "[system=10]\n" > $DEVFS_RULES
     fi
     auto-enable-service devd desktop-installer
-    auto-append-line devfs_system_ruleset 'devfs_system_ruleset="system"' $RC_CONF desktop-installer
+    auto-set-conf-var devfs_system_ruleset '"system"' $RC_CONF desktop-installer
     
     group=$1
     shift
@@ -123,71 +160,6 @@ update_devfs_rules()
 	fi
     done
     $RCDIR/devfs restart
-}
-
-
-##########################################################################
-#   Update the base system and ports tree
-##########################################################################
-
-update_system()
-{
-    # It's a good idea to start with all the latest base system patches installed.
-    printf "Update FreeBSD base? (requires reboot) (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0y ]; then
-	freebsd-update fetch
-	freebsd-update install
-	printf "Updates complete.  Press return to reboot..."
-	read resp
-	shutdown -r now
-    fi
-    
-    # Install ports tree
-    if [ ! -e $PORTSDIR/Makefile ]; then
-	cat << EOM
-    
-    You need to install a ports tree first.
-    
-    1.. Install the stock ports tree, compatible with binary packages.
-    2.. Install the latest ports frameworks using portsnap.
-    
-EOM
-	read resp
-	if [ 0"$resp" = 0'1' ]; then
-	    printf "Entering sysinstall... Select Configure->Distributions->ports\n"
-	    pause
-	    sysinstall
-	elif [ 0"$resp" = 0'2' ]; then
-	    portsnap fetch
-	    portsnap extract
-	else
-	    printf "Invalid selection.\n"
-	    exit 1
-	fi
-    fi
-
-    # If updating a previously configured system, wipe the slate clean.
-    line
-    cat << EOM
-If any currently installed packages are more than a few months old,
-they may not be compatible with latest packages on the servers.
-In this case, you may be better off removing all installed packages
-and starting over with the latest.
-
-This does not apply if you are using RELEASE ports and packages (ports
-tree installed via sysinstall).  It only matters if you are using a ports
-tree installed via portsnap or CVS, or a non-RELEASE version of FreeBSD.
-
-You should manually clean up rc.conf after removing packages.
-EOM
-    line
-    printf "Remove old packages? (requires reboot) (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0y ]; then
-	pkg_delete -a
-	shutdown -r now
-    fi
 }
 
 
@@ -208,30 +180,38 @@ install_xorg()
     # Install Xorg by itself.  Installing as a dependency may not get all the
     # modules we want.
     
-    install_packages x11/xorg x11/xdm x11/xsm x11-drivers/xf86-video-fbdev
+    # auto-gpu-setup will install Intel, AMD/ATI, or nVidia drivers
+    install_packages \
+	x11/xorg \
+	x11/xdm \
+	x11/xsm \
+	x11-drivers/xf86-video-mga \
+	x11-drivers/xf86-video-vesa
 
     # Install additional fonts before Xorg -configure
-    install_packages x11-fonts/bitstream-vera
+    # Liberation fonts are good for qterminal
+    install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
+	x11-fonts/fira x11-fonts/droid-fonts-ttf
 
     # Port fails as depend on 9.0-BETA3
     install_packages archivers/cabextract
 
     # Without webfonts, print to PDF will look awful
-    if ! auto-package-installed webfonts; then
-	save_cwd=`pwd`
-	cd $PORTSDIR/x11-fonts/webfonts && make -DBATCH install && cd $save_cwd
-    fi
+    install_packages x11-fonts/webfonts
     
     # Check for virtualbox guest
-    if vbox_guest; then
-	install_packages emulators/virtualbox-ose-additions
-	auto-enable-service vboxguest desktop-installer
-	auto-enable-service vboxservice desktop-installer
-	# From wiki.freebsd.org/VirtualBox
-	cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
+    if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
+	if [ $install_guest_additions = y ]; then
+	    install_packages emulators/virtualbox-ose-additions
+	    auto-enable-service vboxguest desktop-installer
+	    auto-enable-service vboxservice desktop-installer
+	    # From wiki.freebsd.org/VirtualBox
+	    # FIXME: Is HAL deprecated here?
+	    # mkdir -p $LOCALBASE/etc/hal/fdi/policy/
+	    # cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
+	fi
     fi
-    
-    hal_config
+    dbus_config
 }
 
 
@@ -255,55 +235,105 @@ get_mouse_port()
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|gdm|kdm3|kdm4\n"
+	printf "Usage: xorg_config xdm|slim|light|gdm|sddm|dtlogin\n"
 	exit 1
     else
 	display_manager=$1
     fi
     
-    if [ -e /etc/X11/xorg.conf ]; then
-	resp=`auto-ask reconfigure-x11 "Reconfigure X11? (y/n)" n`
-	if [ "$resp" != y ]; then
+    # Default n if X already running
+    if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
+	printf "X11 is already running.\n"
+	read -p "Reconfigure X11? (y/n) [n] " resp
+	if [ 0"$resp" != 0y ]; then
+	    return
+	fi
+    else
+	read -p "Reconfigure X11? (y/n) [y] " resp
+	if [ 0"$resp" = 0n ]; then
 	    return
 	fi
     fi
-    
-    if [ $ARCH = 'powerpc' ]; then
-	cat << EOM
-	
-	ATI Radeon iBooks may require 
-	
-	    sysctl hw.ofwfb.relax_mmap=1
-	    
+
+    if [ $display_manager = light ]; then
+	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
+	    cat << EOM
+
+Choose a display manager:
+
+1.. XDM augmented with Shutdown, Reboot, and Restart X11 buttons
+2.. SLiM
+
 EOM
-	resp=`auto-ask ofwfb "Add sysctl hw.ofwfb.relax_mmap=1? (y/n)" n`
-	if [ "$resp" = y ]; then
-	    auto-append-line relax_mmap 'hw.ofwfb.relax_mmap=1' $SYSCTL_CONF desktop-installer
-	    sysctl hw.ofwfb.relax_mmap=1
+	    selection=$(auto-ask display-manager "Display manager selection? " 1)
+	    case $selection in
+	    1)
+		display_manager=xdm
+		;;
+	    2)
+		display_manager=slim
+		;;
+	    *)
+		printf "Invalid selection: $selection\n"
+	    esac
+	done
+    fi
+    
+    # Pretty up xterm
+    cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
+
+    # Don't mess with drivers if X already running or this is a VM
+    # FIXME: Check for any VM guest, not just VirtualBox
+    if vbox_guest; then
+	printf "No graphics drivers needed for VirtualBox guests.\n"
+    elif ps axw | fgrep 'bin/X' | fgrep -qv grep; then
+	cat << EOM
+
+X11 already running, so we won't mess with the graphics drivers.  If you
+want desktop-installer to help you change them, shut down X11 and run
+desktop-installer from a text console.
+
+EOM
+	pause
+    else
+	cat << EOM
+
+Graphics drivers must be configured once, followed by a reboot to properly
+load them before attempting to start X11.  If you guess wrong which graphics
+driver/DRM combination to use, you may need to repeat this process and try
+again.  Answer 'y' once, then rerun desktop-installer and answer 'n' to
+attempt X11 startup.
+
+EOM
+	printf "Reconfigure graphics drivers? (y/n) [y] "
+	read configure_graphics
+	if [ 0$configure_graphics != 0n ]; then
+	    auto-gpu-setup
+	    read -p "Reboot now? (y/n) [y] " reboot
+	    if [ "0$reboot" != 0n ]; then
+		shutdown -r now
+	    fi
 	fi
     fi
     
-    # Configure mouse.  Do not use moused on PowerPC: It causes X11 display
-    # to sometimes stall until mouse is moved.
     cat << EOM
+    
 Using moused may be useful for text virtual terminals, but is not necessary
-for X11.  
+for X11.  However, on some systems, enabling moused may work around issues
+with Xorg mouse drivers.
 
-On some systems, such as iBooks, using moused with X11 causes the X server
-to freeze occasionally until the mouse is moved.  Using moused is therefore
-not recommended.
 EOM
 
-    use_moused=`auto-ask use-moused "Use moused? (y/n)" n`
-    if [ $use_moused = 'y' ]; then
+    use_moused=`auto-ask use-moused "Use moused? (y/n)" y`
+    if [ $use_moused != 'n' ]; then
 	mouse_port=`get_mouse_port`
 	printf "Adding mouse device: $mouse_port\n"
-	auto-append-line moused_port "moused_port=$mouse_port" $RC_CONF desktop-installer
+	auto-set-conf-var moused_port "$mouse_port" $RC_CONF desktop-installer
 	auto-enable-service moused desktop-installer
     
 	# Restart moused after suspend
-	if ! fgrep -q $RCDIR/moused $RC_RESUME; then
-	    sed -i 'orig' -E 's|exit 0|# Added by desktop-installer \
+	if ! fgrep -q '$RCDIR/moused' $RC_RESUME; then
+	    sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
 $RCDIR/moused restart \
 \
 exit 0|g' $RC_RESUME
@@ -316,31 +346,28 @@ exit 0|g' $RC_RESUME
 	mv -f temp.rc.conf $RC_CONF
     fi
 
-    cat << EOM
-    
-    Some newer Intel GPUs, such as the one in the EEE PC 1015PE, require
-    an experimental driver version 2.9.
-    
-EOM
-    resp=`auto-ask intel-video "Do you want to install this driver? (y/n)" n`
-    if [ "$resp" = 'y' ]; then
-	# Can't have two versions installed at once
-	if auto-package-installed xf86-video-intel; then
-	    pkg_delete -f /var/db/pkg/xf86-video-intel-*
-	fi
-	if ! auto-package-installed xf86-video-intel29; then
-	    # IGNORE="not supported" as of 4-23-12
-	    # auto-update-port-framework x11-drivers/xf86-video-intel29
-	    cd $PORTSDIR/x11-drivers/xf86-video-intel29
-	    make distclean install
-	fi
-    fi
-
     # Create and install an xorg.conf file.  This isn't necessary, but it's
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
-    if [ ! -e $XORG_CONF ]; then
+
+    line
+    cat << EOM
+
+Xorg is now meant to be configuration-free.  Generating an xorg.conf file
+should only be necessary if you want to override the default resolution or
+other options.
+
+Overrides can also be done with xorg.conf fragments in $XORG_CONF_DIR.
+
+Note that the process of generating xorg.conf could, in rare cases, cause
+your display to freeze, but rest assured that FreeBSD is still running.
+You can restart by typing Ctrl+Alt+F1 followed by Ctrl+Alt+Del.
+
+EOM
+
+    generate_xorg=`auto-ask generate-xorg 'Generate new xorg.conf? (y/n)' n`
+    if [ $generate_xorg = 'y' ]; then
 	Xorg -configure
 	if [ 0$use_moused != 0'y' ]; then
 	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
@@ -348,11 +375,50 @@ EOM
 	    sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
+	line
+    else
+	cat << EOM
+
+Hardware mouse cursor support is a feature of Xorg that sometimes interacts
+badly with video drivers and provides no noticeable benefit to typical Unix
+desktop users.  We can avoid hardware cursor issues by turning on software
+cursor support.
+
+EOM
     fi
-    line
+    swcursor=`auto-ask swcursor "Enable software cursor? (y/n)" y`
+    if [ $swcursor != n ]; then
+	mkdir -p $XORG_CONF_DIR
+	cp $DATADIR/20-swcursor.conf $XORG_CONF_DIR
+	chmod -R a+rX $XORG_CONF_DIR
+    fi
     
-    cat << EOM
-Configuring xorg.conf.  You may wish to add monitor settings to the
+    # Patch for VirtualBox guest additions
+    if vbox_guest && [ -e /etc/X11/xorg.conf ]; then
+	awk '
+	{
+	    if ( $1 == "Driver" && $2 == "\"mouse\"" )
+	    {
+		printf("\t%s      %s\n", "Driver", "\"vboxmouse\"");
+		while ( $0 != "EndSection" )
+		{
+		    printf("\t# %s\n", $0);
+		    getline;
+		}
+		print $0;
+	    }
+	    else
+	    {
+		print $0;
+	    }
+	}'   /etc/X11/xorg.conf > /etc/X11/xorg.conf.vbox
+	mv -f /etc/X11/xorg.conf.vbox /etc/X11/xorg.conf
+    fi
+    
+    success=0
+    while [ $success != 1 ]; do
+	cat << EOM
+You may wish to add monitor settings to the
 Monitor section (HorizSync and VertRefresh) to allow the X11 server
 to optimize your display settings, e.g.
 
@@ -366,132 +432,234 @@ to optimize your display settings, e.g.
 
 These settings can be found in the monitor manual.
 EOM
-    line
+	line
     
-    # Hacks to make Xorg work on PowerPC systems
-    if [ $ARCH = 'powerpc' ]; then
-	cat << EOM
-	In xorg.conf, it may be necessary to add the following to
-	Section "Device":
-	
-	    Option  "BusType"   "PCI"
-	    Option  "Int10"     "False"
-	    Option  "MacModel"  "ibook"
-	
-	and the following to Section "ServerLayout" to enable
-	laptop keyboards:
-	
-	    Option "AllowEmptyInput" "off"
-	
-	These items are being appended to your xorg.conf as
-	comments, so you easily can add them.
-EOM
-cat << EOM >> /etc/X11/xorg.conf
-# Section "Device"
-#           Option  "BusType"   "PCI"
-#           Option  "Int10"     "False"
-#           Option  "MacModel"  "ibook"
-# "ServerLayout"
-#           Option "AllowEmptyInput" "off"
-EOM
-    fi
-
-    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
-    if [ "$resp" = 'y' ]; then
-	vi $XORG_CONF
-    fi
-
-    cat << EOM
-    
-    The first test of X11 may take a minute to start up, as the desktop
-    system creates all new configuration files.
-    
-EOM
-    if [ -e /tmp/.X0-lock ]; then
-	default_resp='n'
-    else
-	default_resp='y'
-    fi
-    printf "Test X11? (y/n) [$default_resp] "
-    read resp
-    if [ 0$resp = 0 ]; then
-	resp=$default_resp
-    fi
-    if [ 0"$resp" = 0'y' ]; then
-	# ${LOCALBASE}$RCDIR/dbus restart started by hald?
-	# hald must be started AFTER moused to function with xorg
-	${LOCALBASE}$RCDIR/hald restart
-	if ! startx; then
-	    echo << EOM
-X11 seems to have failed to start.  Try editing $XORG_CONF.
-If you are using an older video chipset (as many servers do), try
-rebuilding x11-drivers/xorg-drivers with additional drivers such as
-MGA.
-EOM
-	    exit 1
+	if [ $generate_xorg = y ]; then
+	    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
+	    if [ "$resp" = 'y' ]; then
+		vi $XORG_CONF
+	    fi
 	fi
-    fi
+    
+	cat << EOM
+    
+The first test of X11 may take a minute to start up, as the desktop
+system creates all new configuration files.
+    
+EOM
+	if [ -e /tmp/.X0-lock ]; then
+	    printf "X11 is currently running, cannot test.\n"
+	    resp='n'
+	else
+	    printf "Test X11? (y/n) [y] "
+	    read resp
+	    if [ 0$resp = 0 ]; then
+		resp=y
+	    fi
+	fi
+	if [ 0"$resp" = 0'y' ]; then
+	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
+	    # hald must be started AFTER moused to function with xorg
+	    ${LOCALBASE}$RCDIR/dbus restart
+	    # ${LOCALBASE}$RCDIR/hald restart
+	    if startx; then
+		success=1
+	    else
+		cat << EOM
+X11 seems to have failed to start.  Viewing your Xorg log...
+EOM
+		pause
+		$EDITOR /var/log/Xorg.0.log
+		line
+		cat << EOM
+Your chipset is
+
+$(grep Chipset /var/log/Xorg.0.log)
+
+If you are using a newer video chipset, you may want to try installing
+graphics/drm-kmod, which supports newer devices than th base DRM..
+
+If you are using an older video chipset (as many server motherboards do),
+you may need an Xorg video driver that is not installed by default.
+
+EOM
+
+		drm_kmod=`auto-ask drm-kmod "Install drm-kmod? (y/n)" y`
+		if [ $drm_kmod != n ]; then
+		    pkg remove -y drm-\*-kmod || true
+		    install_packages "graphics/drm-kmod"
+		    printf "Update $RC_CONF as described above, reboot, and run desktop-installer again.\n"
+		    exit
+		fi
+
+		more_drivers=`auto-ask more-drivers \
+		    "Would you like to try installing additional drivers? (y/n)" n`
+		if [ $more_drivers = 'y' ]; then
+		    save_cwd=`pwd`
+		    cd $PORTSDIR/x11-drivers/xorg-drivers
+		    make config
+		    make deinstall clean reinstall
+		    cd $save_cwd
+		fi
+	    fi
+	    clear   # Switch back to VT might leave a mess
+	else
+	    success=1
+	fi
+    done
     
     resp=`auto-ask forward-x11 "Forward X11 DISPLAY to other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
+	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
     fi
     
     resp=`auto-ask forward-x11-trusted \
 	"Trust all forwarded X11 hosts? (this is a security risk) (y/n)" n`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
+	sed -i '.bak' -e 's/# *ForwardX11 no/ForwardX11 yes/g' $SSHDIR/ssh_config
     fi
     
     resp=`auto-ask accept-x11-forward "Accept forwarded X11 DISPLAY from other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
-	sed -i 'bak' -e 's/# *X11Forwarding yes/X11Forwarding yes/g' $SSHDIR/sshd_config
+	sed -i '.bak' -e 's/# *X11Forwarding yes/X11Forwarding yes/g' $SSHDIR/sshd_config
 	$RCDIR/sshd restart
     fi
 
     # Install display manager
+    cat << EOM
+
+Display managers should not be reconfigured from a running X11 session.
+If you are running this under X11 now and plan to enable a new display
+manager (gdm, kdm, slim, xdm), please terminate now or answer 'n' to
+the following question and rerun desktop-installer from a virtual terminal.
+
+EOM
+    pause
     ${display_manager}_config
 }
 
 
 ##########################################################################
-#   Modify default startup scripts so that KDE3 is the default for
-#   all users.
+#   Modify default startup scripts so that chosen desktop is the default
+#   for all users.
 ##########################################################################
 
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts Gnome|KDE3|KDE4|XFCE4|LXDE\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
 	exit 1
     fi
-    
+
     subdir=${DATADIR}/$1
     
     # Update default xinitrc to start selected desktop
-    # FIXME: Use auto-replace-file?
-    if [ ! -e $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer ]; then
-	printf "Updating xinitrc...\n"
-	mv $X11BASE/lib/X11/xinit/xinitrc $X11BASE/lib/X11/xinit/xinitrc.pre-desktop-installer
-	cp $subdir/xinitrc $X11BASE/lib/X11/xinit
+    # FIXME: Use auto-replace-file?  Only after updating to allow
+    # use of pre-desktop-installer or other extensions.
+    # FIXME: Back-up to desktop-specific name and allow a second desktop
+    # installation to overwrite if appropriate
+    xinitrc=/root/.xinitrc
+    if [ ! -e $xinitrc ]; then
+	printf "Installing $xinitrc...\n"
+	cp $subdir/xinitrc $xinitrc
     else
-	printf "$X11BASE/lib/X11/xinit/xinitrc has already been modified.\n"
-	#exit 1
+	cat << EOM
+
+The .xinitrc file controls which window manager / desktop system is run when
+starting X11 manually (not from a display manager / graphical login screen).
+If you are switching to a different desktop system, you may want to answer 'y'
+here.
+
+EOM
+	printf "$xinitrc already exists.\n"
+	printf "Overwrite? (y/n) [n] "
+	read overwrite
+	if [ 0$overwrite = 0y ]; then
+	    cp $subdir/xinitrc $xinitrc
+	fi
     fi
     
+    case $1 in
+    CDE)
+	session="$LOCALBASE/dt/bin/dtsession"
+	;;
+    CINNAMON)
+	session="$LOCALBASE/bin/cinammon-session"
+	;;
+    GNOME3)
+	session="$LOCALBASE/bin/gnome-session"
+	;;
+    KDE5)
+	session='startplasma-x11'
+	;;
+    LUMINA)
+	session="$LOCALBASE/bin/start-lumina-desktop"
+	;;
+    LXDE)
+	session="$LOCALBASE/bin/startlxde"
+	;;
+    LXQT)
+	session="$LOCALBASE/bin/startlxqt"
+	;;
+    MATE)
+	session="$LOCALBASE/bin/mate-session"
+	;;
+    XFCE4)
+	session="$LOCALBASE/bin/startxfce4"
+	;;
+    *)
+	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
+	exit 1
+    esac
+
+    # Moved from $X11BASE/lib/X11/xdm in xdm 1.1.11_8
+    xdm_base=$X11BASE/etc/X11/xdm
+    
     # Update default xsession to start selected desktop
-    if [ ! -e $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer ]; then
-	printf "Updating Xsession...\n"
-	mv $X11BASE/lib/X11/xdm/Xsession $X11BASE/lib/X11/xdm/Xsession.pre-desktop-installer
-	cp $subdir/Xsession $X11BASE/lib/X11/xdm/Xsession
+    printf "Updating Xsession...\n"
+    if [ -e $xdm_base/Xsession ]; then
+	# Revert to original so sed command will work
+	if [ -e $xdm_base/Xsession.pre-desktop-installer ]; then
+	    cp $xdm_base/Xsession.pre-desktop-installer \
+		$xdm_base/Xsession
+	else
+	    # Never overwrite Xsession.pre-desktop-installer
+	    cp $xdm_base/Xsession \
+		$xdm_base/Xsession.pre-desktop-installer
+	fi
+	sed -i '' \
+	    -e "s|/usr/local/bin/xsm|$session|g" \
+	    $xdm_base/Xsession
     else
-	printf "$X11BASE/lib/X11/xdm/Xsession has already been modified.\n"
-	#exit 1
+	printf "Internal error: $xdm_base/Xsession is missing!\n"
+	exit 1
     fi
 }
 
 
 dm_msg()
+{
+    cat << EOM
+
+Starting display manager.  After the login screen appears, press Ctrl+Alt+F1
+to return to this screen and complete the desktop-installer setup.
+
+If for any reason you cannot switch back to this text console, run
+
+    pkill desktop-installer
+
+and then restart desktop-installer from $(pwd).
+
+EOM
+    pause
+    return 0
+}
+
+##########################################################################
+#   Old method: Terminate desktop-installler after starting DM
+##########################################################################
+
+dm_msg_exit()
 {
     cat << EOM
 
@@ -512,76 +680,66 @@ EOM
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome uses gdm, so this is
-#   for XFCE and other lightweight desktops.
+#   Enable XDM.  Note that KDE uses kdm and Gnome3 uses gdm, so this is
+#   for XFCE4 and other lightweight desktops.
 ##########################################################################
 
 xdm_config()
 {
-    
-    # Graphical login screen
-    if auto-service-enabled gdm; then
-	cat << EOM
-
-GDM is already enabled.  If you are running both Gnome and XFCE, you should
-use GDM, not XDM.
-
-EOM
+    if ps axw | fgrep 'bin/xdm' | fgrep -qv grep; then
+	printf "xdm is already enabled.\n"
+	return
     fi
-    printf "Enable XDM graphical login screen? (y/n) [n] "
-    read resp
+
+    resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	# Disable gdm and kdm
-	# FIXME: Disable kdm in ttys
 	gdm_disable
+	slim_disable
+	sddm_disable
+
 	# Install xdmshutdown
-	if [ ! -e /var/db/pkg/tk-8.5* ]; then
-	    install_packages x11-toolkits/tk85
-	fi
-	xdmdir=$LOCALBASE/lib/X11/xdm
-	install -m 0755 ${DATADIR}/XFCE4/xdmshutdown $LOCALBASE/sbin
-	auto-replace-file ${DATADIR}/XFCE4/Xsetup_0 $xdmdir/Xsetup_0
+	install_packages x11-toolkits/tk87
+	xdm_base=$LOCALBASE/etc/X11/xdm
+	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
+	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
 	# Xstartup does not get executed on FreeBSD 7.2 or 8.0
-	# auto-replace-file ${DATADIR}/XFCE4/Xstartup $xdmdir/Xstartup
-	auto-replace-file ${DATADIR}/XFCE4/GiveConsole $xdmdir/GiveConsole
+	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdm_base/Xstartup
+	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
-	# Pretty up the login screen
-	install_packages graphics/xv     # Used for login splash image
-	cp ${DATADIR}/XFCE4/bsd_background.jpg $xdmdir/pixmaps
-	cp ${DATADIR}/XFCE4/beastie.xpm $xdmdir/pixmaps
+	# Pretty up the login
+	install_packages graphics/feh   # Display stretched background image
+	cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
+	cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
 	# Put FreeBSD logo on login window
-	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdmdir/Xresources
-	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdmdir/Xresources
+	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
+	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
 	# Login window is too big on SVGA screens
-	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdmdir/Xresources
+	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
+	
+	# Fix login problem on 9.2-RELEASE with XFCE4
+	# Error: XDM authorization key matches an existing client
+	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
+	auto-append-line \
+	    'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
+	    $LOCALBASE/lib/X11/xdm/xdm-config desktop-installer
 	
 	# Enable xdm
 	dm_msg
 	auto-xdm-toggle on
 	kill -HUP 1
-	exit 0
-    fi
-}
-
-
-xdm_disable()
-{
-    auto-xdm-toggle off
-    kill -HUP 1
-    if ! killall xdm; then
-	printf "INFO: No xdm found running.\n"
+	# exit 0
     fi
 }
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome uses gdm, so this is
-#   for XFCE and other lightweight desktops.
+#   Enable GDM.
 ##########################################################################
 
 gdm_config()
 {
-    # Graphical login screen
+    # Graphical login
     install_packages x11/gdm
     line
     cat << EOM
@@ -590,17 +748,108 @@ Enabling gdm will terminate any sessions running under other display
 managers such as xdm or kdm.
 EOM
     line
-    printf "Enable GDM graphical login screen? (y/n) [n] "
-    read resp
+    resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
 	xdm_disable
-	kdm3_disable
-	kdm4_disable
+	slim_disable
+	sddm_disable
 	# Mouse may not work in gdm unless we restart HAL
-	/usr/local/etc/rc.d/hald restart
+	service hald restart
 	auto-enable-service gdm desktop-installer
-	exit 0
+	# exit 0
+    fi
+}
+
+
+##########################################################################
+#   Enable SLiM display manager.
+##########################################################################
+
+slim_config()
+{
+    # Graphical login
+    install_packages x11/slim
+    cp ${DATADIR}/XDM/bsd_background.jpg \
+	$LOCALBASE/share/slim/themes/default/background.jpg
+    local slim_conf=$LOCALBASE/etc/slim.conf
+    if [ ! -e $slim_conf.orig ]; then
+	cp $slim_conf $slim_conf.orig
+    fi
+    # Restore original for sed command below
+    cp -f $slim_conf.orig $slim_conf
+    case $DESKTOP in
+    mate)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/MATE/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    lumina)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LUMINA/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    lxde)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LXDE/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    lxqt)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LXQT/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    xfce4)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/XFCE4/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    *)
+	printf "slim_config(): Invalid desktop: $DESKTOP\n"
+	exit 1
+	;;
+    esac
+    
+    line
+    cat << EOM
+Warning:
+Enabling SLiM will terminate any sessions running under other display
+managers such as xdm or kdm.
+EOM
+    line
+    resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
+    if [ 0"$resp" != 0n ]; then
+	dm_msg
+	xdm_disable
+	gdm_disable
+	sddm_disable
+	auto-enable-service slim desktop-installer
+	# exit 0
+    fi
+}
+
+
+sddm_config()
+{
+    cat << EOM
+Warning:
+Enabling kdm will terminate any sessions running under other display
+managers such as xdm or gdm.
+EOM
+    line
+    resp=`auto-ask enable-sddm "Enable SDDM graphical login? (y/n)" y`
+    if [ 0"$resp" = 0'y' ]; then
+	dm_msg
+	xdm_disable
+	gdm_disable
+	slim_disable
+	auto-enable-service sddm desktop-instaler
+	# exit 0
     fi
 }
 
@@ -619,41 +868,33 @@ gdm_disable()
 {
     if fgrep -q 'gdm_enable="YES"' /etc/rc.conf && \
 	[ -e $LOCALBASE/etc/rc.d/gdm ]; then
-	/usr/local/etc/rc.d/gdm stop
+	service gdm stop || true
     fi
     auto-disable-service gdm
 }
 
 
-##########################################################################
-#   Enable KDM.
-##########################################################################
-
-kdm3_config()
+xdm_disable()
 {
-    if [ $# != 0 ]; then
-	printf "Usage: kdm3_config\n"
-	exit 1
+    auto-xdm-toggle off
+    pkill xdm || true
+}
+
+
+slim_disable()
+{
+    if fgrep -q 'slim_enable="YES"' /etc/rc.conf && \
+	[ -e $LOCALBASE/etc/rc.d/slim ]; then
+	service slim stop || true
+	pkill slim || true
     fi
-    
-    # Graphical login screen
-    printf "Enable KDM graphical login screen? (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0'y' ]; then
-	xdm_disable
-	gdm_disable
-	kdm4_disable
-	dm_msg
-	auto-kdm3-toggle on
-	kill -HUP 1
-	exit
-    fi
+    auto-disable-service slim
 }
 
 
 ##########################################################################
 #   Function description:
-#       Disable kdm3, if running.
+#       Disable sddm (kde5), if running.
 #       Needs more testing.
 #
 #   History:
@@ -661,57 +902,13 @@ kdm3_config()
 #   2012-08-04  J Bacon     Begin
 ##########################################################################
 
-kdm3_disable()
+sddm_disable()
 {
-    auto-kdm3-toggle off
-    kill -HUP 1
-    if ! killall kdm; then
-	printf "INFO: No kdm found running.\n"
+    if fgrep -q 'sddm_enable="YES"' /etc/rc.conf && \
+	[ -e $LOCALBASE/etc/rc.d/sddm ]; then
+	service sddm stop || true
     fi
-}
-
-
-kdm4_config()
-{
-    cat << EOM
-Warning:
-Enabling kdm will terminate any sessions running under other display
-managers such as xdm or gdm.
-EOM
-    line
-    printf "Enable KDM graphical login screen? (y/n) [n] "
-    read resp
-    if [ 0"$resp" = 0'y' ]; then
-	dm_msg
-	xdm_disable
-	gdm_disable
-	kdm3_disable
-	auto-append-line $LOCALBASE/kde4$RCDIR \
-	    'local_startup="${local_startup} $LOCALBASE/kde4$RCDIR"' \
-	    $RC_CONF desktop-installer
-	auto-enable-service kdm4 desktop-instaler
-	exit 0
-    fi
-}
-
-
-##########################################################################
-#   Function description:
-#       Disable kdm4, if running.
-#       Needs more testing.
-#
-#   History:
-#   Date        Name        Modification
-#   2012-08-04  J Bacon     Begin
-##########################################################################
-
-kdm4_disable()
-{
-    if fgrep -q 'kdm4_enable="YES"' /etc/rc.conf && \
-	[ -e $LOCALBASE/etc/rc.d/kdm4 ]; then
-	/usr/local/etc/rc.d/kdm4 stop
-    fi
-    auto-disable-service kdm4
+    auto-disable-service sddm
 }
 
 
@@ -722,7 +919,7 @@ firefox_flash()
     do
 	mkdir -p $dir
 	for plugin in \
-	    $LOCALBASE/lib/npapi/linux-f10-flashplugin/libflashplayer.so \
+	    $LOCALBASE/lib/npapi/*/libflashplayer.so \
 	    $LOCALBASE/lib/browser_plugins/npwrapper.libflashplayer.so; do
 	    if [ -e $plugin ]; then
 		ln -sf $plugin $dir
@@ -735,7 +932,8 @@ firefox_flash()
 flash_config()
 {
     # Test for last item installed in selection
-    if auto-package-installed gnash || auto-package-installed nspluginwrapper; then
+    if auto-package-installed graphics/gnash || \
+	    auto-package-installed www/flashplayer; then
 	printf "Flash already installed.\n"
     else
 	# Gnash or Flash?
@@ -765,11 +963,7 @@ EOM
 	line
 	resp='0'
 	while [ "$resp" != 1 -a "$resp" != 2 -a "$resp" != 3 ]; do
-	    if [ $ARCH = i386 -o $ARCH = amd64 ]; then
-		resp=`auto-ask flash "Your choice?" 2`
-	    else
-		resp=`auto-ask flash "Your choice?" 1`
-	    fi
+	    resp=`auto-ask flash "Your choice?" 3`
 	done
 	
 	case "$resp" in
@@ -777,95 +971,7 @@ EOM
 	    install_packages graphics/gnash
 	    ;;
 	2)
-	    printf "Installing Flash...\n"
-	    start_dir=`pwd`
-	    if ! kldstat | grep -q linux; then
-		kldload linux
-	    fi
-	    
-	    # Speed things up by installing prereqs
-	    install_packages devel/m4
-	    
-	    # add linux to rc.conf
-	    if ! fgrep -q linux $RC_CONF; then
-		auto-enable-service linux desktop-installer
-		# auto-append-line linux_load 'linux_load="YES"' $LOADER_CONF desktop-installer
-	    fi
-	    
-	    # Install the appropriate linux_base
-	    major=`uname -r | cut -d '.' -f 1`
-	    case $major in
-	    7)
-		# Install linux_base
-		cd $PORTSDIR/emulators/linux_base-fc4
-		make -DBATCH install
-		
-		cd $PORTSDIR/www/linux-flashplugin9
-		make -DBATCH install
-		;;
-	    8|9)
-		# Let flash port install the default linux_base as a depend
-		# Install linux_base
-		#if ! auto-package-installed linux_base-f10; then
-		#    cd $PORTSDIR/emulators/linux_base-f10
-		#    make -DBATCH install
-		#fi
-		
-		# Use the latest
-		for version in 11 10; do
-		    if [ -e $PORTSDIR/www/linux-f10-flashplugin$version ]; then
-			flash=linux-f10-flashplugin$version
-			break
-		    fi
-		done
-		printf "Installing $flash\n"
-		
-		if ! auto-package-installed $flash; then
-		    # Remove old versions first
-		    if pkg_delete /var/db/pkg/linux-f10-flashplugin*; then
-			printf 'Old flash removed.\n'
-		    fi
-		    rm -f $LOCALBASE/lib/firefox/plugins/libflash*
-		    rm -f $LOCALBASE/lib/firefox3/plugins/libflash*
-		    rm -f $LOCALBASE/lib/seamonkey/plugins/libflash*
-		    
-		    # Security risk running makesum, but Macromedia annoyingly
-		    # changes the distfile without changing the filename
-		    cd $PORTSDIR/www/$flash
-		    make -DBATCH clean deinstall makesum install
-		    
-		    # Old location for browser plugins.  May be obsolete.
-		    mkdir -p $LOCALBASE/lib/browser_plugins
-		    ln -sf $LOCALBASE/lib/npapi/linux-f10-flashplugin/libflashplayer.so \
-			$LOCALBASE/lib/browser_plugins/
-		fi
-		;;
-	    *)
-		printf "Sorry, FreeBSD $major is not supported at this time.\n"
-	    esac
-	    cd $START_DIR
-	    
-	    # fstab: linproc    /compat/linux/proc  linprocfs   rw  0   0
-	    auto-append-line linproc "linproc\t\t/compat/linux/proc\tlinprocfs\trw\t0\t0" $FSTAB desktop-installer
-	    mount linproc
-	    
-	    # nspluginwrapper for Linux plugins in native Firefox
-	    if ! auto-package-installed nspluginwrapper; then
-		# pkg_delete -f /var/db/pkg/curl-*
-		install_packages ftp/curl
-		cd $PORTSDIR/www/nspluginwrapper
-		make -DBATCH install
-		if [ ! -e ${LOCALBASE}/bin/nspluginwrapper ]; then
-		    install_packages www/nspluginwrapper
-		fi
-	    fi
-    
-	    # No longer needed as of 8.2 (maybe 8.1)
-	    # Add nspluginwrapper -v -a -i to startup scripts for all users
-	    # to install npwrapper.libflashplayer.so in $HOME/.mozilla/plugins
-	    #for file in /etc/profile /etc/csh.cshrc; do
-	    #    auto-append-line nspluginwrapper "nspluginwrapper -v -a -i" $file desktop-installer
-	    #done
+	    auto-install-linux-flash
 	    ;;
 	*)
 	    ;;
@@ -878,38 +984,8 @@ EOM
 	    # Do before firefox_flash, which links to it
 	    nspluginwrapper -v -a -i
 	fi
-	firefox_flash
-    fi
-}
-
-
-gtk2_cups()
-{
-    # Make sure gtk20 and libgnomecups packages are installed
-    install_packages print/libgnomecups
-    
-    # Make sure port is same version as installed package
-    
-    # Enable cups in gtk2 apps, per
-    # http://freebsdwiki.org/index.php/CUPS
-    if ! fgrep -q 'WITH_CUPS="YES"' $MAKE_CONF; then
-	printf "The following should not be necessary on FreeBSD 8.2 or later.\n"
-	printf "Enable CUPS printing from gtk2 apps (e.g. firefox)? (y/n) [n] "
-	read resp
-	if [ 0"$resp" = 0y ]; then
-	    auto-append-line WITH_CUPS 'WITH_CUPS="YES"' $MAKE_CONF desktop-installer
-	    #pkg_delete -f /var/db/pkg/jpeg-7*
-	    #pkg_delete -f /var/db/pkg/tiff-3.*
-	    #pkg_delete -f /var/db/pkg/jasper-1.*
-	    #pkg_delete -f /var/db/pkg/glibmm-*
-	    #pkg_delete -f /var/db/pkg/glib-2.*
-	    
-	    cd $PORTSDIR/print/libgnomeprint
-	    make && make deinstall && make reinstall
-	    
-	    cd $PORTSDIR/x11-toolkits/gtk20
-	    make && make deinstall && make reinstall
-	fi
+	# Obsolete?
+	# firefox_flash
     fi
 }
 
@@ -920,21 +996,18 @@ gtk2_cups()
 
 common_packages()
 {
-    if [ $# != 1 ]; then
-	printf "Usage: $0 desktop\n"
-	exit 1
-    else
-	desktop=$1
-    fi
-    
     ##################################################################
     # Don't make pdflib a requirement unless it's really necessary.
     # There is no binary package, and distfiles are taken away without
     # warning.
     
     # Install these after X11 and desktop
-    install_packages net-mgmt/wifimgr audio/nas
-
+    if [ 0$enable_wireless = 0'y' ]; then
+	install_packages net-mgmt/wifimgr
+    fi
+    
+    install_packages audio/nas
+    
     # Per nas pkg-mesg:
     # Be sure to create a $NASD_CONF file; use
     # $NASD_CONF.eg as a starting point. 
@@ -942,82 +1015,63 @@ common_packages()
     if [ ! -e $NASD_CONF ]; then
 	cp $NASD_CONF.eg $NASD_CONF
     fi
-
-    # Daemon and software for USB web cams
-    webcam_config
-
-    # Fix gtk2/cups interface
-    # gtk2_cups
     
+    # Daemon and software for USB web cams
+    # As of 2019-07 interferes with uhid
+    # Also switch to auto-webcam-setup when it's ready
+    # webcam_config
+
     # Install some sort of flash player
     flash_config
 
     # Install JDK
+    # Let it be installed as a prereq for something else
     java_config
     
     # Common packages for desktop systems
-    # bsdstats should be first or last, since it has an interactive
+    
+    # bsdstats.org is an expired domain as of 2019-08-17. Is the idea dead?
+    # bsdstats should be last, since it has an interactive
     # post-install script and we want the installs to run unattended
-    # as much as possible.
-    common_pkgs="sysutils/bsdstats \
-	x11-fm/mtoolsfm \
-	mail/thunderbird \
-	www/firefox \
-	graphics/gimp \
-	graphics/gtkam \
-	graphics/xsane \
-	graphics/gocr \
-	graphics/dia \
-	graphics/inkscape \
-	print/scribus \
-	print/teTeX \
-	textproc/dblatex \
-	textproc/xmlto \
-	editors/abiword \
-	math/gnumeric \
-	finance/gnucash \
-	editors/libreoffice"
+    # as much as possible.  Also, it reports installed software, so
+    # we want everything else installed first.
+    
+    # FIXME: Problem with auto-package-installed: graphics/gtkam
+    
+    common_pkgs="security/keepassxc sysutils/bsdstats \
+	www/firefox www/chromium mail/thunderbird editors/libreoffice \
+	multimedia/vlc multimedia/libdvdcss"
     
     for pkg in $common_pkgs; do
-	if ! auto-package-installed $pkg; then
+	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
 	    printf '\n---------------------------------------------------------------------------\n'
 	    if [ -e $PORTSDIR/$pkg/pkg-descr ]; then
 		cat $PORTSDIR/$pkg/pkg-descr
 	    fi
 	    printf '\n'
-	    resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
+	    case $pkg in
+	    'sysutils/bsdstats'|'security/keepassx')
+		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
+		;;
+	    *)
+		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" n`
+		;;
+	    esac
 	    if [ "$resp" = y ]; then
 		selected_packages="$selected_packages $pkg"
+		# Pulseaudio needed for microphone as of firefox 75
+		# FIXME: This may change in future versions
+		if [ $pkg = www/firefox ]; then
+		    selected_packages="$selected_packages audio/pulseaudio"
+		fi
 	    fi
 	fi
     done
+    install_packages $selected_packages
 
-    for pkg in $selected_packages; do
-	install_packages $pkg
-	if [ $pkg = 'gnucash' ]; then
-	    install_packages gnucash-docs
-	fi
-    done
-
-    if auto-package-installed virtualbox-ose; then
-	auto-append-line vboxdrv 'vboxdrv_load="YES"' $LOADER_CONF desktop-installer
-	auto-enable-service vboxnet desktop-installer
-	sync
-	if ! kldstat | fgrep -q vboxdrv; then
-	    kldload vboxdrv
-	fi
-	line
-	printf "Remember to add users to the vboxusers group.\n"
-	printf "pw groupmod vboxusers -m username\n"
-	pause
-    fi
-
-    # Do this after selected packages are installed
-    if auto-package-installed qt4-corelib; then
-	for pkg in x11-themes/qt4-style-phase x11-themes/qt4-style-float; do
-	    install_packages $pkg
-	done
-    fi
+    # In case someone installs chromium later
+    auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
+    sysctl kern.ipc.shm_allow_removed=1
 }
 
 
@@ -1034,66 +1088,76 @@ mplayer_plugin_install()
 }
 
 
-transcode_install()
+##########################################################################
+#   lame cannot be packaged due to patent issues
+##########################################################################
+
+faac_lame_install()
 {
-    # No package for lame
-    if ! auto-package-installed lame; then
-	(cd $PORTSDIR/audio/lame; make -DBATCH install)
+    pkg install -y libtool automake help2man mp4v2 gmake
+    if ! auto-package-installed audio/faac; then
+	(cd $PORTSDIR/audio/faac && make -DBATCH clean install)
     fi
-    install_packages multimedia/transcode
-    
-    #if ! auto-package-installed transcode; then
-    #    cd $PORTSDIR/multimedia/transcode
-    #    make -DBATCH install
-    #fi
+    if ! auto-package-installed audio/lame; then
+	(cd $PORTSDIR/audio/lame && make -DBATCH clean install)
+    fi
 }
 
 
 ##########################################################################
-#   Install packages useful to KDE3 users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   Install packages useful to KDE5 users.  These packages will have
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
-kde3_packages()
+kde5_packages()
 {
-    # Packages specific to kde3
-    # k3b, amarok broken in 9.x
-    install_packages multimedia/kaffeine \
-	www/gecko-mediaplayer
+    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
+    install_packages \
+	multimedia/transcode \
+	sysutils/k3b \
+	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
+	x11-themes/kde-gtk-config
     
-    transcode_install
+    cdrecord_perms
     
-    # mplayer_plugin_install (dead)
+    # Prevent nepomuk startup errors
+    # Should this be a dependency for something in the KDE5 collection?
+    # Does not run on i386
+    # install_packages databases/virtuoso
 }
 
 
 ##########################################################################
-#   Install packages useful to KDE4 users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   Function description:
+#       Fix permissions to allow users in operator group to use k3b.
+#       See k3b pkg-message for details.
 ##########################################################################
 
-kde4_packages()
+cdrecord_perms()
 {
-    kde3_packages
+    # /dev/cd* and /dev/xpt* should be set by other code
+    chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
 }
 
 
 ##########################################################################
-#   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   Install packages useful to XFCE4 users.  These packages will have
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 xfce4_packages()
 {
     # Packages specific to xfce4
-    install_packages graphics/epdfview math/galculator sysutils/xfburn \
-	x11/xlockmore graphics/ristretto misc/xfce4-artwork \
+    # FIXME: librsvg2 should be a depend for the xfce4 port
+    install_packages math/galculator sysutils/xfburn \
+	x11/xlockmore x11/xscreensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes
+	misc/xfce4-wm-themes audio/xfce4-mixer graphics/librsvg2 \
+	graphics/evince
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
-    # if ! auto-package-installed thunar-volman; then
+    # if ! auto-package-installed sysutils/thunar-volman; then
 	# install_packages sysutils/thunar-volman-plugin
     # fi
     # multimedia/xfce4-media 
@@ -1101,66 +1165,31 @@ xfce4_packages()
     if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 	install_packages sysutils/xfce4-battery-plugin
     fi
-    if [ $ARCH != 'powerpc' ]; then
-	install_packages www/gecko-mediaplayer
-    fi
-    install_packages x11/xfce4-screenshooter-plugin
-    
-    # Reinstall xfce4-print with CUPS
-    if [ ! -e $LOCALBASE/lib/xfce4/xfprint-plugins/cups_plugin.a ]; then
-	cd $PORTSDIR/*/xfce4-print
-	printf "Rebuilding xfce4-print to enable CUPS.\n"
-	install_packages textproc/intltool
-	
-	# Interactive method
-	#printf "Disable LPR and enable CUPS, and enable letter size if you like.\n"
-	#pause
-	#mkdir -p /var/db/ports/xfce4-print
-	
-	# Automatic methods
-	# 1) Dangerous hack that could be easily broken by port update
-	# cp $DATADIR/xfce4-print-options /var/db/ports/xfce4-print/options
-	
-	# 2) Command line flags to override defaults
-	# FIXME: -DWITH_CUPS has been replaced by ${PORT_OPTIONS:MCUPS}
-	
-	# New port uses PORT_OPTIONS.  Change default to cups.
-	make rmconfig
-	awk ' { if ( $1 == "OPTIONS_DEFAULT=" )
-		    printf("OPTIONS_DEFAULT=\tCUPS\n");
-		else
-		    print $0
-	      }' Makefile > temp
-	mv -f temp Makefile
-	
-	# Old port uses WITH_*.  Use env to select CUPS.
-	make -DBATCH -DWITH_CUPS -DWITHOUT_LPR clean deinstall reinstall
-	cd $START_DIR
-    fi
-    
-    # Reinstall epdfview with CUPS if existing binary was not built with it
-    if ! ldd ${LOCALBASE}/bin/epdfview | fgrep -q cups; then
-	cd $PORTSDIR/*/epdfview
-	printf "Rebuilding epdfview to enable CUPS.\n"
-	install_packages devel/libtool devel/cppunit
-	#mkdir -p /var/db/ports/epdfview
-	#cp $DATADIR/epdfview-options /var/db/ports/epdfview/options
-	make -DBATCH -DWITH_CUPS clean deinstall reinstall
-	cd $START_DIR
-    fi
+    install_packages x11/xfce4-screenshooter-plugin print/xfce4-print
 }
 
 
 ##########################################################################
-#   Install packages useful to XFCE users.  These packages will have
-#   alternatives under KDE and Gnome.
+#   Install packages useful to LXDE users.  These packages will have
+#   alternatives under KDE and Gnome3.
 ##########################################################################
 
 lxde_packages()
 {
-    # Packages specific to xfce4
-    install_packages graphics/epdfview math/galculator \
-	x11/xlockmore graphics/ristretto www/gecko-mediaplayer
+    # Packages specific to lxde
+    install_packages math/galculator x11/xlockmore
+}
+
+
+##########################################################################
+#   Install packages useful to LXQT users.  These packages will have
+#   alternatives under KDE and Gnome3.
+##########################################################################
+
+lxqt_packages()
+{
+    # Packages specific to lxqt
+    install_packages math/galculator x11/xlockmore
 }
 
 
@@ -1171,30 +1200,24 @@ lxde_packages()
 cups_config()
 {
     printf "Configuring cups...\n"
-    # CUPS
-    # hpijs is for some strange reason not a depend for foomatic-db-hpijs
-    
-    if [ $ARCH != 'i386' ] && [ $ARCH != 'amd64' ] && ! auto-package-installed ghostscript9; then
-	line
-	cat << EOM
-Some ghostscript ports attempt to build SVGAlib drivers on architectures
-that do not support them. You are using an architecture that does not
-support SVGAlib, so the SVGAlib options must be disabled.
-
-When the menu appears, disable all SVGAlib options and then select OK.
-EOM
-	line
-	pause
-	(cd /usr/ports/print/ghostscript9 && make config)
-    fi
-    
     install_packages \
-	print/cups print/hpijs print/foomatic-db-engine \
-	print/foomatic-db-hpijs print/foomatic-db \
-	print/foomatic-filters print/gutenprint
+	print/cups \
+	print/hplip \
+	print/foomatic-db-engine \
+	print/gutenprint
 
+    # FIXME
+    # foomatic-db-hpijs and hpijs appear to be redundant.
+    # 2014-11-16: The hpijs package is broken, as does the foomatic-db-hpijs
+    # *port*, so as much as I hate to work around bugs in other software,
+    # we'll install hpijs from source for now.  This print driver is just
+    # too important to leave out.
+    #cd $PORTSDIR/print/hpijs
+    #make deinstall reinstall
+    
     update_devfs_rules cups unlpt ulpt lpt
     
+    # FIXME: Is this still necessary?
     # Older ports have lpt-cupsd.conf, newer ulpt-cupsd.conf
     if [ -f ${LOCALBASE}/share/examples/cups/ulpt-cupsd.conf ]; then
 	if [ ! -f ${LOCALBASE}/etc/devd/ulpt-cupsd.conf ]; then
@@ -1206,18 +1229,19 @@ EOM
 	if [ -e $LOCALBASE/etc/devd/ulpt-cupsd.conf ]; then
 	    sed -i '' -e 's|}$|};|g' $LOCALBASE/etc/devd/ulpt-cupsd.conf
 	fi
-    else
+    elif [ -f ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ]; then
 	if [ ! -f ${LOCALBASE}/etc/devd/lpt-cupsd.conf ]; then
 	    mkdir -p ${LOCALBASE}/etc/devd
 	    cp ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ${LOCALBASE}/etc/devd/
 	fi
     fi
 
+    # FIXME: mime.types is no longer installed
     # Uncomment octet-stream line
-    sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-	${LOCALBASE}/etc/cups/mime.types
-    sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-	${LOCALBASE}/etc/cups/mime.convs
+    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
+    #    ${LOCALBASE}/etc/cups/mime.types
+    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
+    #    ${LOCALBASE}/etc/cups/mime.convs
     
     auto-enable-service cupsd desktop-installer
 }
@@ -1232,18 +1256,17 @@ external_drive_config()
 {
     # CD Burning, per pkg-message
     #[system=10]
-    #add path 'acd*' mode 0666
     #add path 'cd*' mode 0666
     #add path 'pass*' mode 0666
     #add path 'xpt*' mode 0666
-    update_devfs_rules operator acd cd da pass xpt
-    update_devfs_conf acd0 acd1 cd0 cd1 fd0 fd1
+    update_devfs_rules operator cd da pass xpt
+    update_devfs_conf cd0 cd1 fd0 fd1
     
-    if ! fgrep -q '#/dev/acd' $FSTAB; then
-	sed -i pre-desktop-installer 's|/dev/acd|#/dev/acd|g' $FSTAB
+    if ! fgrep -q '#/dev/cd' $FSTAB; then
+	sed -i pre-desktop-installer 's|/dev/cd|#/dev/cd|g' $FSTAB
     fi
     # Required for some removable drive mounting mechanisms
-    auto-append-line 'vfs.usermount' 'vfs.usermount=1' $SYSCTL_CONF desktop-installer
+    auto-set-sysctl vfs.usermount 1 desktop-installer
     sysctl vfs.usermount=1
 }
 
@@ -1256,26 +1279,26 @@ external_drive_config()
 java_config()
 {
     if ! auto-package-installed java/icedtea-web; then
-	resp=`auto-ask install-java "Install Java? (y/n):" y`
+	cat << EOM
+
+If you are running on a mainstream hardware platform with Java support,
+you can install the icedtea-web plugin for running Java programs from
+the web.  Check the openjdk ports for the latest supported platforms.
+If you are not sure your platform supports Java, answer 'n' here.
+
+EOM
+	resp=`auto-ask install-java "Install Java plugin? (y/n)" n`
 	if [ "$resp" = 'y' ]; then
 	    line
-	    # As of Nov 2010, openjdk6 does not have a working browser
-	    # plugin, so use the old diablo jdk with seamonkey for now.
-	    if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
-		# Icedtea installs default jdk as a dependency
-		auto-install-packages java/icedtea-web
-		# Needed by openjdk6
-		fdescfs_config
-	    else
-		printf "No Java available for this platform yet.\n"
-	    fi
+	    # Icedtea installs default jdk as a dependency
+	    install_packages java/icedtea-web
 	fi
     fi
 }
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome, and various other
+#   Enable procfs.  This is required by Gnome3, and various other
 #   packages.
 ##########################################################################
 
@@ -1295,26 +1318,6 @@ procfs_config()
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome, and various other
-#   packages.
-##########################################################################
-
-fdescfs_config()
-{
-    # procfs
-    # proc                    /proc           procfs  rw              0       0
-    auto-append-line fdescfs "fdesc\t\t\t/dev/fd\t\tfdescfs\trw\t\t0\t0" $FSTAB desktop-installer
-    
-    # Mount if not already mounted
-    if ! df | fgrep -qw /fdesc; then
-	mount fdesc
-    else
-	printf "/fdesc is already mounted.\n"
-    fi
-}
-
-
-##########################################################################
 #   Configure the Network Time Protocol daemon.
 ##########################################################################
 
@@ -1326,20 +1329,19 @@ ntp_config()
 	return
     fi
     
-    # ntpd
-    if [ ! -f /etc/ntp.conf ]; then
-	cp ${DATADIR}/ntp.conf /etc
-    fi
-    
     # ntpdate at startup
     if [ -e /var/run/ntpd.pid ]; then
 	$RCDIR/ntpd restart  # In case ntpd.pid is orphaned
 	sleep 2
 	$RCDIR/ntpd stop
     fi
-    auto-enable-service ntpdate desktop-installer
-    auto-append-line ntpdate_flags 'ntpdate_flags="pool.ntp.org"' $RC_CONF desktop-installer
-
+    # Kill off any rogue daemons
+    pkill -9 ntpd || true
+    
+    auto-set-conf-var ntpdate_enable '"YES"' $RC_CONF desktop-installer
+    auto-set-conf-var ntpdate_flags '"-u pool.ntp.org"' $RC_CONF desktop-installer
+    ntpdate -u pool.ntp.org
+    
     # Do after ntpdate, or it will block the port
     auto-enable-service ntpd desktop-installer
 }
@@ -1356,8 +1358,25 @@ nfs_client_config()
     # Needed for some applications (like OpenOffice) to access files on
     # NFS servers.
     auto-enable-service nfs_client desktop-installer
-    auto-enable-service rpc_statd desktop-installer
-    auto-enable-service rpc_lockd desktop-installer
+    auto-enable-service -s statd rpc_statd desktop-installer
+    auto-enable-service -s lockd rpc_lockd desktop-installer
+    auto-autofs-nfs-setup || true
+    cat << EOM
+
+NFS shares on the local network should be accessible via autofs under
+/net/<server-hostname>/.
+
+EOM
+}
+
+
+##########################################################################
+#   Enable NFS server if desired.
+##########################################################################
+
+nfs_server_config()
+{
+    # TBD
 }
 
 
@@ -1370,10 +1389,27 @@ usb_serial_config()
 {
     # uplcom
     # Common USB/Serial adapters
-    auto-append-line uplcom_load 'uplcom_load="YES"' $LOADER_CONF desktop-installer
+    auto-set-conf-var uplcom_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
     update_devfs_rules operator ugen cuaU uhid usbctl usb/ video
+}
+
+
+##########################################################################
+#   Function description:
+#       Enable firewire in loader.conf
+##########################################################################
+
+firewire_config()
+{
+    if dmesg | fgrep -q firewire0; then
+	auto-set-conf-var firewire_load '"YES"' $LOADER_CONF desktop-installer
+	# Firewire disks
+	auto-set-conf-var sbp_load '"YES"' $LOADER_CONF desktop-installer
+	printf "Firewire detected...\n"
+	kldload firewire sbp || true
+    fi
 }
 
 
@@ -1389,7 +1425,7 @@ usb_serial_config()
 bluetooth_config()
 {
     # Common USB bluetooth adapters
-    auto-append-line ng_ubt_load 'ng_ubt_load="YES"' $LOADER_CONF desktop-installer
+    auto-set-conf-var ng_ubt_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
     update_devfs_rules operator ng_ubt
@@ -1408,19 +1444,6 @@ serial_config()
 
 
 ##########################################################################
-#   Configure mtools and mtools-fm for floppy disk and USB stick access.
-#   This is safer than mounting, since these media can be removed by
-#   careless users at any moment.  Removing a mounted device can cause
-#   filesystem corruption and even system panics.
-##########################################################################
-
-mtools_config()
-{
-    printf "Configuring mtools...\n"
-}
-
-
-##########################################################################
 #   Configure Samba server for access to files from Windows clients.
 ##########################################################################
 
@@ -1431,154 +1454,246 @@ samba_config()
 	resp=`auto-ask enable-samba 'Enable Windows fileserver? (y/n)' n`
 	if [ "$resp" = 'y' ]; then
 	    # Support multiple ports trees with different samba port names
-	    for port in samba3 samba34 samba35; do
+	    # There doesn't seem to be a default Samba version, so this list
+	    # will have to be updated as time goes by
+	    for port in samba3 samba34 samba35 samba36; do
 		if [ -e ${PORTSDIR}/net/$port ]; then
 		    install_packages net/$port
 		    break
 		fi
 	    done
 	    # Necessary with stock samba package on 8.3-RELEASE
-	    auto-append-line winbindd_enable 'winbindd_enable="YES"' \
-		$RC_CONF desktop-installer
+	    auto-set-conf-var winbindd_enable '"YES"' $RC_CONF desktop-installer
 	    auto-enable-service samba desktop-installer
 	fi
-    fi
-}
-
-
-##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
-##########################################################################
-
-xfce4_gdm_config()
-{
-    # XFCE4 registers as xfce in /var/db/pkg, so installed() function
-    # won't detect it.
-    if [ ! -e /var/db/pkg/xfce-4* ]; then
-	install_packages x11-wm/xfce4
-    fi
-    
-    startup_scripts XFCE4
-    xorg_config gdm
-    xfce4_packages
-}
-
-
-##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
-##########################################################################
-
-xfce4_xdm_config()
-{
-    # XFCE4 registers as xfce in /var/db/pkg, so installed() function
-    # won't detect it.
-    if [ ! -e /var/db/pkg/xfce-4* ]; then
-	install_packages x11-wm/xfce4
-    fi
-    
-    startup_scripts XFCE4
-    xorg_config xdm
-    xfce4_packages
-    
-    # Enable XFCE 4.6 restart and shutdown options
-    # FIXME: HAL is no longer necessary for XFCE 4.8, and may actually
-    # be detrimental
-    # auto-enable-service hald desktop-installer
-    
-    # printf "Updating PolicyKit.conf to enable shutdown, restart, etc. buttons\n"
-    # auto-replace-file ${DATADIR}/PolicyKit.conf \
-    #    ${LOCALBASE}/${POLKIT_ETC}/PolicyKit.conf
-
-    # XFCE 4.8 no longer uses HAL
-    # From x11-wm/xfce4-session/pkg-message:
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
-}
-
-
-##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
-##########################################################################
-
-lxde_xdm_config()
-{
-    install_packages x11/lxde-meta
-    
-    startup_scripts LXDE
-    xorg_config xdm
-    lxde_packages
-
-    # Same as XFCE 4.8 for shutdown, reboot, etc.
-    cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-	${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
-}
-
-
-##########################################################################
-#   Configure the system to run the KDE3 desktop.
-##########################################################################
-
-kde3_config()
-{
-    # kde3
-    if [ $1 = 'lite' ]; then
-	install_packages x11/kde-lite
     else
-	install_packages x11/kde
+	printf "Samba already configured.\n"
     fi
+}
+
+
+enable_user_shutdown()
+
+{
+    # Apparently obsolete
+    # cp ${DATADIR}/org.freedesktop.consolekit.pkla \
+    #    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     
-    startup_scripts KDE3
-    xorg_config kdm3
-    kde3_packages
+    # New method
+    local rules_file="${LOCALBASE}/etc/polkit-1/rules.d/51-xfce.rules"
+	cat << EOM >> $rules_file
+polkit.addRule(function (action, subject) {
+  if (action.id == "org.freedesktop.consolekit.system.restart" ||
+      action.id == "org.freedesktop.consolekit.system.stop"
+      && subject.isInGroup("operator")) {
+    return polkit.Result.YES;
+  }
+});
+EOM
+    chown -Rh polkitd ${LOCALBASE}/etc/polkit-1
+    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
 }
 
 
 ##########################################################################
-#   Configure the system to run the KDE4 desktop.
+#   Configure the system to run the XFCE4 lightweight desktop.
 ##########################################################################
 
-kde4_config()
+xfce4_config()
 {
-    PATH=${PATH}:${LOCALBASE}/kde4/bin
+    # From x11-wm/xfce4-session/pkg-message:
+    install_packages sysutils/polkit
+    
+    # Allow members of operator group to shut down and restart from
+    # XFCE4 logout panel
+
+    enable_user_shutdown
+    install_packages x11-wm/xfce4
+    startup_scripts XFCE4
+    xorg_config light
+    xfce4_packages
+    auto-automount-setup || true
+}
+
+
+##########################################################################
+#   Configure the system to run the LXDE lightweight desktop.
+##########################################################################
+
+lxde_config()
+{
+    enable_user_shutdown
+    install_packages x11/lxde-meta
+    startup_scripts LXDE
+    xorg_config slim
+    auto-automount-setup || true
+    lxde_packages
+}
+
+
+##########################################################################
+#   Configure the system to run the LXQT lightweight desktop.
+##########################################################################
+
+lxqt_config()
+{
+    enable_user_shutdown
+    install_packages x11-wm/lxqt
+    startup_scripts LXQT
+    xorg_config slim
+    auto-automount-setup || true
+    lxqt_packages
+}
+
+
+##########################################################################
+#   Configure the system to run the KDE5 desktop.
+##########################################################################
+
+kde5_config()
+{
+    PATH=${PATH}:${LOCALBASE}/kde5/bin
     export PATH
     
-    # kde4
-    if [ ! -e /var/db/pkg/kde-4* ]; then
-	install_packages x11/kde4
-    fi
-    startup_scripts KDE4
-    xorg_config kdm4
-    kde4_packages
+    install_packages x11/kde5 x11/sddm devel/bsdisks
+    startup_scripts KDE5
+    xorg_config sddm
+    # Replaced by bsdisks
+    # auto-enable-service hald desktop-installer
+    kde5_packages
 }
 
 
 ##########################################################################
-#   Configure the system to run the Gnome desktop.
+#   Configure the system to run the Gnome3 desktop.
 ##########################################################################
 
-gnome_config()
+gnome3_config()
 {
-    # Gnome
-    printf "Installing Gnome...\n"
+    # Gnome3
     if [ $1 = 'lite' ]; then
-	install_packages x11/gnome2-lite
+	install_packages x11/gnome3-lite
     else
-	install_packages x11/gnome2
+	install_packages x11/gnome3
     fi
     
-    # 8.2: gpk-update-icon torrent overloads system
-    # Work around y removing packagekit
-    for bad_pkg in /var/db/pkg/gnome-packagekit-* /var/db/pkg/PackageKit-*; do
-	if [ -e $bad_pkg ]; then
-	    pkg_delete -f $bad_pkg
-	fi
-    done
-
-    install_packages print/gnome-print
-    startup_scripts Gnome
+    install_packages print/gnome-print sysutils/hal
+    startup_scripts GNOME3
     xorg_config gdm
+    dbus_config
+    auto-enable-service hald desktop-installer
+    # FIXME: Is this still necessary?
+    auto-enable-hal-mount
+}
+
+
+##########################################################################
+#   Install packages useful to Lumina users.  These packages will have
+#   alternatives under KDE and Gnome3.
+##########################################################################
+
+lumina_packages()
+{
+    # Packages specific to Lumina
+    # qterminal is buggy and now depends on lxqt, so not including it anymore
+    # lilyterm is a good alternative, although not QT based
+    # k3b missing deps: cdrdao, dvd+rw-tools, libburn
+    install_packages \
+	multimedia/transcode \
+	print/qpdfview \
+	graphics/qt5-imageformats \
+	graphics/phototonic \
+	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
+	math/galculator x11/lilyterm
+
+    cdrecord_perms
+
+    cat << EOM
+
+GTK2 appearance can be controlled with lxappearance.
+
+EOM
+    pause
+}
+
+
+##########################################################################
+#   Configure the system to run the Lumina desktop.
+##########################################################################
+
+lumina_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/lumina x11-themes/lumina-themes \
+	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt5 x11-themes/lxappearance
+    startup_scripts LUMINA
+    xorg_config light
+    auto-automount-setup || true
+    # Make GTK2 apps look nice
+    cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
+	$LOCALBASE/etc/gtk-2.0
+    lumina_packages
+    auto-enable-service mixer desktop-installer
+}
+
+
+##########################################################################
+#   Configure the system to run the Mate desktop.
+##########################################################################
+
+mate_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/mate
+    startup_scripts MATE
+    xorg_config slim
+    auto-automount-setup || true
+}
+
+
+##########################################################################
+#   Configure the system to run the Cinnamon desktop.
+##########################################################################
+
+cinnamon_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/cinnamon
+    startup_scripts CINNAMON
+    xorg_config gdm
+}
+
+
+cde_config()
+{
+    # ksh needed for CDE to function, groff needed for man pages
+    install_packages x11/cde shells/ksh93 textproc/groff
+    # Needed only for calendar
+    # auto-enable-service rpcbind desktop-installer
+    # auto-enable-service dtcms desktop-installer
+    
+    # Probably not needed and certainly not secure:
+    # https://sourceforge.net/p/cdesktopenv/wiki/Home/
+    # auto-enable-service dtspc desktop-installer
+    # Add these to inetd.conf:
+    # dtspc stream tcp4   nowait  root    /usr/local/dt/bin/dtspcd /usr/local/dt/bin/dtspcd
+    # cmsd/2-5    dgram rpc/udp4 wait root /usr/local/dt/bin/rpc.cmsd rpc.cmsd
+
+    startup_scripts CDE
+    if ! fgrep $(hostname) /etc/hosts; then
+	sed -i '' -e "s|localhost.my.domain|& $(hostname)|" /etc/hosts
+    fi
+    xorg_config dtlogin
+}
+
+
+dtlogin_config()
+{
+    # FIXME: Cannot start X11
+    # auto-append-line dtlogin '/usr/local/dt/bin/dtlogin -daemon' /etc/rc.local desktop-installer
+    # printf "Reboot to test dtlogin.\n"
+    printf "Run /usr/local/dt/bin/dtlogin as root to start a session.\n"
+    pause
 }
 
 
@@ -1588,7 +1703,7 @@ atapicam_config()
     # so atapicam is deprecated.
     if [ `uname -r | cut -d '.' -f 1` -lt 9 ]; then
 	# atapicam
-	auto-append-line atapicam 'atapicam_load="YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var atapicam_load '"YES"' $LOADER_CONF desktop-installer
 	if ! kldstat | fgrep -q atapicam; then
 	    if ! kldload atapicam > /dev/null 2>&1 ; then
 		printf "Warning: Failed to load atapicam.\n"
@@ -1600,10 +1715,8 @@ atapicam_config()
 
 sound_config()
 {
-    # FIXME: Detect proper sound driver instead of loading all
-    if ! fgrep -q snd_ $LOADER_CONF && [ $ARCH != 'powerpc' ]; then
-	auto-append-line snd_driver 'snd_driver_load="YES"' $LOADER_CONF desktop-installer
-	kldload snd_driver
+    if ! auto-sound-driver-setup; then
+	printf "Warning: No sound devices detected.\n"
     fi
 }
 
@@ -1611,9 +1724,8 @@ sound_config()
 power_config()
 {
     # If CPU frequency is controllable, enable powerd.
-    if sysctl dev.cpu.0.freq 2> /dev/null; then
+    if sysctl dev.cpu.0.freq > /dev/null 2>&1 && ! fgrep -q powerd /etc/rc.conf; then
 	auto-enable-service powerd desktop-installer
-	auto-append-line powerd_flags 'powerd_flags="-b hadp"' $RC_CONF desktop-installer
     fi
 
     if sysctl -a | fgrep -q dev.acpi_lid.0; then
@@ -1623,8 +1735,8 @@ Some ACPI functions such as suspend/resume are not standardized across all
 hardware, and therefore may or may not function on open source systems such
 as BSD and Linux.
 
-Enabling suspend/resume when a laptop is closed/opened may cause system
-lock-up on some systems.
+Enabling suspend/resume when a laptop is closed/opened may cause problems
+on some hardware.
 
 On the other hand, allowing a laptop to run while closed may lead to
 overheating and hardware damage.
@@ -1644,29 +1756,37 @@ ACPI web sites for more information.
 
 EOM
 	lid_state=`auto-ask lid-state 'Action to take when laptop is closed?' 3`
+	
+	# Set perms on acpiconf to enable/disable sleep button on exit
+	# panel as well, until we know how to make the button disappear
 	case $lid_state in
 	1)
-	    auto-set-suspend-on-lid S3
+	    auto-set-lid-switch-mode S3
+	    chmod 4555 /usr/sbin/acpiconf
 	    ;;
 	2)
-	    auto-set-suspend-on-lid NONE
+	    auto-set-lid-switch-mode NONE
+	    chmod 555 /usr/sbin/acpiconf
 	    ;;
 	3)
-	    auto-set-suspend-on-lid S5
+	    auto-set-lid-switch-mode S5
+	    chmod 555 /usr/sbin/acpiconf
 	    ;;
 	esac
     fi
     
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
-	auto-append-line battery_shutdown.sh $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
-	cp $DATADIR/Scripts/battery_shutdown.sh $LOCALBASE/sbin
-	auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
+	auto-append-line battery_shutdown.sh \
+	    $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
+	# Prolong battery life slightly
+	# Causes ThinkPad X201 to stall for 20 seconds during resume from sleep
+	# auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
     fi
     
     # Reduce host CPU usage by reducing kernel timer interrupts
     if vbox_guest; then
-	auto-append-line kern.hz 'kern.hz="100"' $LOADER_CONF desktop-installer
+	auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
     fi
 }
 
@@ -1679,10 +1799,10 @@ boot_splash_config()
 	# FIXME: Not all video cards work.  VESA support issue?
 	printf "Configuring boot splash screen...\n"
 	cp ${DATADIR}/splash.bmp /boot
-	auto-append-line vesa_load 'vesa_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line splash_bmp_load 'splash_bmp_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line bitmap_load 'bitmap_load="YES"' $LOADER_CONF desktop-installer
-	auto-append-line bitmap_name "bitmap_name=\"/boot/splash.bmp\"" $LOADER_CONF desktop-installer
+	auto-set-conf-var vesa_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var splash_bmp_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var bitmap_load '"YES"' $LOADER_CONF desktop-installer
+	auto-set-conf-var bitmap_name '"/boot/splash.bmp"' $LOADER_CONF desktop-installer
     fi
 }
 
@@ -1691,58 +1811,59 @@ network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
 
-    resp=`auto-ask install-wireless "Install wireless drivers? (y/n)" y`
-    if [ 0"$resp" = 0y ]; then
+    if sysctl -a | fgrep -q dev.acpi_lid.0; then
+	default_wireless='y'
+    else
+	default_wireless='n'
+    fi
+    enable_wireless=`auto-ask install-wireless "Configure wireless networking? (y/n)" $default_wireless`
+    if [ 0"$enable_wireless" = 0y ]; then
 	# add wlans_{dev}0="wlan0" to rc.conf
 	# FIXME: The real solution should detect all wireless devices,
 	# not just those enumerated here.
 	start_cwd=`pwd`
-	cd /usr/ports/net
+	cd $PORTSDIR/net
 	# ipw and iwi are in GENERIC kernel, so don't load their kmods
 	for port in bwi bwn; do
-	    cd $port-firmware-kmod
-	    if ! make -DBATCH install; then
-		printf "Failed to install $port-firmware-kmod.\n"
+	    if ! auto-package-installed net/$port-firmware-kmod; then
+		cd $port-firmware-kmod
+		if ! make -DBATCH install; then
+		    printf "Failed to install $port-firmware-kmod.\n"
+		fi
+		cd ..
 	    fi
-	    cd ..
 	done
 	cd $start_cwd
 	# Check bwi before bwn.  They support the same devices, but
 	# bwi seems to work better.
-	for driver in an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw wpi zyd; do
+	# Driver name must not contain _ unless it's a variant as in
+	# rtwn_pci.  We'll have to recode this section otherwise.
+	# Both rtwn_pci and rtwn_usb appear as device rtwn0.
+	drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
+	for driver in $drivers; do
 	    if kldload if_${driver} > /dev/null 2>&1; then
 		printf "Loaded $driver.\n"
 	    fi
 	done
 	
-	wlan=0
-	for driver in an ath bwi bwn ipw iwi iwn malo mwl ral rum run uath upgt urtw wpi zyd; do
-	    if grep -q "^${driver}0" /var/run/dmesg.boot || \
+	for driver in $drivers; do
+	    # Strip off _usb or _pci to get device name
+	    WIFI_DEVICE=${driver%_*}0
+	    if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
 		# FIXME: Check also for ${driver}1, ${driver}2, etc.
 		# Also could use a better test than this simple grep.
-		dmesg | grep -q "^${driver}0"; then
-		printf "Found wireless device ${driver}0.\n"
-		auto-append-line "wlans_${driver}0" "wlans_${driver}0=\"wlan$wlan\"" $RC_CONF desktop-installer
+		dmesg | grep -q "^$WIFI_DEVICE"; then
+		printf "Found wireless device $WIFI_DEVICE.\n"
+		auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
+		    $RC_CONF desktop-installer
 		# Not necessary for drivers which are in the GENERIC kernel, but
 		# it shouldn't hurt.
-		auto-append-line "if_${driver}_load=\"YES\"" \
-		    "if_${driver}_load=\"YES\"" $LOADER_CONF desktop-installer
-		wlan=$(($wlan + 1))
-		# break   # Configure only one wireless device!
+		auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
+		break   # Configure only one wireless device!
 	    fi
 	done
-	auto-append-line 'ifconfig_wlan0' 'ifconfig_wlan0="WPA DHCP"' $RC_CONF desktop-installer
+	auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
     fi
-}
-
-
-webcam_config()
-{
-    install_packages multimedia/v4l_compat \
-	multimedia/libv4l \
-	multimedia/pwcview
-    auto-append-line cuse4bsd_load 'cuse4bsd_load="YES"' $LOADER_CONF desktop-installer
-    auto-append-line webcamd_enable 'webcamd_enable="YES"' $RC_CONF desktop-installer
 }
 
 
@@ -1756,7 +1877,7 @@ check_inodes()
 	df -i
 	cat << EOM
     
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 			    *** WARNING ***
 
@@ -1770,7 +1891,7 @@ This system has $inodes.
 You can increase the number of inodes by reformatting the partition
 with newfs using -f to reduce the fragment size and/or -i to reduce
 the number of bytes/inode.  Run "man newfs" for more information.
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
     
 EOM
 	resp=`auto-ask inodes-ok 'Continue with installation? (y/n)' n`
@@ -1781,18 +1902,202 @@ EOM
 }
 
 
-hal_config()
+dbus_config()
 {
     auto-enable-service dbus desktop-installer
-    # Installing HAL from binary package has been known to cause problems in
-    # more than one release.
-    # Not necessary, unless using HAL to automount
-    # if auto-package-installed hal && [ ! -e $PORTSDIR/sysutils/hal/work ]; then
-    #     (cd ${PORTSDIR}/sysutils/hal && make deinstall reinstall)
-    # fi
-    auto-enable-service hald desktop-installer
 }
 
+
+mount_dist()
+{
+    if df | grep -q /dist; then
+	return 0
+    fi
+    for dev in cd0 cd1; do
+	if mount_cd9660 /dev/$dev /dist 2> /dev/null; then
+	    return 0
+	fi
+    done
+}
+
+
+##########################################################################
+#   Function description:
+#       Set up user-mounting of cdroms, usb disks
+#
+#   Arguments:
+#       None
+#
+#   History:
+#   Date        Name        Modification
+#   2013-03-03  Jason Bacon Begin
+##########################################################################
+
+usermount_config()
+{
+    line
+    cat << EOM
+
+You may configure sudo to allow users to mount and unmount removable media,
+without entering a password, using commands such as
+
+    sudo mount /removable/cdrom0
+    sudo auto-mount-any /removable/flash0
+
+It also enables the use of the xfce4-mount-plugin.
+
+If you are using an automounter, answer 'n' here.
+
+Note:
+
+    This will only grant members of the "operator" group rights to mount
+    specific devices.  It will not grant anyone rights to run arbitrary
+    commands.
+
+EOM
+
+    pause
+    cat << EOM
+
+XFCE4 mount plugin should be configured with the following commands:
+
+    sudo auto-mount-any %d %m
+    sudo umount %m
+
+This will configure typical mount points for CD/DVD and USB flash
+devices.  To add more options, edit /etc/fstab and add another drop-in
+file similar to $LOCALBASE/etc/sudoers.d/mount.
+
+Important notes:
+
+    Unplugging a mounted USB or Firewire drive can cause filesystem damage.
+    Do not grant mount privileges to untrusted users.
+
+EOM
+    resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
+    if [ 0$resp = 0y ]; then
+	# DEPRECATE: Use scontrol eject
+	#install_packages sysutils/mcweject
+	#cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
+	#chmod 600 ${LOCALBASE}/etc/eject.allow
+	install_packages security/sudo
+	gamin_dir="$LOCALBASE/etc/gamin"
+	mkdir -p $gamin_dir
+	rm -f $gamin_dir/gaminrc
+	
+	sudoers=$LOCALBASE/etc/sudoers.d/mount
+	printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
+	chmod 440 $sudoers
+	
+	printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
+	for device in cdrom flash; do
+	    for num in 0 1; do
+		
+		# Create mount points
+		mount_point=/removable/${device}${num}
+		mkdir -p $mount_point
+		chown root:operator $mount_point
+		chmod 770 $mount_point
+		
+		# Update fstab
+		case $device in
+		cdrom)
+		    dev="/dev/cd${num}"
+		    type='cd9660'
+		    options='ro,noauto'
+		    ;;
+		flash)
+		    dev="# /dev/da${num}s1"
+		    type='msdosfs'
+		    options='rw,noauto'
+		    ;;
+		*)
+		    ;;
+		esac
+		auto-append-line "$mount_point" \
+		    "$dev\t$mount_point\t$type\t$options\t0\t0" \
+		    /etc/fstab nocomment
+		
+		# Update sudoers drop-in
+		printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
+		
+		# Add custom commands
+		# Where do we put this to make it global default?
+		# From .config/xfce4/panel/xfce4-mount-plugin-24.rc
+		#mount_command=sudo mount %m
+		#umount_command=sudo umount -f %m
+		
+		# Prevent gam_server from accessing mount points
+		printf "poll $mount_point\n" >> $gamin_dir/gaminrc
+	    done
+	done
+	printf "# End auto-admin addition\n" >> /etc/fstab
+	
+	# Remove trailing comma
+	sed -i '' -e 's|,$||g' $sudoers
+	
+	# Restart gam_server
+	if ! pkill gam_server; then
+	    printf "Note: gam_server was not running.\n"
+	fi
+    fi
+    printf "poll /dist\n" >> $gamin_dir/gaminrc
+    line
+}
+
+
+##########################################################################
+#   Function description:
+#       Disable write cache in disk controller to ensure clean filesystem
+#       after a power outage. Otherwise, the journal can be fooled into
+#       thinking the filesystem is clean after a write transaction.
+#       May hurt performance noticeably on older disks.
+#
+#       https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=208691
+#       https://forums.freebsd.org/threads/is-there-a-simple-way-to-disable-write-cache.56367/
+#       man ada
+#
+#   History:
+#   Date        Name        Modification
+#   2020-05-14  Jason Bacon Begin
+##########################################################################
+
+disable_write_cache()
+{
+    cat << EOM
+
+The write cache feature of many hard disks can cause UFS2 filesystems to be
+marked clean after a write transaction when in fact the data have not yet
+been written to the media.  As a result, the fsck run at boot time could leave
+the filesystem dirty following a sudden power outage or other improper
+shutdown.  This can, in rare circumstances, lead to loss of files or even
+cause kernel panics triggered by normal disk writes.
+
+The manual fix is to boot to single user mode after any improper shutdown
+and run "fsck -fy /path/to/filesystem".  ( This will not recover lost files. )
+
+Write cache is enabled by default, a setting aimed at servers backed by an
+ininterruptable power supply.  It is generally unsafe for typical desktop
+systems that may experience sudden power outages.
+
+Disabling the disk's write cache feature will prevent this issue, but may hurt
+performance, especially on older disks.  If maximum performance is more important
+to you than avoiding this issue, then leave write cache enabled. For the average
+desktop user, disabling write cache will not make a noticeable difference.
+Maximizing disk performance is only likely to be important on heavily loaded
+servers.  Below are sequential write benchmark data (average of 3 trials) from a
+ThinkPad X201 before and after write cache was disabled:
+
+   11.53 GiB write       4.00 MiB blocks    191205.00 ms        61.73 MiB/s
+   11.53 GiB write       4.00 MiB blocks    193898.00 ms        60.87 MiB/s
+
+EOM
+    disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
+    if [ $disable_write_cache != n ]; then
+	auto-write-cache-toggle off desktop-installer
+    fi
+    return 0
+}
 
 ###########################################################################
 #   Begin main script
@@ -1800,18 +2105,20 @@ hal_config()
 
 if [ `whoami` != 'root' ]; then
     printf "Desktop-installer must be run by root.\n"
-    printf "Try 'sudo $0'.\n"
     exit 1
 fi
 
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
 
+# Prevent dialogs in auto-install-packages
+export BATCH=yes
+
 START_DIR=`pwd`
 LOCALBASE='/usr/local'
 DATADIR="$LOCALBASE/share/desktop-installer"
 PORTSDIR="/usr/ports"
-X11BASE="/usr/local"
+X11BASE="$LOCALBASE"
 RCDIR='/etc/rc.d'
 SSHDIR='/etc/ssh'
 
@@ -1819,13 +2126,12 @@ JAVA_VERSION='16'
 ARCH=`uname -m`
 
 # Config files
-POLKIT_ETC='etc/PolicyKit'
 XORG_CONF='/etc/X11/xorg.conf'
+XORG_CONF_DIR='/etc/X11/xorg.conf.d'
 DEVFS_CONF='/etc/devfs.conf'
 DEVFS_RULES='/etc/devfs.rules'
 RC_CONF='/etc/rc.conf'
 LOADER_CONF='/boot/loader.conf'
-SYSCTL_CONF='/etc/sysctl.conf'
 RC_RESUME='/etc/rc.resume'
 TTYS='/etc/ttys'
 FSTAB='/etc/fstab'
@@ -1834,68 +2140,94 @@ NASD_CONF="$LOCALBASE/etc/nasd.conf"
 
 cat << EOM
 
+-------------------------------------------------------------------------------
 Desktop-installer automates the configuration of a FreeBSD desktop/laptop
 system.  You will be guided through the process and asked some basic
 questions, as well as a few that may require some thought and research.
 
-Desktop-installer may fail at some point due to broken ports of changes
+Desktop-installer may fail at some point due to broken ports or changes
 in the base system since the last release of desktop-installer.  If this
-happens, you can manually fix the issue and simply run the script again.
+happens, you can manually fix the issue and simply run desktop-installer
+again.
 
-*** Please report any failures of this nature to the maintainer,
-and send a patch if possible.
+Please report any failures of this nature to the maintainer, and send a patch
+if possible.
 
 When asked whether to install software or enable a service, answering
-"no" will not deinstall previously installed software or disable previously
-enabled services.  Once you have answered "yes" to a question posed by
+'n' will not deinstall previously installed software or disable previously
+enabled services.  Once you have answered 'y' to a question posed by
 desktop-installer, you will need to manually reverse the decision by editing
-the appropriate system file(s).
+the appropriate system file(s), which will contain comments enclosing options
+added by desktop-installer.
 
 Answers to most configuration questions will be saved in the file
-"./auto-ask-responses.txt".  If this file is present in the current directory
+./auto-ask-responses.txt.  If this file is present in the current directory
 when you run desktop-installer again, your previous responses will be
 the defaults.
-
+-------------------------------------------------------------------------------
 EOM
 pause
 
-if [ ! -e updated ]; then
-    clear
     cat << EOM
-    
+
+-------------------------------------------------------------------------------
 Note: Desktop-installer is evolving rapidly, as it faces huge challenges
 in keeping up with the evolution of FreeBSD and the many ports it installs.
 
-You may wish to install the latest version and restart.
+You may want to try the latest development version available from:
 
-Note that if you are using a development version from jb-ports, this will
-DOWNGRADE auto-admin and desktop-installer to the latest committed version.
+    https://github.com/outpaddling/freebsd-ports-wip
+
+Note that you may need to upgrade both desktop-installer and auto-admin.
+-------------------------------------------------------------------------------
+EOM
+pause
+
+cat << EOM
+
+-------------------------------------------------------------------------------
+FreeBSD by default installs packages from quarterly snapshots.  If you would
+prefer to use the latest bleeding-edge packages, answer 'y' here.  Before
+doing so, make sure your platform supports this.  Some second-tier platforms
+may only provide quarterly packages.
+-------------------------------------------------------------------------------
 
 EOM
-    update=`auto-ask update-desktop-installer "Install the latest version and restart?" n`
-    if [ 0$update = 0y ]; then
-	auto-update-port-framework sysutils/auto-admin
-	cd /usr/ports/sysutils/auto-admin
-	pkg_delete -f /var/db/pkg/auto-admin*
-	make clean reinstall
-	
-	auto-update-port-framework sysutils/desktop-installer
-	cd /usr/ports/sysutils/desktop-installer
-	pkg_delete -f /var/db/pkg/desktop-installer*
-	make clean reinstall
-	
-	touch updated
-	printf "Restarting desktop-installer.  "
-	pause
-	exec desktop-installer
-    fi
-fi
 
 check_inodes
+mount_dist
 
-# Update base system and ports
-update_system
+if [ ! -e /usr/local/etc/pkg/repos/bleeding-edge.conf ]; then
+    latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
+else
+    latest_packages=n
+fi
+if [ $latest_packages = y ]; then
+    # Runs auto-update-system unconditionally
+    auto-pkg-latest --no-reboot
+    # If user has not rebooted, restart with possibly newer desktop-installer
+    printf "Restarting desktop-installer...\n"
+    pause
+    exec desktop-installer
+else
+    auto-check-ports-branch
+    
+    # Update base system and ports
+    update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
+    if [ $update_system = y ]; then
+	printf "System will restart following update.\n"
+	printf "Rerun desktop-installer from the same directory after reboot.\n"
+	pause
+	auto-update-system --yes
+    fi
+fi
 auto-enable-passwdqc
+
+# Needed by openjdk, bash, etc.
+auto-add-fdesc-mount
+
+# Ensure disk is clean after a power outage
+disable_write_cache
 
 clear
 cat << EOM
@@ -1904,21 +2236,12 @@ cat << EOM
 Source or packages
 ==================
 
-Building from source allows you to build from the latest ports snapshot, but
-it takes a lot longer (possibly a full day or more for the entire
-desktop setup).
+Building from source is not necessary on architectures for which binary
+packages are maintained and it takes a lot longer (possibly a full day or more
+for the entire desktop setup).
 
-Using binary packages is much faster, but should only be attempted using the
-stock ports tree distribution from the base install.  Some software cannot be
-installed from packages, so the ports tree must be compatible with the
-available binary packages.  This is only possible using both ports and
-packages included with a -RELEASE version.
-
-If you want to use binary packages, and you have run portsnap or cvsup, remove
-$PORTSDIR and reinstall the ports tree from sysinstall.
-
-If you want to install from the latest ports snapshot obtained via CVS or
-portsnap, you should build everything from source.
+In any case, make sure that BOTH your installed binary packages and ports
+are kept up-to-date with "pkg update" and "portsnap".
 
 EOM
 
@@ -1936,18 +2259,47 @@ else
 fi
 export AUTO_BUILD_FROM_SOURCE
 
+line
+cat << EOM
+
+Time to select a desktop environment.
+
+Select "No desktop software" if you plan to use something not listed in the
+menu and install it manually.  In this case, desktop-installer will still do
+most of the work necessary to produce a functional desktop system.
+
+KDE is the most feature-rich and is well-supported on FreeBSD, but it also
+requires the most hardware resources.
+
+Lumina desktop is very small, fast, intuitive, and attractive and is developed
+on FreeBSD.
+
+* As of version 1.6.0, Lumina does not always update the screen properly when
+resizing a VirtualBox window with guest additions installed.  If you are
+running under VirtualBox, another lightweight DE may run more cleanly.
+
+EOM
+line
+pause
+
 desktop_selection='0'
 valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
-    printf "1.. Gnome Desktop\n"
-    printf "2.. Gnome Lite Desktop\n"
-    printf "3.. KDE 3 Desktop\n"
-    printf "4.. KDE 3 Lite Desktop\n"
-    printf "5.. KDE 4 Desktop\n"
-    printf "6.. XFCE Lightweight Desktop + XDM (Ultralight Installation)\n"
-    printf "7.. LXDE Lightweight Desktop + XDM (Ultralight Installation)\n"
+    printf "1.. No desktop software (Install your own later)\n"
+    printf "2.. Cinnamon Desktop\n"
+    printf "3.. Gnome3 Desktop\n"
+    printf "4.. Gnome3 Lite Desktop\n"
+    printf "5.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "6.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "7.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "8.. LXQT Lightweight Desktop\n"
+    printf "9.. MATE Desktop\n"
+    printf "10. XFCE4 Lightweight Desktop\n"
+    line
+    printf "Unsupported desktops:\n\n"
+    printf "11. CDE (For nostalgia only, not fully functional or secure)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -1958,17 +2310,14 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 7 ]; then
+       [ $desktop_selection -gt 11 ]; then
 	valid_selection=0
     fi
 done
 
 power_config
-network_config
-auto-append-line kern.maxfiles 'kern.maxfiles="25000"' $LOADER_CONF desktop-installer
 if vbox_guest; then
-    auto-append-line kern.timecounter.hardware=i8254 \
-	kern.timecounter.hardware=i8254 /boot/loader.conf desktop-installer
+    auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
     line
     cat << EOM
 Note: You may need to enable I/O APIC in the VirtualBox system settings, or
@@ -1978,81 +2327,139 @@ EOM
     pause
 fi
 
+# Basic tools
+install_packages archivers/unzip net/rsync devel/gmake
+
+# Need gmake for some wireless drivers, so do this after basic tools
+network_config
+
+# Configure devices and services
+atapicam_config
+sound_config
+procfs_config
+ntp_config
+auto-fusefs-install
+nfs_client_config
+nfs_server_config
+usb_serial_config
+firewire_config
+serial_config
+bluetooth_config
+
+if [ -e /dev/usb ]; then
+    # Make sure /dev/usb/* are accessible to operator
+    chgrp operator /dev/usb
+    chmod 750 /dev/usb
+fi
+external_drive_config
+
+# Ask the questions before beginning so the installation can
+# run unattended
+if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
+    install_guest_additions=`auto-ask guest-additions \
+    'Install VirtualBox guest additions? (y/n)' y`
+fi
+
+# Install GUI
 cat << EOM
 
-Installation of Xorg and your chosen desktop will now begin.  This can
-be a very long process, depending on the speed of your Internet connection
-and disk.  On a modern machine, using binary packages (not installing from
-source), this should take about an hour.  Installing from source on a
-slow machine could take a day or more.
-
-Now might be a good time to grab a cup of tea...
+Installation of Xorg and your chosen desktop will now begin.  This can be a
+very long process, depending on the speed of your Internet connection and disk.
+On a modern machine, using binary packages (not installing from source), this
+may take less than 15 minutes.  Installing from source on a slow machine could
+take a day or more.
 
 EOM
 
 pause
 
-# Basic tools
-install_packages archivers/unzip net/rsync security/sudo devel/gmake
-
 install_xorg
-atapicam_config
-sound_config
-procfs_config
-ntp_config
-nfs_client_config
-usb_serial_config
-serial_config
-bluetooth_config
-boot_splash_config
-# Make sure /dev/usb/* are accessible to operator
-if [ -e /dev/usb ]; then
-    chgrp operator /dev/usb
-    chmod 750 /dev/usb
-fi
+faac_lame_install
 
-external_drive_config
+# Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
 cups_config
-mtools_config
 
 case $desktop_selection in
 1)
-    gnome_config full
-    desktop=gnome
+    DESKTOP=none
     ;;
 2)
-    gnome_config lite
-    desktop=gnome
+    DESKTOP=cinnamon
+    cinnamon_config
     ;;
 3)
-    kde3_config full
-    desktop=kde3
+    DESKTOP=gnome3
+    gnome3_config full
     ;;
 4)
-    kde3_config lite
-    desktop=kde3
+    DESKTOP=gnome3
+    gnome3_config lite
     ;;
 5)
-    kde4_config
-    desktop=kde4
+    DESKTOP=kde5
+    kde5_config
     ;;
 6)
-    xfce4_xdm_config
-    desktop=xfce
+    DESKTOP=lumina
+    lumina_config
     ;;
 7)
-    lxde_xdm_config
-    desktop=lxde
+    DESKTOP=lxde
+    lxde_config
+    ;;
+8)
+    DESKTOP=lxqt
+    lxqt_config
+    ;;
+9)
+    DESKTOP=mate
+    mate_config
+    ;;
+10)
+    DESKTOP=xfce4
+    xfce4_config
+    ;;
+11)
+    DESKTOP=cde
+    cde_config
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
 esac
 
-samba_config
-common_packages $desktop
+# Broken sudo config
+# usermount_config    # Must come after desktop installation.  Configures gamin.
+
+# Broken and of questionable value samba_config
+
+# After network_config
+common_packages
 
 # Additional package installs may have added fonts, etc.
-auto-update-xorg.conf
+if [ -e $XORG_CONF ]; then
+    auto-update-xorg.conf
+fi
+
+if [ 0$enable_wireless = 0'y' ]; then
+    cat << EOM
+
+FreeBSD's lagg (link aggregation) driver can be used to configure your WiFi
+interface as a failover for an Ethernet interface.  This will enable automatic
+switching between WiFi and Ethernet when you plug/unplug a network cable.
+
+Problems with lagg are uncommon, but tricky to debug.  We recommend enabling
+this only if you really plan to use Ethernet sometimes.  If you will only use
+WiFi on this machine, answer 'n' here.
+
+Enabling lagg will update your $RC_CONF and requires a reboot.
+
+EOM
+    lagg=`auto-ask use-lagg 'Configure lagg for WiFi? (y/n)' n`
+    if [ $lagg = y ]; then
+	printf "\nDetected WiFi device: $WIFI_DEVICE\n\n"
+	auto-wifi-failover
+    fi
+fi
 
 cat << EOM
 

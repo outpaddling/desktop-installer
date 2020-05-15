@@ -1,15 +1,14 @@
 #!/bin/sh
 # $Xorg: Xsetup_0,v 1.3 2000/08/17 19:54:17 cpqbld Exp $
 
-# put me in /usr/local/lib/X11/xdm
-#/usr/local/bin/xsetroot -solid steelblue
+# put me in /usr/local/etc/X11/xdm
+# /usr/local/bin/xsetroot -solid steelblue
+/usr/local/bin/feh --bg-fill /usr/local/share/pixmaps/bsd_background.jpg
+
+# Add shutdown, reboot, restart X11 buttons
 width=`xwininfo -root | awk '$1 == "Width:" { print $2 }'`
 height=`xwininfo -root | awk '$1 == "Height:" { print $2 }'`
-/usr/local/bin/xv -root -quit /usr/local/lib/X11/xdm/pixmaps/bsd_background.jpg
-x=`expr \( $width - 150 \) / 2`
-y=`expr \( $height - 10 \) / 2 + 120`
-#echo $x $y
-#exit
-
+x=$(( ($width - 150) / 2 ))
+y=$(( ($height - 10) / 2 + 120 ))
 /usr/local/sbin/xdmshutdown -geometry +$x+$y &
 echo $! > /var/run/xdmshutdown.pid

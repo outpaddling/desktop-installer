@@ -1,0 +1,30 @@
+#!/bin/sh
+
+selection='0'
+while [ 0$selection != 'q' ]; do
+    clear
+    cat << EOM
+1.. Install a desktop environment
+2.. Add a user
+3.. Configure printers
+Q.. Quit
+
+EOM
+    printf 'Enter your selection: '
+    read selection
+    
+    case $selection in
+    1)
+	desktop-installer
+	;;
+    2)
+	printf "Username? "
+	;;
+    3)
+	webbrowser localhost:631
+	;;
+    *)
+	;;
+    esac
+done
+
