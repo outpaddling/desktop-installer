@@ -2066,44 +2066,57 @@ disable_write_cache()
 {
     cat << EOM
 
-The write cache feature of many hard disks can cause UFS2 filesystems to be
-marked clean after a write transaction when in fact the data have not yet
-been written to the media.  As a result, the fsck run at boot time could leave
-the filesystem inconsistent following a sudden power outage or other improper
-shutdown.  This can, in rare circumstances, lead to loss of files or even
-cause kernel panics triggered by normal disk writes.
+The built-in write cache of many hard disks can cause filesystems to be marked
+clean after a write transaction when in fact the data have not yet been written
+to the media.  In the event of a sudden power loss, this can leave part of the
+journal unwritten.  Consequently, fsck run on UFS2 at boot time can miss the
+problem and leave the filesystem in an inconsistent state.  This can, in very
+rare circumstances, cause kernel panics triggered by normal disk writes.
 
 The manual fix is to boot to single user mode after any improper shutdown
-and run "fsck -fy /path/to/filesystem".  This will restore consistency in
-the filesystem but will not recover data lost to the write cache.
+and run "fsck -fy" on all UFS+su+j filesystems.  This will restore consistency
+to the filesystem (though it will not recover data lost in the write cache).
+If you do not mind doing this, then the default configuration is probably
+best and no action is necessary here.
 
-Write cache is enabled by default, a setting aimed at servers backed by an
-ininterruptable power supply.  It is generally unsafe for systems that are
-vulnerable to power outages or other improper shutdowns.
+Write cache is enabled by default in order to maximize performance.  This
+setting is aimed at servers backed by an ininterruptable power supply.  It is
+generally unsafe for systems that are vulnerable to power outages or other
+improper shutdowns, like typical home and office desktop systems.
 
 EOM
     pause
     cat << EOM
 
-Disabling the disk's write cache feature will prevent this issue, but may hurt
+Disabling the hardware write cache will prevent this issue, but may hurt
 performance, especially on slow disks. For the average desktop user with a
 fast, modern disk, disabling write cache will not make a noticeable difference
 most of the time.  You may notice a slow-down of operations performing many
 small writes, such as pkg installs.
 
 If maximum performance is more important to you than avoiding this issue, then
-leave write cache enabled or alternatively, you could disable the soft updates
+leave write cache enabled.  Alternatively, you could disable the soft updates
 journal.  Disabling the journal will actually increase write performance and
 minimize disk wear.  It will also cause a full fsck (filesystem check and
-repair) to be run following an improper shutdown.  Unlike some other *nix
-filesystems, running fsck on a UFS filesystem generally does not take terribly
+repair) to be run automatically following any improper shutdown.
+
+The UFS2 filesystem on FreeBSD has a unique feature called "soft updates" (SU),
+which maintains filesystem consistency without the need for a journal.  Hence,
+the added journal in UFS+su+j provides only minimal benefit, unlike most other
+filesystems.  Running fsck on a UFS filesystem generally does not take terribly
 long and only needs to be completed for the root filesystem during boot.
-FreeBSD's UFS with soft updates has a unique feature allowing most UFS
-filesystems to be checked in the background after booting is complete.
+Thanks to soft updates, it is actually safe to mount a dirty filesystem and
+most filesystems can be checked in the background after booting is complete.
+EOM
 
-To disable the journal, boot to single-user mode and run:
+    cat << EOM
 
-    auto-su+j-toggle off
+You can disable write cache right now, with the change taking effect after
+the next reboot.
+
+To disable the journal, you must manually boot to single-user mode and run:
+
+    /usr/local/sbin/auto-su+j-toggle off
 
 EOM
     disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
