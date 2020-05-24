@@ -2073,16 +2073,16 @@ journal unwritten.  Consequently, fsck run on UFS2 at boot time can miss the
 problem and leave the filesystem in an inconsistent state.  This can, in very
 rare circumstances, cause kernel panics triggered by normal disk writes.
 
+Write cache is enabled by default in order to maximize performance.  This
+setting is aimed at servers backed by an ininterruptable power supply.  It is
+generally unsafe for systems that are vulnerable to power outages or other
+improper shutdowns, like typical home and office desktop systems.
+
 The manual fix is to boot to single user mode after any improper shutdown
 and run "fsck -fy" on all UFS+su+j filesystems.  This will restore consistency
 to the filesystem (though it will not recover data lost in the write cache).
 If you do not mind doing this, then the default configuration is probably
 best and no action is necessary here.
-
-Write cache is enabled by default in order to maximize performance.  This
-setting is aimed at servers backed by an ininterruptable power supply.  It is
-generally unsafe for systems that are vulnerable to power outages or other
-improper shutdowns, like typical home and office desktop systems.
 
 EOM
     pause
@@ -2108,6 +2108,7 @@ long and only needs to be completed for the root filesystem during boot.
 Thanks to soft updates, it is actually safe to mount a dirty filesystem and
 most filesystems can be checked in the background after booting is complete.
 EOM
+    pause
 
     cat << EOM
 
