@@ -2107,6 +2107,7 @@ filesystems.  Running fsck on a UFS filesystem generally does not take terribly
 long and only needs to be completed for the root filesystem during boot.
 Thanks to soft updates, it is actually safe to mount a dirty filesystem and
 most filesystems can be checked in the background after booting is complete.
+
 EOM
     pause
 
