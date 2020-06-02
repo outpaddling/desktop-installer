@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4|WMAKER\n"
 	exit 1
     fi
 
@@ -606,6 +606,9 @@ EOM
 	;;
     XFCE4)
 	session="$LOCALBASE/bin/startxfce4"
+	;;
+    WMAKER)
+	session="$LOCALBASE/bin/wmaker"
 	;;
     *)
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
@@ -806,6 +809,12 @@ slim_config()
     xfce4)
 	# FIXME: Doesn't work for previously altered slim.conf
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/XFCE4/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    wmaker)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/WMAKER/xinitrc|g" \
 	    $slim_conf
 	;;
     
@@ -1512,6 +1521,21 @@ xfce4_config()
     startup_scripts XFCE4
     xorg_config light
     xfce4_packages
+    auto-automount-setup || true
+}
+
+
+##########################################################################
+#   Configure the system to run the XFCE4 lightweight desktop.
+##########################################################################
+
+wmaker_config()
+{
+    enable_user_shutdown
+    install_packages x11-wm/windowmaker
+    startup_scripts WMAKER
+    xorg_config xdm
+    install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
 }
 
@@ -2326,9 +2350,10 @@ while [ $valid_selection = 0 ]; do
     printf "8.. LXQT Lightweight Desktop\n"
     printf "9.. MATE Desktop\n"
     printf "10. XFCE4 Lightweight Desktop\n"
+    printf "11. WindowMaker Lightweight Window Manager\n"
     line
     printf "Unsupported desktops:\n\n"
-    printf "11. CDE (For nostalgia only, not fully functional or secure)\n"
+    printf "12. CDE (For nostalgia only, not fully functional or secure)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2449,6 +2474,10 @@ case $desktop_selection in
     xfce4_config
     ;;
 11)
+    DESKTOP=wmaker
+    wmaker_config
+    ;;
+12)
     DESKTOP=cde
     cde_config
     ;;
