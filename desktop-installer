@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|XFCE4|WMAKER\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
 	exit 1
     fi
 
@@ -604,11 +604,11 @@ EOM
     MATE)
 	session="$LOCALBASE/bin/mate-session"
 	;;
-    XFCE4)
-	session="$LOCALBASE/bin/startxfce4"
-	;;
     WMAKER)
 	session="$LOCALBASE/bin/wmaker"
+	;;
+    XFCE4)
+	session="$LOCALBASE/bin/startxfce4"
 	;;
     *)
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
@@ -2349,8 +2349,8 @@ while [ $valid_selection = 0 ]; do
     printf "7.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
     printf "8.. LXQT Lightweight Desktop\n"
     printf "9.. MATE Desktop\n"
-    printf "10. XFCE4 Lightweight Desktop\n"
-    printf "11. WindowMaker Lightweight Window Manager\n"
+    printf "10. WindowMaker Lightweight Window Manager\n"
+    printf "11. XFCE4 Lightweight Desktop\n"
     line
     printf "Unsupported desktops:\n\n"
     printf "12. CDE (For nostalgia only, not fully functional or secure)\n"
@@ -2470,12 +2470,12 @@ case $desktop_selection in
     mate_config
     ;;
 10)
-    DESKTOP=xfce4
-    xfce4_config
-    ;;
-11)
     DESKTOP=wmaker
     wmaker_config
+    ;;
+11)
+    DESKTOP=xfce4
+    xfce4_config
     ;;
 12)
     DESKTOP=cde
