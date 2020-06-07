@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+exec 3>&1
+desktop=`dialog --menu "Select a Desktop Environment" 0 0 0 \
+    NONE "No desktop environment.  I will install my own later." \
+    Gnome "Gnome 3 Desktop Environment" \
+    KDE "K Desktop Environment (heavy)" \
+    Lumina "Lumina lightweight desktop" \
+    LXDE "Lightweight X11 Desktop Environment" \
+    LXQT "Lightweight QT Desktop Environment" \
+    MATE "Fork of Gnome 2" \
+    2>&1 1>&3`
+
+printf "Desktop = $desktop\n"
