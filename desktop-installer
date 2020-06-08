@@ -299,14 +299,14 @@ EOM
 	cat << EOM
 
 Graphics drivers must be configured once, followed by a reboot to properly
-load them before attempting to start X11.  If you guess wrong which graphics
+test them before attempting to start X11.  If you guess wrong which graphics
 driver/DRM combination to use, you may need to repeat this process and try
-again.  Answer 'y' once, then rerun desktop-installer and answer 'n' to
-attempt X11 startup.
+again.  Answer 'y' if you want to to use the guided driver configurator or
+'n' if you want to fall back on the generic SCFB or VESA drivers or configure
+your graphics manually later.
 
 EOM
-	printf "Reconfigure graphics drivers? (y/n) [y] "
-	read configure_graphics
+	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" y`
 	if [ 0$configure_graphics != 0n ]; then
 	    auto-gpu-setup
 	    read -p "Reboot now? (y/n) [y] " reboot
