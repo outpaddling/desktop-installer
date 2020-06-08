@@ -212,6 +212,9 @@ install_xorg()
 	fi
     fi
     dbus_config
+
+    # Pretty up xterm
+    cat $DATADIR/Xdefaults-xterm >> $LOCALBASE/lib/X11/app-defaults/XTerm
 }
 
 
@@ -279,9 +282,6 @@ EOM
 	done
     fi
     
-    # Pretty up xterm
-    cat $DATADIR/Xdefaults-xterm >> /usr/local/lib/X11/app-defaults/XTerm
-
     # Don't mess with drivers if X already running or this is a VM
     # FIXME: Check for any VM guest, not just VirtualBox
     if vbox_guest; then
@@ -631,7 +631,7 @@ EOM
 		$xdm_base/Xsession.pre-desktop-installer
 	fi
 	sed -i '' \
-	    -e "s|/usr/local/bin/xsm|$session|g" \
+	    -e "s|$LOCALBASE/bin/xsm|$session|g" \
 	    $xdm_base/Xsession
     else
 	printf "Internal error: $xdm_base/Xsession is missing!\n"
@@ -1700,8 +1700,8 @@ cde_config()
     # https://sourceforge.net/p/cdesktopenv/wiki/Home/
     # auto-enable-service dtspc desktop-installer
     # Add these to inetd.conf:
-    # dtspc stream tcp4   nowait  root    /usr/local/dt/bin/dtspcd /usr/local/dt/bin/dtspcd
-    # cmsd/2-5    dgram rpc/udp4 wait root /usr/local/dt/bin/rpc.cmsd rpc.cmsd
+    # dtspc stream tcp4   nowait  root    $LOCALBASE/dt/bin/dtspcd $LOCALBASE/dt/bin/dtspcd
+    # cmsd/2-5    dgram rpc/udp4 wait root $LOCALBASE/dt/bin/rpc.cmsd rpc.cmsd
 
     startup_scripts CDE
     if ! fgrep $(hostname) /etc/hosts; then
@@ -1714,9 +1714,9 @@ cde_config()
 dtlogin_config()
 {
     # FIXME: Cannot start X11
-    # auto-append-line dtlogin '/usr/local/dt/bin/dtlogin -daemon' /etc/rc.local desktop-installer
+    # auto-append-line dtlogin '$LOCALBASE/dt/bin/dtlogin -daemon' /etc/rc.local desktop-installer
     # printf "Reboot to test dtlogin.\n"
-    printf "Run /usr/local/dt/bin/dtlogin as root to start a session.\n"
+    printf "Run $LOCALBASE/dt/bin/dtlogin as root to start a session.\n"
     pause
 }
 
@@ -2043,7 +2043,7 @@ EOM
 		    /etc/fstab nocomment
 		
 		# Update sudoers drop-in
-		printf " /usr/local/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
+		printf " $LOCALBASE/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
 		
 		# Add custom commands
 		# Where do we put this to make it global default?
@@ -2142,7 +2142,7 @@ the next reboot.
 
 To disable the journal, you must manually boot to single-user mode and run:
 
-    /usr/local/sbin/auto-su+j-toggle off
+    $LOCALBASE/sbin/auto-su+j-toggle off
 
 EOM
     disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" y)
@@ -2250,7 +2250,7 @@ EOM
 check_inodes
 mount_dist
 
-if [ ! -e /usr/local/etc/pkg/repos/bleeding-edge.conf ]; then
+if [ ! -e $LOCALBASE/etc/pkg/repos/bleeding-edge.conf ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
 else
     latest_packages=n
