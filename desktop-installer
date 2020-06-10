@@ -2364,19 +2364,19 @@ valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
-    printf "1.. No desktop software (Install your own later)\n"
-    printf "2.. Cinnamon Desktop\n"
-    printf "3.. Gnome3 Desktop\n"
-    printf "4.. Gnome3 Lite Desktop\n"
-    printf "5.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
-    printf "6.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "7.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
-    printf "8.. LXQT Lightweight Desktop\n"
-    printf "9.. MATE Desktop\n"
-    printf "10. WindowMaker Lightweight Window Manager\n"
-    printf "11. XFCE4 Lightweight Desktop\n"
-    printf "12. CDE (For nostalgia only, not fully functional or secure)\n"
-    printf "13. Fluxbox Lightweight Window Manager\n"
+    printf "1.. No desktop software (I'll install my own later)\n"
+    printf "2.. CDE (For nostalgia only, not fully functional or secure)\n"
+    printf "3.. Cinnamon Desktop\n"
+    printf "4.. Fluxbox Lightweight Window Manager\n"
+    printf "5.. Gnome3 Desktop\n"
+    printf "6.. Gnome3 Lite Desktop\n"
+    printf "7.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "8.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "9.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "10. LXQT Lightweight Desktop\n"
+    printf "11. MATE Desktop\n"
+    printf "12. WindowMaker Lightweight Window Manager\n"
+    printf "13. XFCE4 Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2461,52 +2461,52 @@ case $desktop_selection in
     DESKTOP=none
     ;;
 2)
-    DESKTOP=cinnamon
-    cinnamon_config
-    ;;
-3)
-    DESKTOP=gnome3
-    gnome3_config full
-    ;;
-4)
-    DESKTOP=gnome3
-    gnome3_config lite
-    ;;
-5)
-    DESKTOP=kde5
-    kde5_config
-    ;;
-6)
-    DESKTOP=lumina
-    lumina_config
-    ;;
-7)
-    DESKTOP=lxde
-    lxde_config
-    ;;
-8)
-    DESKTOP=lxqt
-    lxqt_config
-    ;;
-9)
-    DESKTOP=mate
-    mate_config
-    ;;
-10)
-    DESKTOP=wmaker
-    wmaker_config
-    ;;
-11)
-    DESKTOP=xfce4
-    xfce4_config
-    ;;
-12)
     DESKTOP=cde
     cde_config
     ;;
-13)
+3)
+    DESKTOP=cinnamon
+    cinnamon_config
+    ;;
+4)
     DESKTOP=fluxbox
     fluxbox_config
+    ;;
+5)
+    DESKTOP=gnome3
+    gnome3_config full
+    ;;
+6)
+    DESKTOP=gnome3
+    gnome3_config lite
+    ;;
+7)
+    DESKTOP=kde5
+    kde5_config
+    ;;
+8)
+    DESKTOP=lumina
+    lumina_config
+    ;;
+9)
+    DESKTOP=lxde
+    lxde_config
+    ;;
+10)
+    DESKTOP=lxqt
+    lxqt_config
+    ;;
+11)
+    DESKTOP=mate
+    mate_config
+    ;;
+12)
+    DESKTOP=wmaker
+    wmaker_config
+    ;;
+13)
+    DESKTOP=xfce4
+    xfce4_config
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
