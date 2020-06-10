@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
 	exit 1
     fi
 
@@ -585,6 +585,9 @@ EOM
 	;;
     CINNAMON)
 	session="$LOCALBASE/bin/cinammon-session"
+	;;
+    FLUXBOX)
+	session="$LOCALBASE/bin/startfluxbox"
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
@@ -815,6 +818,12 @@ slim_config()
     wmaker)
 	# FIXME: Doesn't work for previously altered slim.conf
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/WMAKER/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    fluxbox)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/FLUXBOX/xinitrc|g" \
 	    $slim_conf
 	;;
     
@@ -1534,6 +1543,21 @@ wmaker_config()
     enable_user_shutdown
     install_packages x11-wm/windowmaker x11-wm/wmakerconf
     startup_scripts WMAKER
+    xorg_config light
+    install_packages math/galculator x11/xlockmore x11/xscreensaver 
+    auto-automount-setup || true
+}
+
+
+##########################################################################
+#   Configure the system to run the XFCE4 lightweight desktop.
+##########################################################################
+
+fluxbox_config()
+{
+    enable_user_shutdown
+    install_packages x11-wm/fluxbox x11-themes/fluxbox-tenr-styles-pack
+    startup_scripts FLUXBOX
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
@@ -2351,9 +2375,8 @@ while [ $valid_selection = 0 ]; do
     printf "9.. MATE Desktop\n"
     printf "10. WindowMaker Lightweight Window Manager\n"
     printf "11. XFCE4 Lightweight Desktop\n"
-    line
-    printf "Unsupported desktops:\n\n"
     printf "12. CDE (For nostalgia only, not fully functional or secure)\n"
+    printf "13. Fluxbox Lightweight Window Manager\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2364,7 +2387,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 12 ]; then
+       [ $desktop_selection -gt 13 ]; then
 	valid_selection=0
     fi
 done
@@ -2480,6 +2503,10 @@ case $desktop_selection in
 12)
     DESKTOP=cde
     cde_config
+    ;;
+13)
+    DESKTOP=fluxbox
+    fluxbox_config
     ;;
 *)
     printf "Invalid desktop selection.\n\n"
