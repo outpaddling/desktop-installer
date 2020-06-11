@@ -547,7 +547,7 @@ EOM
 startup_scripts()
 {
     if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
 	exit 1
     fi
 
@@ -591,6 +591,9 @@ EOM
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
+	;;
+    ICEWM)
+	session="$LOCALBASE/bin/icewm-session"
 	;;
     KDE5)
 	session='startplasma-x11'
@@ -824,6 +827,12 @@ slim_config()
     fluxbox)
 	# FIXME: Doesn't work for previously altered slim.conf
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/FLUXBOX/xinitrc|g" \
+	    $slim_conf
+	;;
+    
+    icewm)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/ICEWM/xinitrc|g" \
 	    $slim_conf
 	;;
     
@@ -1560,6 +1569,21 @@ fluxbox_config()
     startup_scripts FLUXBOX
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
+    auto-automount-setup || true
+}
+
+
+##########################################################################
+#   Configure the system to run the XFCE4 lightweight desktop.
+##########################################################################
+
+icewm_config()
+{
+    enable_user_shutdown
+    install_packages x11-wm/icewm
+    startup_scripts ICEWM
+    xorg_config light
+    install_packages math/galculator x11/xlockmore x11/xscreensaver
     auto-automount-setup || true
 }
 
@@ -2370,13 +2394,14 @@ while [ $valid_selection = 0 ]; do
     printf "4.. Fluxbox Lightweight Window Manager\n"
     printf "5.. Gnome3 Desktop\n"
     printf "6.. Gnome3 Lite Desktop\n"
-    printf "7.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
-    printf "8.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "9.. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
-    printf "10. LXQT Lightweight Desktop\n"
-    printf "11. MATE Desktop\n"
-    printf "12. WindowMaker Lightweight Window Manager\n"
-    printf "13. XFCE4 Lightweight Desktop\n"
+    printf "7.. IceWM Lightweight Window Manager\n"
+    printf "8.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "11. LXQT Lightweight Desktop\n"
+    printf "12. MATE Desktop\n"
+    printf "13. WindowMaker Lightweight Window Manager\n"
+    printf "14. XFCE4 Lightweight Desktop\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2387,7 +2412,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 13 ]; then
+       [ $desktop_selection -gt 14 ]; then
 	valid_selection=0
     fi
 done
@@ -2481,30 +2506,34 @@ case $desktop_selection in
     gnome3_config lite
     ;;
 7)
+    DESKTOP=icewm
+    icewm_config lite
+    ;;
+8)
     DESKTOP=kde5
     kde5_config
     ;;
-8)
+9)
     DESKTOP=lumina
     lumina_config
     ;;
-9)
+10)
     DESKTOP=lxde
     lxde_config
     ;;
-10)
+11)
     DESKTOP=lxqt
     lxqt_config
     ;;
-11)
+12)
     DESKTOP=mate
     mate_config
     ;;
-12)
+13)
     DESKTOP=wmaker
     wmaker_config
     ;;
-13)
+14)
     DESKTOP=xfce4
     xfce4_config
     ;;
