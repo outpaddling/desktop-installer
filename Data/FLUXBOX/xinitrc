@@ -24,4 +24,8 @@ if [ -f "$usermodmap" ]; then
     xmodmap "$usermodmap"
 fi
 
+# FIXME: Should this be necessary, or is it a WM responsibility?
+if sysctl dev.acpi.0.%desc | fgrep -q VBOX; then
+    VBoxClient --display
+fi
 exec startfluxbox

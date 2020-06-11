@@ -588,12 +588,14 @@ EOM
 	;;
     FLUXBOX)
 	session="$LOCALBASE/bin/startfluxbox"
+	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
 	session="$LOCALBASE/bin/icewm-session"
+	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
 	;;
     KDE5)
 	session='startplasma-x11'
@@ -612,6 +614,7 @@ EOM
 	;;
     WMAKER)
 	session="$LOCALBASE/bin/wmaker"
+	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
 	;;
     XFCE4)
 	session="$LOCALBASE/bin/startxfce4"
@@ -636,8 +639,9 @@ EOM
 	    cp $xdm_base/Xsession \
 		$xdm_base/Xsession.pre-desktop-installer
 	fi
+	
 	sed -i '' \
-	    -e "s|$LOCALBASE/bin/xsm|$session|g" \
+	    -e "s|exec $LOCALBASE/bin/xsm|$vbox_client exec $session|g" \
 	    $xdm_base/Xsession
     else
 	printf "Internal error: $xdm_base/Xsession is missing!\n"
@@ -651,7 +655,8 @@ dm_msg()
     cat << EOM
 
 Starting display manager.  After the login screen appears, press Ctrl+Alt+F1
-to return to this screen and complete the desktop-installer setup.
+(or Host-key+F1 in VirtualBox) to return to this screen and complete the
+desktop-installer setup.
 
 If for any reason you cannot switch back to this text console, run
 
