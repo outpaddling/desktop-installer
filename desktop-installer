@@ -2211,6 +2211,30 @@ EOM
     return 0
 }
 
+
+##########################################################################
+#   Function description:
+#       Configure firewall
+##########################################################################
+
+firewall_config()
+{
+    cat << EOM
+Most systems should have a firewall configured to block incoming network
+traffic, protecting the system from malicious users.  You can configure a
+basic IPFW firewall now with virtually no effort and customize the rules later.
+
+Note that this will likely terminate any existing ssh connections, so answer
+no here unless you know what you're doing.
+
+EOM
+    firewall_config=$(auto-ask configure-firewall "Configure a basic firewall? (y/n)" y)
+    if [ $firewall_config = y ]; then
+	auto-firewall-setup
+    fi
+    return 0
+}
+
 ###########################################################################
 #   Begin main script
 ###########################################################################
@@ -2293,6 +2317,9 @@ EOM
 
 check_inodes
 mount_dist
+
+# Enable firewall as early as possible for maximum security
+firewall_config
 
 if [ ! -e $LOCALBASE/etc/pkg/repos/bleeding-edge.conf ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
