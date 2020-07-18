@@ -447,7 +447,7 @@ The first test of X11 may take a minute to start up, as the desktop
 system creates all new configuration files.
     
 EOM
-	if [ -e /tmp/.X0-lock ]; then
+	if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	    printf "X11 is currently running, cannot test.\n"
 	    resp='n'
 	else
