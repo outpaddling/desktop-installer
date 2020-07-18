@@ -1654,7 +1654,8 @@ gnome3_config()
 	install_packages x11/gnome3
     fi
     
-    install_packages print/gnome-print sysutils/hal
+    # GDM must be installed even for startx to work during X11 test
+    install_packages print/gnome-print sysutils/hal x11/gdm
     startup_scripts GNOME3
     xorg_config gdm
     dbus_config
