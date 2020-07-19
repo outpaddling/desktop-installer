@@ -458,6 +458,13 @@ EOM
 	    fi
 	fi
 	if [ 0"$resp" = 0'y' ]; then
+	    cat << EOM
+
+Starting your selected desktop environment.  Log out (do not shut down or
+restart) to resume desktop-installer.
+
+EOM
+	    pause
 	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
 	    # hald must be started AFTER moused to function with xorg
 	    ${LOCALBASE}$RCDIR/dbus restart
