@@ -2312,16 +2312,22 @@ pause
 cat << EOM
 
 -------------------------------------------------------------------------------
-FreeBSD by default installs packages from quarterly snapshots.  If you would
-prefer to use the latest bleeding-edge packages, answer 'y' here.  Before
-doing so, make sure your platform supports this.  Some second-tier platforms
-such as powerpc may only provide quarterly packages.
+FreeBSD by default installs packages from quarterly snapshots, which provide
+an added layer of quality control beyond the normal ports QA.  Quarterly
+ports/packages receive only bug fixes and minor updates, no major upgrades,
+so they tend to be very reliable.  New snapshots are created around the first
+of January, April, July, and October.
+
+If you would prefer to use the latest bleeding-edge packages, answer 'y' here.
+Before doing so, make sure your platform supports this.  Some second-tier
+platforms such as powerpc may only provide quarterly packages for some FreeBSD
+versions.
 
 When using latest packages, updates to some packages may become available
 almost every day.  You will have access to all the latest features, but will
 also likely experience occasional regressions (things stop working) such as
 browsers crashing, printing not working from LibreOffice, etc.  You can help
-both the FreeBSD project and application developers by running the latest\
+both the FreeBSD project and application developers by using the latest
 packages on one or more of your machines and reporting such problems.
 Contributing bug reports helps minimize problems with the quarterly snapshots.
 
@@ -2615,6 +2621,29 @@ EOM
 	auto-wifi-failover
     fi
 fi
+
+cat << EOM
+
+Some final tips:
+
+o   Keep your system up-to-date by running "auto-update-system" frequently
+
+o   Use "pkg install" to install new software
+    -   Browse the collection at https://www.freebsd.org/ports/index.html
+    -   To search the collection, try "pkg search <regular-expression>"
+    -   For a full list, run "pkg search '.*'"
+
+o   Use "adduser" to add new users
+    -   Add them to the "wheel" group to permit using "su"
+    -   Add them to the "operator" group to permit using "shutdown"
+    -   Add them to the "video" group to ensure video driver performance
+
+o   Please report issues at https://github.com/outpaddling/desktop-installer
+
+Thanks for using desktop-installer!
+
+EOM
+pause
 
 cat << EOM
 
