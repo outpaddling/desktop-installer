@@ -2624,11 +2624,12 @@ fi
 
 cat << EOM
 
-Some final tips:
+You can spend years exploring the amazing features of FreeBSD, but for now
+here are some essentials to get you started...
 
 o   Keep your system up-to-date by running "auto-update-system" frequently
 
-o   Use "pkg install" to install new software
+o   Use "pkg install" to install any of the 30,000+ FreeBSD packages
     -   Browse the collection at https://www.freebsd.org/ports/index.html
     -   To search the collection, try "pkg search <regular-expression>"
     -   For a full list, run "pkg search '.*'"
@@ -2638,9 +2639,11 @@ o   Use "adduser" to add new users
     -   Add them to the "operator" group to permit using "shutdown"
     -   Add them to the "video" group to ensure video driver performance
 
-o   Please report issues at https://github.com/outpaddling/desktop-installer
+o   Please report problems with desktop-installer at
+	
+	https://github.com/outpaddling/desktop-installer
 
-Thanks for using desktop-installer!
+We hope you enjoy your new desktop system!
 
 EOM
 pause
