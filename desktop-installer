@@ -1768,7 +1768,8 @@ cde_config()
     if ! fgrep $(hostname) /etc/hosts; then
 	sed -i '' -e "s|localhost.my.domain|& $(hostname)|" /etc/hosts
     fi
-    xorg_config dtlogin
+    cp $DATADIR/CDE/cde.desktop $LOCALBASE/share/xsessions
+    xorg_config sddm
 }
 
 
@@ -2254,6 +2255,9 @@ fi
 
 # Prevent dialogs in auto-install-packages
 export BATCH=yes
+
+# Make sure installed files are readable
+umask 022
 
 START_DIR=`pwd`
 LOCALBASE='/usr/local'
