@@ -537,7 +537,7 @@ EOM
 
 Display managers should not be reconfigured from a running X11 session.
 If you are running this under X11 now and plan to enable a new display
-manager (gdm, kdm, slim, xdm), please terminate now or answer 'n' to
+manager (gdm, sddm, slim, xdm), please terminate now or answer 'n' to
 the following question and rerun desktop-installer from a virtual terminal.
 
 EOM
@@ -701,7 +701,7 @@ EOM
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses kdm and Gnome3 uses gdm, so this is
+#   Enable XDM.  Note that KDE uses sddm and Gnome3 uses gdm, so this is
 #   for XFCE4 and other lightweight desktops.
 ##########################################################################
 
@@ -714,7 +714,7 @@ xdm_config()
 
     resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
-	# Disable gdm and kdm
+	# Disable other login managers
 	gdm_disable
 	slim_disable
 	sddm_disable
@@ -766,7 +766,7 @@ gdm_config()
     cat << EOM
 Warning:
 Enabling gdm will terminate any sessions running under other display
-managers such as xdm or kdm.
+managers such as xdm or sddm.
 EOM
     line
     resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
@@ -858,7 +858,7 @@ slim_config()
     cat << EOM
 Warning:
 Enabling SLiM will terminate any sessions running under other display
-managers such as xdm or kdm.
+managers such as xdm or sddm.
 EOM
     line
     resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
@@ -877,7 +877,7 @@ sddm_config()
 {
     cat << EOM
 Warning:
-Enabling kdm will terminate any sessions running under other display
+Enabling sddm will terminate any sessions running under other display
 managers such as xdm or gdm.
 EOM
     line
