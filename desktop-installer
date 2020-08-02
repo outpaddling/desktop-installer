@@ -1548,6 +1548,8 @@ xfce4_config()
 
     enable_user_shutdown
     install_packages x11-wm/xfce4
+    # Keep HAL as long as the xfce port depends on it
+    auto-enable-service hald desktop-installer
     startup_scripts XFCE4
     xorg_config light
     xfce4_packages
@@ -1666,6 +1668,7 @@ gnome3_config()
     startup_scripts GNOME3
     xorg_config gdm
     dbus_config
+    # Keep HAL as long as gnome depends on it
     auto-enable-service hald desktop-installer
     # FIXME: Is this still necessary?
     auto-enable-hal-mount
