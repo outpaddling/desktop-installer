@@ -1116,7 +1116,9 @@ common_packages()
 	fi
     done
     install_packages $selected_packages
-    auto-mark-package-critical $selected_packages
+    for pkg in $selected_packages; do
+	auto-mark-package-critical $(basename $pkg)
+    done
 
     # In case someone installs chromium later
     auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
