@@ -187,7 +187,8 @@ install_xorg()
 	x11/xsm \
 	x11-drivers/xf86-video-mga \
 	x11-drivers/xf86-video-vesa
-
+    auto-mark-package-critical xorg
+    
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
@@ -272,9 +273,11 @@ EOM
 	    case $selection in
 	    1)
 		display_manager=xdm
+		auto-mark-package-critical xdm
 		;;
 	    2)
 		display_manager=slim
+		auto-mark-package-critical slim
 		;;
 	    *)
 		printf "Invalid selection: $selection\n"
@@ -721,6 +724,8 @@ xdm_config()
 
 	# Install xdmshutdown
 	install_packages x11-toolkits/tk87
+	auto-mark-package-critical tk87
+    
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
@@ -762,6 +767,8 @@ gdm_config()
 {
     # Graphical login
     install_packages x11/gdm
+    auto-mark-package-critical gdm
+
     line
     cat << EOM
 Warning:
@@ -791,6 +798,8 @@ slim_config()
 {
     # Graphical login
     install_packages x11/slim
+    auto-mark-package-critical slim
+
     cp ${DATADIR}/XDM/bsd_background.jpg \
 	$LOCALBASE/share/slim/themes/default/background.jpg
     local slim_conf=$LOCALBASE/etc/slim.conf
@@ -881,6 +890,7 @@ Enabling sddm will terminate any sessions running under other display
 managers such as xdm or gdm.
 EOM
     line
+    auto-mark-package-critical sddm
     resp=`auto-ask enable-sddm "Enable SDDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
@@ -888,7 +898,6 @@ EOM
 	gdm_disable
 	slim_disable
 	auto-enable-service sddm desktop-instaler
-	# exit 0
     fi
 }
 
@@ -1107,6 +1116,7 @@ common_packages()
 	fi
     done
     install_packages $selected_packages
+    auto-mark-package-critical $selected_packages
 
     # In case someone installs chromium later
     auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
@@ -1244,7 +1254,8 @@ cups_config()
 	print/hplip \
 	print/foomatic-db-engine \
 	print/gutenprint
-
+    auto-mark-package-critical cups hplip foomatic-db-engine gutenprint
+    
     # FIXME
     # foomatic-db-hpijs and hpijs appear to be redundant.
     # 2014-11-16: The hpijs package is broken, as does the foomatic-db-hpijs
@@ -1541,13 +1552,12 @@ EOM
 xfce4_config()
 {
     # From x11-wm/xfce4-session/pkg-message:
-    install_packages sysutils/polkit
+    install_packages sysutils/polkit x11-wm/xfce4
+    auto-mark-package-critical xfce4 polkit
     
     # Allow members of operator group to shut down and restart from
     # XFCE4 logout panel
-
     enable_user_shutdown
-    install_packages x11-wm/xfce4
     # Keep HAL as long as the xfce port depends on it
     auto-enable-service hald desktop-installer
     startup_scripts XFCE4
@@ -1569,6 +1579,7 @@ wmaker_config()
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
+    auto-mark-package-critical windomaker wmakerconf
 }
 
 
@@ -1584,6 +1595,7 @@ fluxbox_config()
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
+    auto-mark-package-critical fluxbox
 }
 
 
@@ -1599,6 +1611,7 @@ icewm_config()
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver
     auto-automount-setup || true
+    auto-mark-package-critical icewm
 }
 
 
@@ -1614,6 +1627,7 @@ lxde_config()
     xorg_config slim
     auto-automount-setup || true
     lxde_packages
+    auto-mark-package-critical lxde-meta
 }
 
 
@@ -1629,6 +1643,7 @@ lxqt_config()
     xorg_config slim
     auto-automount-setup || true
     lxqt_packages
+    auto-mark-package-critical lxqt
 }
 
 
@@ -1642,6 +1657,7 @@ kde5_config()
     export PATH
     
     install_packages x11/kde5 x11/sddm devel/bsdisks
+    auto-mark-package-critical kde5 bsdisks     # sddm added by sddm_config
     startup_scripts KDE5
     xorg_config sddm
     # Replaced by bsdisks
@@ -1665,6 +1681,8 @@ gnome3_config()
     
     # GDM must be installed even for startx to work during X11 test
     install_packages print/gnome-print sysutils/hal x11/gdm
+    auto-mark-package-critical gnome3 gnome-print hal gdm
+    
     startup_scripts GNOME3
     xorg_config gdm
     dbus_config
@@ -1714,6 +1732,8 @@ lumina_config()
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/lumina x11-themes/lumina-themes \
 	x11-themes/qtcurve-gtk2 x11-themes/qtcurve-qt5 x11-themes/lxappearance
+    auto-mark-package-critical lumina
+    
     startup_scripts LUMINA
     xorg_config light
     auto-automount-setup || true
@@ -1733,6 +1753,8 @@ mate_config()
 {
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/mate
+    auto-mark-package-critical mate
+    
     startup_scripts MATE
     xorg_config slim
     auto-automount-setup || true
@@ -1747,6 +1769,8 @@ cinnamon_config()
 {
     # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
     install_packages x11/cinnamon
+    auto-mark-package-critical cinnamon
+    
     startup_scripts CINNAMON
     xorg_config gdm
 }
@@ -1773,6 +1797,7 @@ cde_config()
     fi
     cp $DATADIR/CDE/cde.desktop $LOCALBASE/share/xsessions
     xorg_config sddm
+    auto-mark-package-critical cde
 }
 
 
