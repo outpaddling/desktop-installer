@@ -1145,10 +1145,11 @@ mplayer_plugin_install()
 
 faac_lame_install()
 {
-    pkg install -y libtool automake help2man mp4v2 gmake
-    if ! auto-package-installed audio/faac; then
-	(cd $PORTSDIR/audio/faac && make -DBATCH clean install)
-    fi
+    pkg install -y libtool automake help2man mp4v2 gmake faac
+    # Binary packages used to be restricted
+    #if ! auto-package-installed audio/faac; then
+    #    (cd $PORTSDIR/audio/faac && make -DBATCH clean install)
+    #fi
     if ! auto-package-installed audio/lame; then
 	(cd $PORTSDIR/audio/lame && make -DBATCH clean install)
     fi
@@ -2379,7 +2380,7 @@ mount_dist
 # Enable firewall as early as possible for maximum security
 firewall_config
 
-if [ ! -e $LOCALBASE/etc/pkg/repos/bleeding-edge.conf ]; then
+if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
 else
     latest_packages=n
@@ -2510,9 +2511,6 @@ EOM
     pause
 fi
 
-# Basic tools
-install_packages archivers/unzip net/rsync devel/gmake
-
 # Need gmake for some wireless drivers, so do this after basic tools
 network_config
 
@@ -2521,7 +2519,6 @@ atapicam_config
 sound_config
 procfs_config
 ntp_config
-auto-fusefs-install
 nfs_client_config
 nfs_server_config
 usb_serial_config
@@ -2556,8 +2553,10 @@ EOM
 
 pause
 
+# Basic tools
+install_packages archivers/unzip net/rsync devel/gmake
+
 install_xorg
-faac_lame_install
 
 # Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
 cups_config
@@ -2626,6 +2625,9 @@ esac
 # usermount_config    # Must come after desktop installation.  Configures gamin.
 
 # Broken and of questionable value samba_config
+
+faac_lame_install
+auto-fusefs-install
 
 # After network_config
 common_packages
