@@ -58,6 +58,8 @@ log_cmd()
 #       already installed.  If $AUTO_BUILD_FROM_SOURCE is true, installs from source,
 #       otherwise attempts to install using pkg_add.
 #
+#       FIXME: Replace this with auto-install-packages
+#
 #   Arguments:
 #       List of ports in the for "category/name"
 ##########################################################################
@@ -1145,7 +1147,8 @@ mplayer_plugin_install()
 
 faac_lame_install()
 {
-    pkg install -y libtool automake help2man mp4v2 gmake faac
+    install_packages devel/libtool devel/automake misc/help2man \
+	multimedia/mp4v2 devel/gmake audio/faac
     # Binary packages used to be restricted
     #if ! auto-package-installed audio/faac; then
     #    (cd $PORTSDIR/audio/faac && make -DBATCH clean install)
@@ -2539,6 +2542,10 @@ if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; th
     install_guest_additions=`auto-ask guest-additions \
     'Install VirtualBox guest additions? (y/n)' y`
 fi
+
+# Add special configs for specific hardware
+install_packages sysutils/dmidecode
+auto-detect-laptops
 
 # Install GUI
 cat << EOM
