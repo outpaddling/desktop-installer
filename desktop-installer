@@ -639,6 +639,16 @@ EOM
     # Moved from $X11BASE/lib/X11/xdm in xdm 1.1.11_8
     xdm_base=$X11BASE/etc/X11/xdm
     
+    local di_xsession=$LOCALBASE/etc/xsession.desktop-installer
+    cat << EOM > $di_xsession 
+#!/bin/sh -e
+
+xinput --set-prop 10 'libinput Tapping Enabled' 1
+$vbox_client
+exec $session
+EOM
+    chmod 755 $di_xsession
+
     # Update default xsession to start selected desktop
     printf "Updating Xsession...\n"
     if [ -e $xdm_base/Xsession ]; then
@@ -653,7 +663,7 @@ EOM
 	fi
 	
 	sed -i '' \
-	    -e "s|exec $LOCALBASE/bin/xsm|$vbox_client exec $session|g" \
+	    -e "s|exec $LOCALBASE/bin/xsm|exec $di_xsession|g" \
 	    $xdm_base/Xsession
     else
 	printf "Internal error: $xdm_base/Xsession is missing!\n"
