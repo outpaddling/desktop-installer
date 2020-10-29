@@ -234,6 +234,30 @@ get_mouse_port()
 
 
 ##########################################################################
+#   Function description:
+#       Enable touchpad tapping
+#
+#   History:
+#   Date        Name        Modification
+#   2020-10-29  Jason Bacon Begin
+##########################################################################
+
+touchpad_tap_enable()
+{
+    mkdir -p $XORG_CONF_DIR
+    cat << EOM > $XORG_CONF_DIR/30-tap.conf
+Section "InputClass"
+Identifier "touchpad"
+Driver "libinput"
+  MatchIsTouchpad "on"
+  Option "Tapping" "on"
+  Option "NaturalScrolling" "on"
+  Option "ClickMethod" "clickfinger"
+EndSection
+EOM
+}
+
+##########################################################################
 #   Configure Xorg.  This should be done after the desktop system
 #   is installed so that startx will run the desktop.
 ##########################################################################
@@ -397,6 +421,9 @@ EOM
 	cp $DATADIR/20-swcursor.conf $XORG_CONF_DIR
 	chmod -R a+rX $XORG_CONF_DIR
     fi
+    
+    # Touchpad tapping is off by default on 12.2-RC*
+    touchpad_tap_enable
     
     # Patch for VirtualBox guest additions
     if vbox_guest && [ -e /etc/X11/xorg.conf ]; then
