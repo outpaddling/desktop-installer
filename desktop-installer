@@ -670,7 +670,8 @@ EOM
     cat << EOM > $di_xsession 
 #!/bin/sh -e
 
-xinput --set-prop 10 'libinput Tapping Enabled' 1
+# Use xorg.conf.d/30-tap.conf instead
+# xinput --set-prop 10 'libinput Tapping Enabled' 1
 $vbox_client
 exec $session
 EOM
