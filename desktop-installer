@@ -161,7 +161,7 @@ update_devfs_rules()
 	    printf "Entry already exists in devfs.rules for $dev.\n"
 	fi
     done
-    $RCDIR/devfs restart
+    service devfs restart
 }
 
 
@@ -361,15 +361,15 @@ EOM
 	auto-enable-service moused desktop-installer
     
 	# Restart moused after suspend
-	if ! fgrep -q '$RCDIR/moused' $RC_RESUME; then
+	if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
 	    sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
-$RCDIR/moused restart \
+/usr/sbin/service moused restart \
 \
 exit 0|g' $RC_RESUME
 	fi
     else
 	if [ -e /var/run/moused.pid ]; then
-	    $RCDIR/moused stop
+	    service moused stop
 	fi
 	fgrep -v moused $RC_CONF > temp.rc.conf
 	mv -f temp.rc.conf $RC_CONF
@@ -497,10 +497,10 @@ restart) to resume desktop-installer.
 
 EOM
 	    pause
-	    # ${LOCALBASE}$RCDIR/dbus restart started by hald?
+	    # service dbus restart started by hald?
 	    # hald must be started AFTER moused to function with xorg
-	    ${LOCALBASE}$RCDIR/dbus restart
-	    # ${LOCALBASE}$RCDIR/hald restart
+	    service dbus restart
+	    # service hald restart
 	    if startx; then
 		success=1
 	    else
@@ -561,7 +561,7 @@ EOM
     resp=`auto-ask accept-x11-forward "Accept forwarded X11 DISPLAY from other hosts over ssh? (y/n)" y`
     if [ "$resp" = 'y' ]; then
 	sed -i '.bak' -e 's/# *X11Forwarding yes/X11Forwarding yes/g' $SSHDIR/sshd_config
-	$RCDIR/sshd restart
+	service sshd restart
     fi
 
     # Install display manager
@@ -1425,9 +1425,9 @@ ntp_config()
     
     # ntpdate at startup
     if [ -e /var/run/ntpd.pid ]; then
-	$RCDIR/ntpd restart  # In case ntpd.pid is orphaned
+	service ntpd restart  # In case ntpd.pid is orphaned
 	sleep 2
-	$RCDIR/ntpd stop
+	service ntpd stop
     fi
     # Kill off any rogue daemons
     pkill -9 ntpd || true
@@ -1968,6 +1968,13 @@ boot_splash_config()
 network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
+    # Restart network after suspend
+    if ! fgrep -q "$LOCALBASE/sbin/auto-network-restart" $RC_RESUME; then
+	sed -i '.orig' -E "s|exit 0|# Added by desktop-installer \\
+$LOCALBASE/sbin/auto-network-restart \\
+\\
+exit 0|g" $RC_RESUME
+    fi
 
     if sysctl -a | fgrep -q dev.acpi_lid.0; then
 	default_wireless='y'
@@ -1982,7 +1989,7 @@ network_config()
 	start_cwd=`pwd`
 	cd $PORTSDIR/net
 	# ipw and iwi are in GENERIC kernel, so don't load their kmods
-	for port in bwi bwn; do
+	for port in bwi bwn malo; do
 	    if ! auto-package-installed net/$port-firmware-kmod; then
 		cd $port-firmware-kmod
 		if ! make -DBATCH install; then
@@ -2336,7 +2343,6 @@ LOCALBASE='/usr/local'
 DATADIR="$LOCALBASE/share/desktop-installer"
 PORTSDIR="/usr/ports"
 X11BASE="$LOCALBASE"
-RCDIR='/etc/rc.d'
 SSHDIR='/etc/ssh'
 
 JAVA_VERSION='16'
