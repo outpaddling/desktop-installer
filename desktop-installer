@@ -2232,8 +2232,8 @@ disable_write_cache()
     cat << EOM
 
 The built-in write cache of modern hard disks causes the disk controller to
-tell the operating that data has been committed to the disk media when it
-really is only in a memory buffer.  This can cause filesystems to be marked
+tell the operating system that data has been committed to the disk media when
+it really is only in a memory buffer.  This can cause filesystems to be marked
 clean after a write transaction when in fact the data have not yet been written
 to the media.  In the event of a sudden power loss, this can leave part of the
 journal unwritten.  If the write cache is not battery-backed, the unwritten
@@ -2244,7 +2244,7 @@ leave the filesystem in an inconsistent state.  This can, in very rare
 circumstances, cause kernel panics triggered by normal disk writes.
 
 Write cache is enabled by default in order to maximize performance.  This
-setting is aimed at servers backed by an ininterruptable power supply.  It is
+setting is aimed at servers backed by an uninterruptable power supply.  It is
 generally unsafe for systems that are vulnerable to power outages or other
 improper shutdowns, like typical home and office desktop systems.
 
