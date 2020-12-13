@@ -1174,7 +1174,7 @@ mplayer_plugin_install()
     # mplayer plugin has no package
     if ! auto-package-installed mplayerplug-in; then
 	cd $PORTSDIR/www/mplayer-plugin
-	make -DBATCH install
+	make -DBATCH deinstall clean reinstall
     fi
 }
 
@@ -1189,10 +1189,10 @@ faac_lame_install()
 	multimedia/mp4v2 devel/gmake audio/faac
     # Binary packages used to be restricted
     #if ! auto-package-installed audio/faac; then
-    #    (cd $PORTSDIR/audio/faac && make -DBATCH clean install)
+    #    (cd $PORTSDIR/audio/faac && make -DBATCH deinstall clean reinstall)
     #fi
     if ! auto-package-installed audio/lame; then
-	(cd $PORTSDIR/audio/lame && make -DBATCH clean install)
+	(cd $PORTSDIR/audio/lame && make -DBATCH deinstall clean reinstall)
     fi
 }
 
