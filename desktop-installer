@@ -2402,13 +2402,26 @@ If you would prefer to use the latest bleeding-edge packages, answer 'y' here.
 Before doing so, make sure your platform supports this.  Some second-tier
 platforms such as powerpc may only provide quarterly packages for some FreeBSD
 versions.
+-------------------------------------------------------------------------------
 
+EOM
+pause
+
+cat << EOM
+
+-------------------------------------------------------------------------------
 When using latest packages, updates to some packages may become available
 almost every day.  You will have access to all the latest features, but will
 also likely experience occasional regressions (things stop working) such as
-browsers crashing, printing not working from LibreOffice, etc.  You can help
-both the FreeBSD project and application developers by using the latest
-packages on one or more of your machines and reporting such problems.
+browsers crashing, printing not working from LibreOffice, etc.
+
+You can guard against many regressions by using auto-update-system to upgrade
+everything and listing critical packages in
+
+$LOCALBASE/etc/auto-admin/critical-packages
+
+You can help both the FreeBSD project and application developers by using the
+latest packages on one or more of your machines and reporting such problems.
 Contributing bug reports helps minimize problems with the quarterly snapshots.
 
 Note that switching back to quarterly from latest is not trivial, as
@@ -2418,6 +2431,7 @@ you're prepared to stay with it.
 -------------------------------------------------------------------------------
 
 EOM
+pause
 
 check_inodes
 mount_dist
