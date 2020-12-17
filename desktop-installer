@@ -1162,7 +1162,6 @@ common_packages()
 
     # In case someone installs chromium later
     auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
-    sysctl kern.ipc.shm_allow_removed=1
 }
 
 
@@ -1361,7 +1360,6 @@ external_drive_config()
     fi
     # Required for some removable drive mounting mechanisms
     auto-set-sysctl vfs.usermount 1 desktop-installer
-    sysctl vfs.usermount=1
 }
 
 
@@ -2591,6 +2589,11 @@ fi
 install_packages sysutils/dmidecode
 auto-detect-laptops
 
+##########################################################################
+#   Lump as many package installs as possible under here so that the bulk
+#   of setup time is unattended
+##########################################################################
+
 # Install GUI
 cat << EOM
 
@@ -2605,7 +2608,7 @@ EOM
 pause
 
 # Basic tools
-install_packages archivers/unzip net/rsync devel/gmake
+install_packages archivers/unzip net/rsync devel/gmake ports-mgmt/dialog4ports
 
 install_xorg
 
