@@ -1966,10 +1966,19 @@ boot_splash_config()
 network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
-    # Restart network after suspend
+    # Restart network and run ntpdate after suspend
+    # Normally don't like to work around FreeBSD shortcomings, but the wide
+    # variety of network drivers and ACPI implementations make this
+    # impossible to keep up with on the back end.
     if ! fgrep -q "$LOCALBASE/sbin/auto-network-restart" $RC_RESUME; then
 	sed -i '.orig' -E "s|exit 0|# Added by desktop-installer \\
 $LOCALBASE/sbin/auto-network-restart \\
+\\
+exit 0|g" $RC_RESUME
+    fi
+    if ! fgrep -q "$LOCALBASE/sbin/auto-fix-date" $RC_RESUME; then
+	sed -i '.orig' -E "s|exit 0|# Added by desktop-installer \\
+$LOCALBASE/sbin/auto-fix-date\\
 \\
 exit 0|g" $RC_RESUME
     fi
