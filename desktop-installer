@@ -1493,7 +1493,7 @@ usb_serial_config()
 
 firewire_config()
 {
-    if dmesg | fgrep -q firewire0; then
+    if dmidecode | fgrep -iq firewire0; then
 	auto-set-conf-var firewire_load '"YES"' $LOADER_CONF desktop-installer
 	# Firewire disks
 	auto-set-conf-var sbp_load '"YES"' $LOADER_CONF desktop-installer
@@ -2565,6 +2565,9 @@ while [ $valid_selection = 0 ]; do
     fi
 done
 
+# Do this early: Use by config functions for hardware detection
+install_packages sysutils/dmidecode
+
 power_config
 if vbox_guest; then
     auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
@@ -2607,7 +2610,6 @@ if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; th
 fi
 
 # Add special configs for specific hardware
-install_packages sysutils/dmidecode
 auto-detect-laptops
 
 ##########################################################################
