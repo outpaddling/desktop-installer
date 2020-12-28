@@ -667,12 +667,16 @@ EOM
     xdm_base=$X11BASE/etc/X11/xdm
     
     local di_xsession=$LOCALBASE/etc/xsession.desktop-installer
-    cat << EOM > $di_xsession 
+    cat << EOM > $di_xsession
 #!/bin/sh -e
 
-# Use xorg.conf.d/30-tap.conf instead
-# xinput --set-prop 10 'libinput Tapping Enabled' 1
 $vbox_client
+
+local_xsession=/usr/local/etc/xsession.local
+if [ -e $local_xsession ]; then
+    . $local_xsession
+fi
+
 exec $session
 EOM
     chmod 755 $di_xsession
