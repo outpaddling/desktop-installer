@@ -1493,7 +1493,7 @@ usb_serial_config()
 
 firewire_config()
 {
-    if dmidecode | fgrep -iq firewire0; then
+    if dmidecode | fgrep -iq firewire; then
 	auto-set-conf-var firewire_load '"YES"' $LOADER_CONF desktop-installer
 	# Firewire disks
 	auto-set-conf-var sbp_load '"YES"' $LOADER_CONF desktop-installer
