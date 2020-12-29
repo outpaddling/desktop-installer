@@ -24,5 +24,12 @@ if [ -f "$usermodmap" ]; then
     xmodmap "$usermodmap"
 fi
 
+aa_dir=/usr/local/etc/auto-admin
+for local_xsession in $aa_dir/xsession.*; do
+    if [ -e  ] && /usr/local/sbin/auto-file-secure $local_xsession; then
+	. $local_xsession
+    fi
+done
+
 ln -sf /usr/local/dt/bin/Xsession $HOME/.Xsession
 env LANG=C /usr/local/dt/bin/dtsession

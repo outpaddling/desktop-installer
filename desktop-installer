@@ -670,12 +670,15 @@ EOM
     cat << EOM > $di_xsession
 #!/bin/sh -e
 
+# FIXME: Move this to a separate script in etc/auto-admin/xsession.vbox
 $vbox_client
 
-local_xsession=/usr/local/etc/xsession.local
-if [ -e $local_xsession ]; then
-    . $local_xsession
-fi
+aa_dir=$LOCALBASE/etc/auto-admin
+for local_xsession in \$aa_dir/xsession.*; do
+    if [ -e $local_xsession ] && $LOCALBASE/sbin/auto-file-secure \$local_xsession; then
+	. \$local_xsession
+    fi
+done
 
 exec $session
 EOM
