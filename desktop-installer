@@ -1172,19 +1172,6 @@ common_packages()
 }
 
 
-mplayer_plugin_install()
-
-{
-    install_packages multimedia/mplayer www/libxul
-    
-    # mplayer plugin has no package
-    if ! auto-package-installed mplayerplug-in; then
-	cd $PORTSDIR/www/mplayer-plugin
-	make -DBATCH deinstall clean reinstall
-    fi
-}
-
-
 ##########################################################################
 #   lame cannot be packaged due to patent issues
 ##########################################################################
@@ -1199,6 +1186,7 @@ faac_lame_install()
     #fi
     if ! auto-package-installed audio/lame; then
 	(cd $PORTSDIR/audio/lame && make -DBATCH deinstall clean reinstall)
+	auto-mark-install-from-source audio/lame license
     fi
 }
 
@@ -2001,11 +1989,13 @@ exit 0|g" $RC_RESUME
 	start_cwd=`pwd`
 	cd $PORTSDIR/net
 	# ipw and iwi are in GENERIC kernel, so don't load their kmods
-	for port in bwi bwn malo; do
-	    if ! auto-package-installed net/$port-firmware-kmod; then
-		cd $port-firmware-kmod
-		if ! make -DBATCH install; then
-		    printf "Failed to install $port-firmware-kmod.\n"
+	for driver in bwi bwn malo; do
+	    if ! auto-package-installed net/$driver-firmware-kmod; then
+		cd $driver-firmware-kmod
+		if make -DBATCH clean reinstall; then
+		    auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
+		else
+		    printf "Failed to install $driver-firmware-kmod.\n"
 		fi
 		cd ..
 	    fi
