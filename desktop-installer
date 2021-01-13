@@ -1179,15 +1179,16 @@ common_packages()
 faac_lame_install()
 {
     install_packages devel/libtool devel/automake misc/help2man \
-	multimedia/mp4v2 devel/gmake audio/faac
+	multimedia/mp4v2 devel/gmake audio/faac audio/lame
     # Binary packages used to be restricted
     #if ! auto-package-installed audio/faac; then
     #    (cd $PORTSDIR/audio/faac && make -DBATCH deinstall clean reinstall)
+    #    auto-mark-install-from-source audio/faac license
     #fi
-    if ! auto-package-installed audio/lame; then
-	(cd $PORTSDIR/audio/lame && make -DBATCH deinstall clean reinstall)
-	auto-mark-install-from-source audio/lame license
-    fi
+    #if ! auto-package-installed audio/lame; then
+    #    (cd $PORTSDIR/audio/lame && make -DBATCH deinstall clean reinstall)
+    #    auto-mark-install-from-source audio/lame license
+    #fi
 }
 
 
