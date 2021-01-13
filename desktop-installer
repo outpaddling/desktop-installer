@@ -2338,6 +2338,9 @@ fi
 # Prevent dialogs in auto-install-packages
 export BATCH=yes
 
+# Distinguish our auto-ask responses in .config/auto-ask-responses
+export AUTO_ASK_TAG_PREFIX=desktop-installer-
+
 # Make sure installed files are readable
 umask 022
 
@@ -2457,7 +2460,8 @@ if [ $latest_packages = y ]; then
     pause
     exec desktop-installer
 else
-    auto-check-ports-branch
+    # Just update if necessary, don't report
+    auto-check-ports-branch > /dev/null
     
     # Update base system and ports
     update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
