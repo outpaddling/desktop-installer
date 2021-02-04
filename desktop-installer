@@ -353,7 +353,11 @@ with Xorg mouse drivers.
 
 EOM
 
-    use_moused=`auto-ask use-moused "Use moused? (y/n)" y`
+    if [ $SETUP_LEVEL = 2 ]; then
+	use_moused=`auto-ask use-moused "Use moused? (y/n)" y`
+    else
+	use_moused=y
+    fi
     if [ $use_moused != 'n' ]; then
 	mouse_port=`get_mouse_port`
 	printf "Adding mouse device: $mouse_port\n"
@@ -374,7 +378,7 @@ exit 0|g' $RC_RESUME
 	fgrep -v moused $RC_CONF > temp.rc.conf
 	mv -f temp.rc.conf $RC_CONF
     fi
-
+    
     # Create and install an xorg.conf file.  This isn't necessary, but it's
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
@@ -395,7 +399,11 @@ You can restart by typing Ctrl+Alt+F1 followed by Ctrl+Alt+Del.
 
 EOM
 
-    generate_xorg=`auto-ask generate-xorg 'Generate new xorg.conf? (y/n)' n`
+    if [ $SETUP_LEVEL = 2 ]; then
+	generate_xorg=`auto-ask generate-xorg 'Generate new xorg.conf? (y/n)' n`
+    else
+	generate_xorg=n
+    fi
     if [ $generate_xorg = 'y' ]; then
 	Xorg -configure
 	if [ 0$use_moused != 0'y' ]; then
@@ -415,7 +423,13 @@ cursor support.
 
 EOM
     fi
-    swcursor=`auto-ask swcursor "Enable software cursor? (y/n)" y`
+    
+    if [ $SETUP_LEVEL = 2 ]; then
+	swcursor=`auto-ask swcursor "Enable software cursor? (y/n)" y`
+    else
+	swcursor=y
+    fi
+    
     if [ $swcursor != n ]; then
 	mkdir -p $XORG_CONF_DIR
 	cp $DATADIR/20-swcursor.conf $XORG_CONF_DIR
@@ -1117,12 +1131,16 @@ common_packages()
     # webcam_config
 
     # Install some sort of flash player
-    flash_config
-
+    if [ $SETUP_LEVEL = 2 ]; then
+	flash_config
+    fi
+    
     # Install JDK
     # Let it be installed as a prereq for something else
-    java_config
-    
+    if [ $SETUP_LEVEL = 2 ]; then
+	java_config
+    fi
+
     # Common packages for desktop systems
     
     # bsdstats.org is an expired domain as of 2019-08-17. Is the idea dead?
@@ -2291,8 +2309,8 @@ To disable the journal, you must manually boot to single-user mode and run:
     $LOCALBASE/sbin/auto-su+j-toggle off
 
 EOM
-    disable_write_cache=$(auto-ask disable-write-cache "Disable write cache?" n)
-    if [ $disable_write_cache = y ]; then
+    disable_cache=$(auto-ask disable-write-cache "Disable write cache?" n)
+    if [ $disable_cache = y ]; then
 	auto-write-cache-toggle off desktop-installer
 	pause
     fi
@@ -2351,7 +2369,6 @@ PORTSDIR="/usr/ports"
 X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
 
-JAVA_VERSION='16'
 ARCH=`uname -m`
 
 # Config files
@@ -2396,6 +2413,20 @@ the defaults.
 -------------------------------------------------------------------------------
 EOM
 pause
+
+while [ 0$SETUP_LEVEL != 01 ] && [ 0$SETUP_LEVEL != 02 ]; do
+    cat << EOM
+
+You may now choose between a simple setup process with fewer questions,
+using reasonable defaults where possible, or an advanced setup providing
+you full control over all configuration options.
+
+1.. Simple
+2.. Advanced
+
+EOM
+    read -p 'Your choice? ' SETUP_LEVEL
+done
 
 cat << EOM
 
@@ -2444,9 +2475,6 @@ pause
 check_inodes
 mount_dist
 
-# Enable firewall as early as possible for maximum security
-firewall_config
-
 if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
 else
@@ -2464,7 +2492,7 @@ else
     auto-check-ports-branch > /dev/null
     
     # Update base system and ports
-    update_system=`auto-ask update-system 'Update system before proceeding? (y/n)' y`
+    update_system=`auto-ask update-system 'Update and reboot system before proceeding? (y/n)' y`
     if [ $update_system = y ]; then
 	printf "System will restart following update.\n"
 	printf "Rerun desktop-installer from the same directory after reboot.\n"
@@ -2472,13 +2500,21 @@ else
 	auto-update-system --yes
     fi
 fi
+
+# Enable firewall as early as possible for maximum security
+if [ $SETUP_LEVEL = 2 ]; then
+    firewall_config
+fi
+
 auto-enable-passwdqc
 
 # Needed by openjdk, bash, etc.
 auto-add-fdesc-mount
 
 # Ensure disk is clean after a power outage
-disable_write_cache
+if [ $SETUP_LEVEL = 2 ]; then
+    disable_write_cache
+fi
 
 clear
 cat << EOM
@@ -2496,19 +2532,21 @@ are kept up-to-date with "pkg update" and "portsnap".
 
 EOM
 
-resp=`auto-ask build-from-source 'Build from source? (y/n)' n`
-if [ "$resp" = y ]; then
-    AUTO_BUILD_FROM_SOURCE=yes
-else
-    AUTO_BUILD_FROM_SOURCE=fall-back
-    if [ x$AUTO_PACKAGEROOT = x ]; then
-	printf "Finding fastest mirror... "
-	AUTO_PACKAGEROOT=`auto-fastest-mirror`
-	export AUTO_PACKAGEROOT
-	printf "$AUTO_PACKAGEROOT\n"
+if [ $SETUP_LEVEL = 2 ]; then
+    resp=`auto-ask build-from-source 'Build from source? (y/n)' n`
+    if [ "$resp" = y ]; then
+	AUTO_BUILD_FROM_SOURCE=yes
+    else
+	AUTO_BUILD_FROM_SOURCE=fall-back
+	if [ x$AUTO_PACKAGEROOT = x ]; then
+	    printf "Finding fastest mirror... "
+	    AUTO_PACKAGEROOT=`auto-fastest-mirror`
+	    export AUTO_PACKAGEROOT
+	    printf "$AUTO_PACKAGEROOT\n"
+	fi
     fi
+    export AUTO_BUILD_FROM_SOURCE
 fi
-export AUTO_BUILD_FROM_SOURCE
 
 line
 cat << EOM
@@ -2740,23 +2778,14 @@ fi
 cat << EOM
 
 You can spend years exploring the amazing features of FreeBSD, but for now
-here are some essentials to get you started...
+you can perform basic systems management like updating your system, adding
+users, or installing software by running
 
-o   Keep your system up-to-date by running "auto-update-system" frequently
+su -m root -c auto-admin
 
-o   Use "pkg install" to install any of the 30,000+ FreeBSD packages
-    -   Browse the collection at https://www.freebsd.org/ports/index.html
-    -   To search the collection, try "pkg search <regular-expression>"
-    -   For a full list, run "pkg search '.*'"
-
-o   Use "adduser" to add new users
-    -   Add them to the "wheel" group to permit using "su"
-    -   Add them to the "operator" group to permit using "shutdown"
-    -   Add them to the "video" group to ensure video driver performance
-
-o   Please report problems with desktop-installer at
+Please report problems with desktop-installer at
 	
-	https://github.com/outpaddling/desktop-installer
+    https://github.com/outpaddling/desktop-installer
 
 We hope you enjoy your new desktop system!
 
