@@ -172,6 +172,15 @@ vbox_guest()
 }
 
 
+vm_guest()
+{
+    # FIXME: Add support for other hypervisors and emulators
+    vbox_guest
+    
+    return $?
+}
+
+
 ##########################################################################
 #   Install Xorg.  This should be done separately, since not all
 #   modules will be installed as dependencies by the desktop packages.
@@ -1038,6 +1047,48 @@ firefox_flash()
 }
 
 
+##########################################################################
+#   Function description:
+#       Set up linux_base complete with linproc, etc.
+#       
+#   History:
+#   Date        Name        Modification
+#   2021-02-06  J Bacon     Begin
+##########################################################################
+
+linux_config()
+{
+    if [ ! -e /compat/linux/bin/bash ]; then
+	cat << EOM
+
+FreeBSD's Linux compatibility module allows you to run closed-source Linux
+binaries in cases where you don't have access to the source code to compile
+a program directly for FreeBSD.
+
+It is NOT an emulation layer.  It simply adds Linux system calls to the
+FreeBSD kernel so that Linux binaries can run directly.  In some cases, a
+Linux binary will actually run faster on FreeBSD than it does on Linux.
+
+Most Linux binaries compiled for RHEL/CentOS will work, though you may need
+to install appropriate Linux shared libraries or other dependencies just as
+you would on a Linux system.  The most commonly needed Linux libraries are
+available as FreeBSD ports, e.g. textproc/linux-c7-expat.  Creating new
+FreeBSD ports from existing CentOS Yum packages is extremely easy.
+
+FreeBSD's Linux compatibility also provides Linux procfs, sysfs, and tmpfs
+for applications that require it.
+
+EOM
+	install_linux=$(auto-ask linux-compat 'Configure Linux compatibility? (y/n)' n)
+	if [ $install_linux = y ]; then
+	    auto-install-linux_base
+	fi
+    else
+	printf "Linux compatibility already enabled.\n"
+    fi
+}
+
+
 flash_config()
 {
     # Test for last item installed in selection
@@ -1133,11 +1184,7 @@ common_packages()
     # Install some sort of flash player
     if [ $SETUP_LEVEL = 2 ]; then
 	flash_config
-    fi
-    
-    # Install JDK
-    # Let it be installed as a prereq for something else
-    if [ $SETUP_LEVEL = 2 ]; then
+	linux_config
 	java_config
     fi
 
@@ -1382,6 +1429,8 @@ external_drive_config()
 
 java_config()
 {
+    # Let it be installed as a prereq for something else so we get
+    # the default version
     if ! auto-package-installed java/icedtea-web; then
 	cat << EOM
 
@@ -1767,13 +1816,6 @@ lumina_packages()
 	math/galculator x11/lilyterm
 
     cdrecord_perms
-
-    cat << EOM
-
-GTK2 appearance can be controlled with lxappearance.
-
-EOM
-    pause
 }
 
 
@@ -1995,60 +2037,64 @@ $LOCALBASE/sbin/auto-fix-date\\
 exit 0|g" $RC_RESUME
     fi
 
-    if sysctl -a | fgrep -q dev.acpi_lid.0; then
-	default_wireless='y'
-    else
-	default_wireless='n'
-    fi
-    enable_wireless=`auto-ask install-wireless "Configure wireless networking? (y/n)" $default_wireless`
-    if [ 0"$enable_wireless" = 0y ]; then
-	# add wlans_{dev}0="wlan0" to rc.conf
-	# FIXME: The real solution should detect all wireless devices,
-	# not just those enumerated here.
-	start_cwd=`pwd`
-	cd $PORTSDIR/net
-	# ipw and iwi are in GENERIC kernel, so don't load their kmods
-	for driver in bwi bwn malo; do
-	    if ! auto-package-installed net/$driver-firmware-kmod; then
-		cd $driver-firmware-kmod
-		if make -DBATCH clean reinstall; then
-		    auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
-		else
-		    printf "Failed to install $driver-firmware-kmod.\n"
+    if ! vm_guest; then
+	if sysctl -a | fgrep -q dev.acpi_lid.0; then
+	    default_wireless='y'
+	else
+	    default_wireless='n'
+	fi
+	enable_wireless=`auto-ask install-wireless "Configure wireless networking? (y/n)" $default_wireless`
+	if [ 0"$enable_wireless" = 0y ]; then
+	    # add wlans_{dev}0="wlan0" to rc.conf
+	    # FIXME: The real solution should detect all wireless devices,
+	    # not just those enumerated here.
+	    start_cwd=`pwd`
+	    cd $PORTSDIR/net
+	    # ipw and iwi are in GENERIC kernel, so don't load their kmods
+	    for driver in bwi bwn malo; do
+		if ! auto-package-installed net/$driver-firmware-kmod; then
+		    cd $driver-firmware-kmod
+		    if make -DBATCH clean reinstall; then
+			auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
+		    else
+			printf "Failed to install $driver-firmware-kmod.\n"
+		    fi
+		    cd ..
 		fi
-		cd ..
-	    fi
-	done
-	cd $start_cwd
-	# Check bwi before bwn.  They support the same devices, but
-	# bwi seems to work better.
-	# Driver name must not contain _ unless it's a variant as in
-	# rtwn_pci.  We'll have to recode this section otherwise.
-	# Both rtwn_pci and rtwn_usb appear as device rtwn0.
-	drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
-	for driver in $drivers; do
-	    if kldload if_${driver} > /dev/null 2>&1; then
-		printf "Loaded $driver.\n"
-	    fi
-	done
-	
-	for driver in $drivers; do
-	    # Strip off _usb or _pci to get device name
-	    WIFI_DEVICE=${driver%_*}0
-	    if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
-		# FIXME: Check also for ${driver}1, ${driver}2, etc.
-		# Also could use a better test than this simple grep.
-		dmesg | grep -q "^$WIFI_DEVICE"; then
-		printf "Found wireless device $WIFI_DEVICE.\n"
-		auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
-		    $RC_CONF desktop-installer
-		# Not necessary for drivers which are in the GENERIC kernel, but
-		# it shouldn't hurt.
-		auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
-		break   # Configure only one wireless device!
-	    fi
-	done
-	auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
+	    done
+	    cd $start_cwd
+	    # Check bwi before bwn.  They support the same devices, but
+	    # bwi seems to work better.
+	    # Driver name must not contain _ unless it's a variant as in
+	    # rtwn_pci.  We'll have to recode this section otherwise.
+	    # Both rtwn_pci and rtwn_usb appear as device rtwn0.
+	    drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
+	    for driver in $drivers; do
+		if kldload if_${driver} > /dev/null 2>&1; then
+		    printf "Loaded $driver.\n"
+		fi
+	    done
+	    
+	    for driver in $drivers; do
+		# Strip off _usb or _pci to get device name
+		WIFI_DEVICE=${driver%_*}0
+		if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
+		    # FIXME: Check also for ${driver}1, ${driver}2, etc.
+		    # Also could use a better test than this simple grep.
+		    dmesg | grep -q "^$WIFI_DEVICE"; then
+		    printf "Found wireless device $WIFI_DEVICE.\n"
+		    auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
+			$RC_CONF desktop-installer
+		    # Not necessary for drivers which are in the GENERIC kernel, but
+		    # it shouldn't hurt.
+		    auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
+		    break   # Configure only one wireless device!
+		fi
+	    done
+	    auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
+	fi
+    else
+	enable_wireless='n'
     fi
 }
 
@@ -2421,7 +2467,7 @@ You may now choose between a simple setup process with fewer questions,
 using reasonable defaults where possible, or an advanced setup providing
 you full control over all configuration options.
 
-1.. Simple
+1.. Quick and easy
 2.. Advanced
 
 EOM
@@ -2512,7 +2558,7 @@ auto-enable-passwdqc
 auto-add-fdesc-mount
 
 # Ensure disk is clean after a power outage
-if [ $SETUP_LEVEL = 2 ]; then
+if [ $SETUP_LEVEL = 2 ] && ! vm_guest; then
     disable_write_cache
 fi
 
@@ -2538,12 +2584,13 @@ if [ $SETUP_LEVEL = 2 ]; then
 	AUTO_BUILD_FROM_SOURCE=yes
     else
 	AUTO_BUILD_FROM_SOURCE=fall-back
-	if [ x$AUTO_PACKAGEROOT = x ]; then
-	    printf "Finding fastest mirror... "
-	    AUTO_PACKAGEROOT=`auto-fastest-mirror`
-	    export AUTO_PACKAGEROOT
-	    printf "$AUTO_PACKAGEROOT\n"
-	fi
+	# FIXME: Obsolete?
+	#if [ x$AUTO_PACKAGEROOT = x ]; then
+	#    printf "Finding fastest mirror... "
+	#    AUTO_PACKAGEROOT=`auto-fastest-mirror`
+	#    export AUTO_PACKAGEROOT
+	#    printf "$AUTO_PACKAGEROOT\n"
+	#fi
     fi
     export AUTO_BUILD_FROM_SOURCE
 fi
@@ -2777,11 +2824,28 @@ fi
 
 cat << EOM
 
-You can spend years exploring the amazing features of FreeBSD, but for now
+You can spend years exploring all the amazing features of FreeBSD, but for now
 you can perform basic systems management like updating your system, adding
 users, or installing software by running
 
-su -m root -c auto-admin
+    su -m root -c auto-admin
+
+NOTE:
+
+Some software was installed by building from source to avert potential
+compatibility issues or to respect software license restrictions.
+
+You MUST use auto-admin or auto-update-system to ensure that packages
+installed from source are updated from source.  Running "pkg upgrade" directly
+will either replace them with binary packages from the FreeBSD project or
+not upgrade them at all.
+
+EOM
+while [ 0$resp != "got it" ]; do
+    read -p 'Type "got it" to continue. ' resp
+done
+
+cat << EOM
 
 Please report problems with desktop-installer at
 	
@@ -2792,6 +2856,7 @@ We hope you enjoy your new desktop system!
 EOM
 pause
 
+line
 cat << EOM
 
 ========================================================================
