@@ -2541,7 +2541,7 @@ else
     update_system=`auto-ask update-system 'Update and reboot system before proceeding? (y/n)' y`
     if [ $update_system = y ]; then
 	printf "System will restart following update.\n"
-	printf "Rerun desktop-installer from the same directory after reboot.\n"
+	printf "Rerun desktop-installer again after reboot.\n"
 	pause
 	auto-update-system --yes
     fi
