@@ -2463,12 +2463,12 @@ pause
 while [ 0$SETUP_LEVEL != 01 ] && [ 0$SETUP_LEVEL != 02 ]; do
     cat << EOM
 
-You may now choose between a simple setup process with fewer questions,
+You may now choose between a simplified setup process with fewer questions,
 using reasonable defaults where possible, or an advanced setup providing
 you full control over all configuration options.
 
-1.. Quick and easy
-2.. Advanced
+1.. Just the essentials
+2.. Advanced options
 
 EOM
     read -p 'Your choice? ' SETUP_LEVEL
