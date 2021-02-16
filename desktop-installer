@@ -2841,7 +2841,7 @@ will either replace them with binary packages from the FreeBSD project or
 not upgrade them at all.
 
 EOM
-while [ 0$resp != "got it" ]; do
+while [ 0"$resp" != 0"got it" ]; do
     read -p 'Type "got it" to continue. ' resp
 done
 
