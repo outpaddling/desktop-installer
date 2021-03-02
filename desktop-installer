@@ -1030,23 +1030,6 @@ sddm_disable()
 }
 
 
-# Is this function obsolete with firefox 3.6?
-firefox_flash()
-{
-    for dir in $LOCALBASE/lib/firefox/plugins $LOCALBASE/lib/firefox3/plugins
-    do
-	mkdir -p $dir
-	for plugin in \
-	    $LOCALBASE/lib/npapi/*/libflashplayer.so \
-	    $LOCALBASE/lib/browser_plugins/npwrapper.libflashplayer.so; do
-	    if [ -e $plugin ]; then
-		ln -sf $plugin $dir
-	    fi
-	done
-    done
-}
-
-
 ##########################################################################
 #   Function description:
 #       Set up linux_base complete with linproc, etc.
@@ -1089,67 +1072,6 @@ EOM
 }
 
 
-flash_config()
-{
-    # Test for last item installed in selection
-    if auto-package-installed graphics/gnash || \
-	    auto-package-installed www/flashplayer; then
-	printf "Flash already installed.\n"
-    else
-	# Gnash or Flash?
-	line
-	cat << EOM
-Choosing a Flash player:
-
-The official Flash player from Adobe is for x86-based processors only,
-and requires Linux compatibility, since it is a closed source
-Linux binary.  Linux binaries run essentially natively on
-FreeBSD, so there is no measurable performance penalty.  The only
-significant cost of running Linux binaries is the extra installation
-time and space required by Linux libraries.  If you need full
-Flash capabilities, this is the best option.
-
-Gnash (GNU Flash Player) is an open source Flash implementation that
-runs natively on all platforms.  It currently works for many Flash
-WEB sites, including many, but not all YouTube videos.  If complete
-flash support is not important to you, or you are not running
-on an x86-based processor, this is your best bet.
-    
-1.. Install Gnash
-2.. Install Linux Flash
-3.. No Flash
-	
-EOM
-	line
-	resp='0'
-	while [ "$resp" != 1 -a "$resp" != 2 -a "$resp" != 3 ]; do
-	    resp=`auto-ask flash "Your choice?" 3`
-	done
-	
-	case "$resp" in
-	1)
-	    install_packages graphics/gnash
-	    ;;
-	2)
-	    auto-install-linux-flash
-	    ;;
-	*)
-	    ;;
-	esac
-    fi
-
-    if [ 0"$resp" = 01 ] || [ 0"$resp" = 02 ]; then
-	if [ -e $LOCALBASE/bin/nspluginwrapper ]; then
-	    # Create $LOCALBASE/lib/browser_plugins/npwrapper.libflashplayer.so
-	    # Do before firefox_flash, which links to it
-	    nspluginwrapper -v -a -i
-	fi
-	# Obsolete?
-	# firefox_flash
-    fi
-}
-
-
 ##########################################################################
 #   Install popular packages likely to be used under any desktop.
 ##########################################################################
@@ -1181,9 +1103,7 @@ common_packages()
     # Also switch to auto-webcam-setup when it's ready
     # webcam_config
 
-    # Install some sort of flash player
     if [ $SETUP_LEVEL = 2 ]; then
-	flash_config
 	linux_config
 	java_config
     fi
@@ -1440,7 +1360,7 @@ the web.  Check the openjdk ports for the latest supported platforms.
 If you are not sure your platform supports Java, answer 'n' here.
 
 EOM
-	resp=`auto-ask install-java "Install Java plugin? (y/n)" n`
+	resp=`auto-ask install-java "Install icedtea Java plugin? (y/n)" n`
 	if [ "$resp" = 'y' ]; then
 	    line
 	    # Icedtea installs default jdk as a dependency
