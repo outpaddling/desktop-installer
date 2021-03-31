@@ -1679,7 +1679,7 @@ kde5_config()
     PATH=${PATH}:${LOCALBASE}/kde5/bin
     export PATH
     
-    install_packages x11/kde5 x11/sddm devel/bsdisks
+    install_packages x11/kde5 x11/sddm sysutils/bsdisks
     auto-mark-package-critical kde5 bsdisks     # sddm added by sddm_config
     startup_scripts KDE5
     xorg_config sddm
