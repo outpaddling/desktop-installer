@@ -2455,7 +2455,7 @@ if [ $latest_packages = y ]; then
     exec desktop-installer
 else
     # Just update if necessary, don't report
-    auto-check-ports-branch > /dev/null
+    auto-check-ports-branch
     
     # Update base system and ports
     update_system=`auto-ask update-system 'Update and reboot system before proceeding? (y/n)' y`
@@ -2572,8 +2572,10 @@ while [ $valid_selection = 0 ]; do
     fi
 done
 
-# Do this early: Use by config functions for hardware detection
-install_packages sysutils/dmidecode
+# Do this early: dmidecode used by config functions for hardware detection
+# gmake used for wifi driver builds
+install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
+    devel/gmake ports-mgmt/dialog4ports
 
 power_config
 if vbox_guest; then
@@ -2636,9 +2638,6 @@ take a day or more.
 EOM
 
 pause
-
-# Basic tools
-install_packages archivers/unzip net/rsync devel/gmake ports-mgmt/dialog4ports
 
 install_xorg
 
