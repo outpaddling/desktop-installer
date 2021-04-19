@@ -344,13 +344,16 @@ again.  Answer 'y' if you want to to use the guided driver configurator or
 your graphics manually later.
 
 EOM
-	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" y`
+	
+	if [ -e $CONFIG_DIR/gpu-done ]; then
+	    default_response=n
+	else
+	    default_response=y
+	fi
+	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" $default_response`
 	if [ 0$configure_graphics != 0n ]; then
 	    auto-gpu-setup
-	    read -p "Reboot now? (y/n) [y] " reboot
-	    if [ "0$reboot" != 0n ]; then
-		shutdown -r now
-	    fi
+	    touch $CONFIG_DIR/gpu-done
 	fi
     fi
     
@@ -2334,6 +2337,8 @@ DATADIR="$LOCALBASE/share/desktop-installer"
 PORTSDIR="/usr/ports"
 X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
+CONFIG_DIR='/root/.config/desktop-installer'
+mkdir -p $CONFIG_DIR
 
 ARCH=`uname -m`
 
@@ -2704,10 +2709,11 @@ case $desktop_selection in
     printf "Invalid desktop selection.\n\n"
 esac
 
+# Must come after desktop installation.  Configures gamin.
 # Broken sudo config
-# usermount_config    # Must come after desktop installation.  Configures gamin.
+# usermount_config
 
-# Broken and of questionable value samba_config
+# Broken and of questionable value: samba_config
 
 faac_lame_install
 auto-fusefs-install
