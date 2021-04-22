@@ -1910,8 +1910,8 @@ EOM
     
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
-	auto-append-line battery_shutdown.sh \
-	    $LOCALBASE'/sbin/battery_shutdown.sh &' /etc/rc.local desktop-installer
+	auto-append-line battery-shutdown.sh \
+	    $LOCALBASE'/sbin/battery-shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
 	# Causes ThinkPad X201 to stall for 20 seconds during resume from sleep
 	# auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
