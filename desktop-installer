@@ -217,10 +217,6 @@ install_xorg()
 	    install_packages emulators/virtualbox-ose-additions
 	    auto-enable-service vboxguest desktop-installer
 	    auto-enable-service vboxservice desktop-installer
-	    # From wiki.freebsd.org/VirtualBox
-	    # FIXME: Is HAL deprecated here?
-	    # mkdir -p $LOCALBASE/etc/hal/fdi/policy/
-	    # cp $DATADIR/90-vboxguest.fdi $LOCALBASE/etc/hal/fdi/policy/
 	fi
     fi
     dbus_config
@@ -523,10 +519,7 @@ restart) to resume desktop-installer.
 
 EOM
 	    pause
-	    # service dbus restart started by hald?
-	    # hald must be started AFTER moused to function with xorg
 	    service dbus restart
-	    # service hald restart
 	    if startx; then
 		success=1
 	    else
@@ -855,10 +848,7 @@ EOM
 	xdm_disable
 	slim_disable
 	sddm_disable
-	# Mouse may not work in gdm unless we restart HAL
-	service hald restart
 	auto-enable-service gdm desktop-installer
-	# exit 0
     fi
 }
 
@@ -1584,8 +1574,6 @@ xfce4_config()
     # Allow members of operator group to shut down and restart from
     # XFCE4 logout panel
     enable_user_shutdown
-    # Keep HAL as long as the xfce port depends on it
-    auto-enable-service hald desktop-installer
     startup_scripts XFCE4
     xorg_config light
     xfce4_packages
@@ -1686,8 +1674,6 @@ kde5_config()
     auto-mark-package-critical kde5 bsdisks     # sddm added by sddm_config
     startup_scripts KDE5
     xorg_config sddm
-    # Replaced by bsdisks
-    # auto-enable-service hald desktop-installer
     kde5_packages
 }
 
@@ -1706,16 +1692,12 @@ gnome3_config()
     fi
     
     # GDM must be installed even for startx to work during X11 test
-    install_packages print/gnome-print sysutils/hal x11/gdm
-    auto-mark-package-critical gnome3 gnome-print hal gdm
+    install_packages print/gnome-print x11/gdm
+    auto-mark-package-critical gnome3 gnome-print gdm
     
     startup_scripts GNOME3
     xorg_config gdm
     dbus_config
-    # Keep HAL as long as gnome depends on it
-    auto-enable-service hald desktop-installer
-    # FIXME: Is this still necessary?
-    auto-enable-hal-mount
 }
 
 
