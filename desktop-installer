@@ -646,14 +646,14 @@ EOM
 	;;
     FLUXBOX)
 	session="$LOCALBASE/bin/startfluxbox"
-	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
+	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
 	session="$LOCALBASE/bin/icewm-session"
-	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
+	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     KDE5)
 	session='startplasma-x11'
@@ -672,7 +672,7 @@ EOM
 	;;
     WMAKER)
 	session="$LOCALBASE/bin/wmaker"
-	vbox_client='sysctl dev.acpi.0.%desc \| fgrep -q VBOX \&\& VBoxClient --display;'
+	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     XFCE4)
 	session="$LOCALBASE/bin/startxfce4"
@@ -694,7 +694,7 @@ $vbox_client
 
 aa_dir=$LOCALBASE/etc/auto-admin
 for local_xsession in \$aa_dir/xsession.*; do
-    if [ -e $local_xsession ] && $LOCALBASE/sbin/auto-file-secure \$local_xsession; then
+    if [ -e "$local_xsession" ] && $LOCALBASE/sbin/auto-file-secure \$local_xsession; then
 	. \$local_xsession
     fi
 done
