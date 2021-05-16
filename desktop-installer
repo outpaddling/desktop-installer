@@ -2334,8 +2334,10 @@ LOADER_CONF='/boot/loader.conf'
 RC_RESUME='/etc/rc.resume'
 TTYS='/etc/ttys'
 FSTAB='/etc/fstab'
-MAKE_CONF='/etc/make.conf'
 NASD_CONF="$LOCALBASE/etc/nasd.conf"
+
+# Possible that bsdinstall does not create
+test -e $LOADER_CONF || touch $LOADER_CONF
 
 cat << EOM
 
