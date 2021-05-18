@@ -36,7 +36,7 @@ log_cmd()
 	printf "Usage: $0 command [args]\n"
 	exit 1
     fi
-    log_dir=$START_DIR/desktop-installer-log
+    log_dir=/root/desktop-installer-log
     if [ ! -e $log_dir ]; then
 	mkdir $log_dir
     fi
@@ -68,7 +68,7 @@ install_packages()
 {
     local install
     
-    log_dir=$START_DIR/desktop-installer-log
+    log_dir=/root/desktop-installer-log
     if [ ! -e $log_dir ]; then
 	mkdir $log_dir
     fi
