@@ -709,7 +709,7 @@ $vbox_client
 
 aa_dir=$LOCALBASE/etc/auto-admin
 for local_xsession in \$aa_dir/xsession.*; do
-    if [ -e "$local_xsession" ] && $LOCALBASE/sbin/auto-file-secure \$local_xsession; then
+    if [ -e \$local_xsession ] && $LOCALBASE/sbin/auto-file-secure \$local_xsession; then
 	. \$local_xsession
     fi
 done
