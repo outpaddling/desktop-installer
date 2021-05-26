@@ -171,11 +171,15 @@ vbox_guest()
     return $?
 }
 
+parallels_guest()
+{
+    sysctl kern.vm_guest | fgrep -q parallels
+}
 
 vm_guest()
 {
     # FIXME: Add support for other hypervisors and emulators
-    vbox_guest
+    vbox_guest || parallels_guest
     
     return $?
 }
@@ -323,10 +327,22 @@ EOM
 	done
     fi
     
+    # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
+    if parallels_guest; then
+	cat << EOM > $XORG_CONF_DIR/10-parallels-scfb.conf
+Section "Device"
+	### Force SCFB driver for Parallels 15+
+	Identifier  "Card0"
+	Driver      "scfb"
+	BusID       "PCI:1:0:0"
+EndSection
+EOM
+    fi
+    
     # Don't mess with drivers if X already running or this is a VM
     # FIXME: Check for any VM guest, not just VirtualBox
-    if vbox_guest; then
-	printf "No graphics drivers needed for VirtualBox guests.\n"
+    if vm_guest; then
+	printf "No graphics drivers needed for VM guests.\n"
     elif ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	cat << EOM
 
