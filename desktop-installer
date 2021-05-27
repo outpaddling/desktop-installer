@@ -340,10 +340,7 @@ EOM
     fi
     
     # Don't mess with drivers if X already running or this is a VM
-    # FIXME: Check for any VM guest, not just VirtualBox
-    if vm_guest; then
-	printf "No graphics drivers needed for VM guests.\n"
-    elif ps axw | fgrep 'bin/X' | fgrep -qv grep; then
+    if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	cat << EOM
 
 X11 already running, so we won't mess with the graphics drivers.  If you
@@ -1420,7 +1417,7 @@ procfs_config()
 ntp_config()
 {
     # Let the host manage the clock
-    if vbox_guest; then
+    if vm_guest; then
 	printf "Skipping NTP configuration for guest OS.\n"
 	return
     fi
@@ -1930,9 +1927,10 @@ EOM
     fi
     
     # Reduce host CPU usage by reducing kernel timer interrupts
-    if vbox_guest; then
-	auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
-    fi
+    # Deviating from default hz causes some timing issues
+    #if vbox_guest; then
+    #    auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
+    #fi
 }
 
 
@@ -2410,7 +2408,7 @@ you full control over all configuration options.
 2.. Advanced options
 
 EOM
-    read -p 'Your choice? ' SETUP_LEVEL
+    SETUP_LEVEL=`auto-ask setup-level 'Your choice? ' 1`
 done
 
 cat << EOM
@@ -2630,8 +2628,7 @@ if [ -e /dev/usb ]; then
 fi
 external_drive_config
 
-# Ask the questions before beginning so the installation can
-# run unattended
+# Ask the questions before beginning so the installation can run unattended
 if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
     install_guest_additions=`auto-ask guest-additions \
     'Install VirtualBox guest additions? (y/n)' y`
