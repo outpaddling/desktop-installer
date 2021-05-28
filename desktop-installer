@@ -173,13 +173,18 @@ vbox_guest()
 
 parallels_guest()
 {
-    sysctl kern.vm_guest | fgrep -q parallels
+    sysctl kern.vm_guest | fgrep -iq parallels
+}
+
+vmware_guest()
+{
+    sysctl kern.vm_guest | fgrep -iq vmware
 }
 
 vm_guest()
 {
     # FIXME: Add support for other hypervisors and emulators
-    vbox_guest || parallels_guest
+    vbox_guest || parallels_guest || vmware_guest
     
     return $?
 }
@@ -216,13 +221,39 @@ install_xorg()
     install_packages x11-fonts/webfonts
     
     # Check for virtualbox guest
-    if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
-	if [ $install_guest_additions = y ]; then
-	    install_packages emulators/virtualbox-ose-additions
-	    auto-enable-service vboxguest desktop-installer
-	    auto-enable-service vboxservice desktop-installer
+    if vbox_guest; then
+	if [ $install_guest_additions = y ] && \
+	   ! auto-package-installed emulators/virtualbox-ose-additions; then
+		install_packages emulators/virtualbox-ose-additions
+		auto-enable-service vboxguest desktop-installer
+		auto-enable-service vboxservice desktop-installer
 	fi
+    else
+	pkg remove -y virtualbox-ose-additions || true
     fi
+    
+    # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
+    if parallels_guest; then
+	cat << EOM > $XORG_CONF_DIR/10-parallels-scfb.conf
+Section "Device"
+	### Force SCFB driver for Parallels 15+
+	Identifier  "Card0"
+	Driver      "scfb"
+	# Default BusID detected by Xorg -configure
+	# BusID       "PCI:1:0:0"
+EndSection
+EOM
+	install_packages emulators/parallels-tools
+    else
+	pkg remove -y parallels-tools || true
+	rm -f $XORG_CONF_DIR/10-parallels-scfb.conf
+    fi
+    
+    if ! vmware_guest; then
+	# Installed by auto-gpu-setup
+	pkg remove -y xf86-video-vmware || true
+    fi
+
     dbus_config
 
     # Pretty up xterm
@@ -325,18 +356,6 @@ EOM
 		printf "Invalid selection: $selection\n"
 	    esac
 	done
-    fi
-    
-    # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
-    if parallels_guest; then
-	cat << EOM > $XORG_CONF_DIR/10-parallels-scfb.conf
-Section "Device"
-	### Force SCFB driver for Parallels 15+
-	Identifier  "Card0"
-	Driver      "scfb"
-	BusID       "PCI:1:0:0"
-EndSection
-EOM
     fi
     
     # Don't mess with drivers if X already running or this is a VM
@@ -573,7 +592,7 @@ EOM
 		drm_kmod=`auto-ask drm-kmod "Install drm-kmod? (y/n)" y`
 		if [ $drm_kmod != n ]; then
 		    pkg remove -y drm-\*-kmod || true
-		    install_packages "graphics/drm-kmod"
+		    install_packages graphics/drm-kmod
 		    printf "Update $RC_CONF as described above, reboot, and run desktop-installer again.\n"
 		    exit
 		fi
