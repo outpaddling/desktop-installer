@@ -1732,7 +1732,10 @@ gnome3_config()
 {
     # Gnome3
     if [ $1 = 'lite' ]; then
-	install_packages x11/gnome3-lite
+	# FIXME: gnome3-lite is no longer a separate port
+	# install_packages needs to support FLAVORS
+	# install_packages x11/gnome3-lite
+	pkg install -y gnome3-lite
     else
 	install_packages x11/gnome3
     fi
@@ -2705,7 +2708,7 @@ case $desktop_selection in
     ;;
 7)
     DESKTOP=icewm
-    icewm_config lite
+    icewm_config
     ;;
 8)
     DESKTOP=kde5
