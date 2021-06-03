@@ -74,7 +74,8 @@ install_packages()
     fi
     for pkg in $@; do
 	install=no
-	if fgrep -q ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile; then
+	# FIXME: See Linimon comments in todo
+	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
 		if [ $(uname -p) = $arch ]; then
@@ -85,6 +86,7 @@ install_packages()
 	    install=yes
 	fi
 	if [ $install = yes ]; then
+	    # FIXME: Fails to terminate if port does not exist
 	    log_cmd auto-install-packages -l $pkg
 	    if [ $? != 0 ]; then
 		printf "install failed.\n"
