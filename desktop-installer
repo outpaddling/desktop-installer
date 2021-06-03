@@ -169,7 +169,7 @@ update_devfs_rules()
 
 vbox_guest()
 {
-    sysctl dev.acpi.0.%desc | fgrep -q VBOX
+    sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX
     return $?
 }
 
@@ -695,14 +695,14 @@ EOM
 	;;
     FLUXBOX)
 	session="$LOCALBASE/bin/startfluxbox"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc  2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
 	session="$LOCALBASE/bin/icewm-session"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc  2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     KDE5)
 	session='startplasma-x11'
@@ -721,7 +721,7 @@ EOM
 	;;
     WMAKER)
 	session="$LOCALBASE/bin/wmaker"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     XFCE4)
 	session="$LOCALBASE/bin/startxfce4"
@@ -1894,7 +1894,7 @@ power_config()
 	auto-enable-service powerd desktop-installer
     fi
 
-    if sysctl -a | fgrep -q dev.acpi_lid.0; then
+    if sysctl -a | fgrep -q dev.acpi_lid.0 2> /dev/null; then
 	cat << EOM
 ============================================================================
 Some ACPI functions such as suspend/resume are not standardized across all
@@ -1942,7 +1942,7 @@ EOM
     fi
     
     # Install auto-shutdown script for low battery
-    if sysctl -a | fgrep -q hw.acpi.battery; then
+    if sysctl -a | fgrep -q hw.acpi.battery 2> /dev/null; then
 	auto-append-line battery-shutdown.sh \
 	    $LOCALBASE'/sbin/battery-shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
@@ -1995,7 +1995,7 @@ exit 0|g" $RC_RESUME
     fi
 
     if ! vm_guest; then
-	if sysctl -a | fgrep -q dev.acpi_lid.0; then
+	if sysctl -a | fgrep -q dev.acpi_lid.0 2> /dev/null; then
 	    default_wireless='y'
 	else
 	    default_wireless='n'
