@@ -34,3 +34,62 @@ Install anacron?
     I've meant those peoriodic tasks that are already in /etc/crontab - daily, weekly, monthly. They seem to run almost never at desktops, that work on daily basis and are switched off at evening. But. the other side of enabling the the periodic through anacron is that roots mail will be spammed with the periodic reports. To avoid this, there shoud be line in periodic.conf making periodic to write it's repots to file, and syslod-ng rotating this files and maybe other things should be done..... So it's an overtask for the desktop-installer possibly.
 
 Separate code for general setup and desktop installation? (vans)
+
+***************************************************************************
+Linimon:
+
+There are several structural problems:
+
+ 1) the assumption that dmidecode and acpi sysctls exist.  (In my
+    hacking I have worked around that.)
+ 2) the assumption that any port/pkg install failure is fatal.
+ 3) the lack of correctly determining whether a pkg is available
+    to install.
+
+------------------------------------------------------------------
+
+3) is illustrated by the following:
+
+  if fgrep -q FOR_ARCHS $PORTSDIR/$pkg/Makefile
+
+Nope and nope.  Completely bogus test.  If you *are* going to
+query port Makefiles the only robust thing is something like:
+
+  (cd $PORTSDIR/$pkg/Makefile && make ARCH=$arch -V IGNORE)
+
+For only thing, I already shortened ONLY_FOR_ARCHS to FOR_ARCHS.
+But that is still not correct.
+
+------------------------------------------------------------------
+
+But that's the correct way for _ports_.
+
+For _packages_, which IMVVHO we should in all cases set as default
+for users of this script, every possible port install:
+
+  if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
+
+should be immediately followed by something like:
+
+    rdescr=$(pkg rquery %e $pkg 2> /dev/null || true)
+    if [ -z "${rdescr}" ]; then
+        printf "Unfortunately, recommended package $pkg is not available for your system.\n"
+    else
+
+I can generate a patch for the ones in common_packages().  But it
+might be better as a refactoring of install_packages.
+
+I will wait to try that hacking until you say one way or the other.
+
+------------------------------------------------------------------
+
+But, really, nothing should be offered to the newbie user by default
+unless we know ahead of time it will install.
+
+------------------------------------------------------------------
+
+Specific change: I do not believe cups_config() should be in the
+"just the essentials" selection.  I have hacked it out for now.
+
+------------------------------------------------------------------
+***************************************************************************
