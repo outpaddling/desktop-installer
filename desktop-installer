@@ -169,7 +169,7 @@ update_devfs_rules()
 
 vbox_guest()
 {
-    sysctl dev.acpi.0.%desc | fgrep -q VBOX
+    sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX
     return $?
 }
 
@@ -576,7 +576,7 @@ EOM
 X11 seems to have failed to start.  Viewing your Xorg log...
 EOM
 		pause
-		$EDITOR /var/log/Xorg.0.log
+		$MORE /var/log/Xorg.0.log
 		line
 		cat << EOM
 Your chipset is
@@ -695,14 +695,14 @@ EOM
 	;;
     FLUXBOX)
 	session="$LOCALBASE/bin/startfluxbox"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     GNOME3)
 	session="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
 	session="$LOCALBASE/bin/icewm-session"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     KDE5)
 	session='startplasma-x11'
@@ -721,7 +721,7 @@ EOM
 	;;
     WMAKER)
 	session="$LOCALBASE/bin/wmaker"
-	vbox_client='sysctl dev.acpi.0.%desc | fgrep -q VBOX && VBoxClient --vmsvga;'
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     XFCE4)
 	session="$LOCALBASE/bin/startxfce4"
@@ -1517,7 +1517,7 @@ usb_serial_config()
 
 firewire_config()
 {
-    if dmidecode | fgrep -iq firewire; then
+    if dmidecode 2> /dev/null | fgrep -iq firewire; then
 	auto-set-conf-var firewire_load '"YES"' $LOADER_CONF desktop-installer
 	# Firewire disks
 	auto-set-conf-var sbp_load '"YES"' $LOADER_CONF desktop-installer
@@ -1718,8 +1718,8 @@ kde5_config()
     PATH=${PATH}:${LOCALBASE}/kde5/bin
     export PATH
     
-    install_packages x11/kde5 x11/sddm devel/bsdisks
-    auto-mark-package-critical kde5 bsdisks     # sddm added by sddm_config
+    install_packages x11/kde5 x11/sddm
+    auto-mark-package-critical kde5     # sddm added by sddm_config
     startup_scripts KDE5
     xorg_config sddm
     kde5_packages
@@ -2365,16 +2365,17 @@ export AUTO_ASK_TAG_PREFIX=desktop-installer-
 # Make sure installed files are readable
 umask 022
 
+: ${MORE:=more}
+: ${LOCALBASE:=/usr/local}
+
+ARCH=`uname -m`
 START_DIR=`pwd`
-LOCALBASE='/usr/local'
 DATADIR="$LOCALBASE/share/desktop-installer"
 PORTSDIR="/usr/ports"
 X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
 CONFIG_DIR='/root/.config/desktop-installer'
 mkdir -p $CONFIG_DIR
-
-ARCH=`uname -m`
 
 # Config files
 XORG_CONF='/etc/X11/xorg.conf'
