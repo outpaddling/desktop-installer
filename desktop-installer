@@ -27,33 +27,6 @@ pause()
 
 ##########################################################################
 #   Description:
-#       Run command given by arguments and log output.
-##########################################################################
-
-log_cmd()
-{
-    if [ $# -lt 1 ]; then
-	printf "Usage: $0 command [args]\n"
-	exit 1
-    fi
-    log_dir=/root/desktop-installer-log
-    if [ ! -e $log_dir ]; then
-	mkdir $log_dir
-    fi
-    
-    # Don't use "| tee", since log_cmd() would then return the status
-    # of tee instead of the command of interest.
-    fifo=$log_dir/log_cmd.fifo
-    if [ ! -e $fifo ]; then
-	mkfifo $fifo
-    fi
-    tee -a < $fifo $log_dir/$1.log &
-    $@ > $fifo 2>&1
-}
-
-
-##########################################################################
-#   Description:
 #       Install ports or packages specified by arguments if they are not
 #       already installed.  If $AUTO_BUILD_FROM_SOURCE is true, installs from source,
 #       otherwise attempts to install using pkg_add.
@@ -68,14 +41,16 @@ install_packages()
 {
     local install
     
-    log_dir=/root/desktop-installer-log
-    if [ ! -e $log_dir ]; then
-	mkdir $log_dir
-    fi
     for pkg in $@; do
+	# FIXME: auto-install-packages should exit non-zero in this case
+	if [ ! -e $PORTSDIR/$pkg ]; then
+	    printf "Error: $pkg does not exist.\n"
+	    exit 1
+	fi
+	
 	install=no
 	# FIXME: See Linimon comments in todo
-	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile; then
+	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile 2> /dev/null; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
 		if [ $(uname -p) = $arch ]; then
@@ -87,8 +62,8 @@ install_packages()
 	fi
 	if [ $install = yes ]; then
 	    # FIXME: Fails to terminate if port does not exist
-	    log_cmd auto-install-packages -l $pkg
-	    if [ $? != 0 ]; then
+	    if ! auto-install-packages -l $pkg 2>&1 \
+		| tee $LOG_DIR/auto-install-packages.log; then
 		printf "install failed.\n"
 		exit $?
 	    fi
@@ -1736,6 +1711,7 @@ gnome3_config()
     if [ $1 = 'lite' ]; then
 	# FIXME: gnome3-lite is no longer a separate port
 	# install_packages needs to support FLAVORS
+	# Support via auto-print-make-variable --flavor?
 	# install_packages x11/gnome3-lite
 	pkg install -y gnome3-lite
     else
@@ -1743,8 +1719,8 @@ gnome3_config()
     fi
     
     # GDM must be installed even for startx to work during X11 test
-    install_packages print/gnome-print x11/gdm
-    auto-mark-package-critical gnome3 gnome-print gdm
+    install_packages x11/gdm
+    auto-mark-package-critical gnome3 gdm
     
     startup_scripts GNOME3
     xorg_config gdm
@@ -2376,6 +2352,8 @@ X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
 CONFIG_DIR='/root/.config/desktop-installer'
 mkdir -p $CONFIG_DIR
+LOG_DIR='/root/desktop-installer-log'
+mkdir -p $LOG_DIR
 
 # Config files
 XORG_CONF='/etc/X11/xorg.conf'
@@ -2682,9 +2660,6 @@ pause
 
 install_xorg
 
-# Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
-cups_config
-
 case $desktop_selection in
 1)
     DESKTOP=none
@@ -2753,6 +2728,12 @@ esac
 
 faac_lame_install
 auto-fusefs-install
+
+# Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
+cups=`auto-ask use-lagg 'Configure CUPS printing services? (y/n)' n`
+if [ $cups = y ]; then
+    cups_config
+fi
 
 # After network_config
 common_packages
