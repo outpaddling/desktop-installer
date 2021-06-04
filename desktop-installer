@@ -2684,6 +2684,10 @@ install_xorg
 # Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
 cups_config
 
+if [ -z "$EDITOR" ]; then
+    EDITOR=/usr/bin/more
+fi
+
 case $desktop_selection in
 1)
     DESKTOP=none
