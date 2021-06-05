@@ -1720,15 +1720,17 @@ gnome3_config()
 	# Support via auto-print-make-variable --flavor?
 	# install_packages x11/gnome3-lite
 	pkg install -y gnome3-lite
+	auto-mark-package-critical gnome3-lite
     else
 	install_packages x11/gnome3
+	auto-mark-package-critical gnome3
     fi
     
     # GDM must be installed even for startx to work during X11 test
     # FIXME: Do we need to install x11/gdm here, or can we leave it to
     # gdm_config?
     install_packages x11/gdm
-    auto-mark-package-critical gnome3 gdm
+    auto-mark-package-critical gdm
     
     startup_scripts GNOME3
     xorg_config gdm
@@ -2449,10 +2451,10 @@ almost every day.  You will have access to all the latest features, but will
 also likely experience occasional regressions (things stop working) such as
 browsers crashing, printing not working from LibreOffice, etc.
 
-You can guard against many regressions by using auto-update-system to upgrade
-everything and listing critical packages in
-
-$LOCALBASE/etc/auto-admin/critical-packages
+You can guard against major problems by using auto-update-system to perform
+all upgradees and auto-mark-package-critical to block upgrades when critical
+packages are broken.  Desktop-installer does this automatically for your
+chosen desktop environment, login manager, and many other key components.
 
 You can help both the FreeBSD project and application developers by using the
 latest packages on one or more of your machines and reporting such problems.
