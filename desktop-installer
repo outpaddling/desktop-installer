@@ -902,6 +902,12 @@ slim_config()
 	    $slim_conf
 	;;
     
+    cinnamon)
+	# FIXME: Doesn't work for previously altered slim.conf
+	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/CINNAMON/xinitrc|g" \
+	    $slim_conf
+	;;
+    
     lumina)
 	# FIXME: Doesn't work for previously altered slim.conf
 	sed -i '' -e "s|~/.xinitrc|$LOCALBASE/share/desktop-installer/LUMINA/xinitrc|g" \
@@ -1719,12 +1725,46 @@ gnome3_config()
     fi
     
     # GDM must be installed even for startx to work during X11 test
+    # FIXME: Do we need to install x11/gdm here, or can we leave it to
+    # gdm_config?
     install_packages x11/gdm
     auto-mark-package-critical gnome3 gdm
     
     startup_scripts GNOME3
     xorg_config gdm
     dbus_config
+}
+
+
+##########################################################################
+#   Configure the system to run the Cinnamon desktop.
+##########################################################################
+
+cinnamon_config()
+{
+    # GDM must be installed even for startx to work during X11 test
+    install_packages x11/cinnamon
+    auto-mark-package-critical cinnamon
+    
+    startup_scripts CINNAMON
+    xorg_config slim
+    dbus_config
+}
+
+
+##########################################################################
+#   Configure the system to run the Mate desktop.
+##########################################################################
+
+mate_config()
+{
+    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
+    install_packages x11/mate
+    auto-mark-package-critical mate
+    
+    startup_scripts MATE
+    xorg_config slim
+    auto-automount-setup || true
 }
 
 
@@ -1770,37 +1810,6 @@ lumina_config()
 	$LOCALBASE/etc/gtk-2.0
     lumina_packages
     auto-enable-service mixer desktop-installer
-}
-
-
-##########################################################################
-#   Configure the system to run the Mate desktop.
-##########################################################################
-
-mate_config()
-{
-    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
-    install_packages x11/mate
-    auto-mark-package-critical mate
-    
-    startup_scripts MATE
-    xorg_config slim
-    auto-automount-setup || true
-}
-
-
-##########################################################################
-#   Configure the system to run the Cinnamon desktop.
-##########################################################################
-
-cinnamon_config()
-{
-    # http://fosskb.wordpress.com/2014/09/05/installing-mate-desktop-on-freebsd-10/
-    install_packages x11/cinnamon
-    auto-mark-package-critical cinnamon
-    
-    startup_scripts CINNAMON
-    xorg_config gdm
 }
 
 
