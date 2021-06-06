@@ -1099,7 +1099,7 @@ EOM
 #   Install popular packages likely to be used under any desktop.
 ##########################################################################
 
-common_packages()
+install_common_ports()
 {
     ##################################################################
     # Don't make pdflib a requirement unless it's really necessary.
@@ -1141,37 +1141,49 @@ common_packages()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_pkgs="security/keepassxc sysutils/bsdstats www/firefox \
+    common_ports="security/keepassxc sysutils/bsdstats www/firefox \
 	mail/thunderbird editors/libreoffice multimedia/vlc"
     
-    for pkg in $common_pkgs; do
-	if ! auto-package-installed $pkg && [ -d $PORTSDIR/$pkg ]; then
+    for port in $common_ports; do
+	if ! auto-package-installed $port && [ -d $PORTSDIR/$port ]; then
 	    printf '\n---------------------------------------------------------------------------\n'
-	    if [ -e $PORTSDIR/$pkg/pkg-descr ]; then
-		cat $PORTSDIR/$pkg/pkg-descr
+	    if [ -e $PORTSDIR/$port/pkg-descr ]; then
+		cat $PORTSDIR/$port/pkg-descr
 	    fi
 	    printf '\n'
-	    case $pkg in
+	    case $port in
 	    'sysutils/bsdstats'|'security/keepassx')
-		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" y`
+		resp=`auto-ask install-$port "Install $port? (y/n)" y`
 		;;
 	    *)
-		resp=`auto-ask install-$pkg "Install $pkg? (y/n)" n`
+		resp=`auto-ask install-$port "Install $port? (y/n)" n`
 		;;
 	    esac
 	    if [ "$resp" = y ]; then
-		selected_packages="$selected_packages $pkg"
+		selected_ports="$selected_ports $port"
 		# Pulseaudio needed for microphone as of firefox 75
 		# FIXME: This may change in future versions
-		if [ $pkg = www/firefox ]; then
-		    selected_packages="$selected_packages audio/pulseaudio"
+		if [ $port = www/firefox ]; then
+		    selected_ports="$selected_ports audio/pulseaudio"
 		fi
 	    fi
 	fi
     done
-    install_packages $selected_packages
-    for pkg in $selected_packages; do
-	auto-mark-package-critical $(basename $pkg)
+    for port in $selected_ports; do
+	rdescr=$(pkg rquery %e $port 2> /dev/null || true)
+	if [ -z "${rdescr}" ]; then
+	    printf "Binary package for $port is not available.\n"
+	    install=`auto-ask try-from-source-$port 'Try installing from source? (y/n)' n`
+	    if [ $install = y ]; then
+		# Don't log build output
+		auto-install-packages -s $port
+	    fi
+	else
+	    install_packages $port
+	fi
+    done
+    for port in $selected_ports; do
+	auto-mark-package-critical $(basename $port)
     done
 
     # In case someone installs chromium later
@@ -2344,7 +2356,8 @@ fi
 # export PKGDIR=$PORTSDIR/packages
 
 # Prevent dialogs in auto-install-packages
-export BATCH=yes
+# Maybe not a good idea since it prevents installing ports with license dialogs
+# export BATCH=yes
 
 # Distinguish our auto-ask responses in .config/auto-ask-responses
 export AUTO_ASK_TAG_PREFIX=desktop-installer-
@@ -2747,7 +2760,7 @@ if [ $cups = y ]; then
 fi
 
 # After network_config
-common_packages
+install_common_ports
 
 # Additional package installs may have added fonts, etc.
 if [ -e $XORG_CONF ]; then
