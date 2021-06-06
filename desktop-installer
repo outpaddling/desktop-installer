@@ -2502,11 +2502,33 @@ else
     auto-check-ports-branch
     
     # Update base system and ports
-    update_system=`auto-ask update-system 'Update and reboot system before proceeding? (y/n)' y`
+    current_time=$(date '+%s')
+    current_time=$((current_time / 3600))
+    sys_update_file=$CONFIG_DIR/last-system-update
+    if [ -e $sys_update_file ]; then
+	last_update=$(cat $sys_update_file)
+	# printf "$last_update $current_time $((current_time - 24))\n"
+	if [ $last_update -ge $((current_time - 24)) ]; then
+	    printf "Last update time less than 24 hours ago.\n"
+	    update_default=n
+	else
+	    printf "Last update time more than 24 hours ago.\n"
+	    update_default=y
+	fi
+    else
+	printf "Last update time is unknown.\n"
+	update_default=y
+    fi
+    printf "Update and reboot system before proceeding? (y/n) [$update_default] "
+    read update_system
+    if [ 0$"update_system" != 0y ] && [ 0"$update_system" != 0n ]; then
+	update_system=$update_default
+    fi
     if [ $update_system = y ]; then
 	printf "System will restart following update.\n"
 	printf "Rerun desktop-installer again after reboot.\n"
 	pause
+	printf "$current_time\n" > $sys_update_file
 	auto-update-system --yes
     fi
 fi
