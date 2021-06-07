@@ -43,15 +43,23 @@ install_packages()
     for pkg in $@; do
 	# FIXME: auto-install-packages should exit non-zero in this case
 	if [ ! -e $PORTSDIR/$pkg ]; then
-	    printf "Error: $pkg does not exist.\n"
-	    exit 1
+	    cat << EOM
+
+Error: $pkg does not exist.  Please report this issue at
+
+    https://github.com/outpaddling/desktop-installer/issues
+
+It may not be critical, so we will attempt to continue the setup.
+
+EOM
+	    pause
 	fi
 	
 	install=no
 	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile 2> /dev/null; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
-		if [ $(uname -p) = $arch ]; then
+		if [ 0$(uname -p) = 0$arch ]; then
 		    install=yes
 		fi
 	    done
@@ -173,7 +181,7 @@ install_xorg()
     
     # Check for virtualbox guest
     if vbox_guest; then
-	if [ $install_guest_additions = y ] && \
+	if [ 0$install_guest_additions = 0y ] && \
 	   ! auto-package-installed emulators/virtualbox-ose-additions; then
 		install_packages emulators/virtualbox-ose-additions
 		auto-enable-service vboxguest desktop-installer
@@ -272,12 +280,12 @@ xorg_config()
     # Default n if X already running
     if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	printf "X11 is already running.\n"
-	read -p "Reconfigure X11? (y/n) [n] " resp
+	read -p "Reconfigure X11 and desktop? (y/n) [n] " resp
 	if [ 0"$resp" != 0y ]; then
 	    return
 	fi
     else
-	read -p "Reconfigure X11? (y/n) [y] " resp
+	read -p "Reconfigure X11 and desktop? (y/n) [y] " resp
 	if [ 0"$resp" = 0n ]; then
 	    return
 	fi
@@ -1248,7 +1256,7 @@ xfce4_packages()
     install_packages math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xfce4-screensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes audio/xfce4-mixer graphics/evince
+	misc/xfce4-wm-themes graphics/evince
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
@@ -1260,7 +1268,7 @@ xfce4_packages()
     if [ $ARCH = 'i386' -o $ARCH = 'amd64' ]; then
 	install_packages sysutils/xfce4-battery-plugin
     fi
-    install_packages x11/xfce4-screenshooter-plugin print/xfce4-print
+    install_packages x11/xfce4-screenshooter-plugin
 }
 
 
@@ -2827,7 +2835,7 @@ cat << EOM
 
 Please report problems with desktop-installer at
 	
-    https://github.com/outpaddling/desktop-installer
+    https://github.com/outpaddling/desktop-installer/issues
 
 We hope you enjoy your new desktop system!
 
