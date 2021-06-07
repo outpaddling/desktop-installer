@@ -28,10 +28,9 @@ pause()
 ##########################################################################
 #   Description:
 #       Install ports or packages specified by arguments if they are not
-#       already installed.  If $AUTO_BUILD_FROM_SOURCE is true, installs from source,
-#       otherwise attempts to install using pkg_add.
-#
-#       FIXME: Replace this with auto-install-packages
+#       already installed.  If $AUTO_BUILD_FROM_SOURCE is "yes", installs
+#       from source, otherwise attempts to install using pkg install and
+#       falls back on building from source.
 #
 #   Arguments:
 #       List of ports in the for "category/name"
@@ -49,7 +48,6 @@ install_packages()
 	fi
 	
 	install=no
-	# FIXME: See Linimon comments in todo
 	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile 2> /dev/null; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
@@ -61,7 +59,6 @@ install_packages()
 	    install=yes
 	fi
 	if [ $install = yes ]; then
-	    # FIXME: Fails to terminate if port does not exist
 	    if ! auto-install-packages -l $pkg 2>&1 \
 		| tee $LOG_DIR/auto-install-packages.log; then
 		printf "install failed.\n"
@@ -69,29 +66,6 @@ install_packages()
 	    fi
 	fi
     done
-}
-
-
-##########################################################################
-#   Function description:
-#       
-#   Arguments:
-#       
-#   Returns:
-#       
-#   History:
-#   Date        Name        Modification
-#   2013-11-09  Charlie &   Begin
-##########################################################################
-
-delete_packages()
-{
-    if [ $# -lt 1 ]; then
-	printf "Usage: $0 [flags] pkg [pkg ...]\n"
-	exit 1
-    fi
-    
-    pkg delete $@
 }
 
 
@@ -1173,6 +1147,22 @@ install_common_ports()
 	rdescr=$(pkg rquery %e $port 2> /dev/null || true)
 	if [ -z "${rdescr}" ]; then
 	    printf "Binary package for $port is not available.\n"
+	    cat << EOM
+
+Possible reasons:
+
+1. $port is not compatible with $(uname -m)
+2. $port is currently broken
+3. $port actually works on $(uname -m), but a binary package is not
+   available for some reason
+
+It might help to check $PORTSDIR/$port/Makefile for lines containing
+BROKEN or FOR_ARCHS.
+
+If you believe it should work on $(uname -m), you can try installing from
+source, but this may take a long time.
+
+EOM
 	    install=`auto-ask try-from-source-$port 'Try installing from source? (y/n)' n`
 	    if [ $install = y ]; then
 		# Don't log build output
@@ -2096,19 +2086,6 @@ dbus_config()
 }
 
 
-mount_dist()
-{
-    if df | grep -q /dist; then
-	return 0
-    fi
-    for dev in cd0 cd1; do
-	if mount_cd9660 /dev/$dev /dist 2> /dev/null; then
-	    return 0
-	fi
-    done
-}
-
-
 ##########################################################################
 #   Function description:
 #       Set up user-mounting of cdroms, usb disks
@@ -2483,7 +2460,6 @@ EOM
 pause
 
 check_inodes
-mount_dist
 
 if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
