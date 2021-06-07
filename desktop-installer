@@ -1569,6 +1569,18 @@ samba_config()
 }
 
 
+##########################################################################
+#   Function description:
+#       Configure polkit to allow users to shut down and restart.  This
+#       is required by XFCE and probably others.  Polkit is required by
+#       many common packages, including gtk3, so installing
+#       unconditionally doesn't hurt.
+#       
+#   History:
+#   Date        Name        Modification
+#   Circa 2009  J Bacon     Begin
+##########################################################################
+
 enable_user_shutdown()
 
 {
@@ -1577,7 +1589,9 @@ enable_user_shutdown()
     #    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
     
     # New method
-    local rules_file="${LOCALBASE}/etc/polkit-1/rules.d/51-xfce.rules"
+    install_packages sysutils/polkit
+    auto-mark-package-critical polkit
+    local rules_file="${LOCALBASE}/etc/polkit-1/rules.d/51-user-shutdown.rules"
 	cat << EOM >> $rules_file
 polkit.addRule(function (action, subject) {
   if (action.id == "org.freedesktop.consolekit.system.restart" ||
@@ -1599,8 +1613,8 @@ EOM
 xfce4_config()
 {
     # From x11-wm/xfce4-session/pkg-message:
-    install_packages sysutils/polkit x11-wm/xfce4
-    auto-mark-package-critical xfce4 polkit
+    install_packages x11-wm/xfce4
+    auto-mark-package-critical xfce4
     
     # Allow members of operator group to shut down and restart from
     # XFCE4 logout panel
