@@ -2423,6 +2423,18 @@ the defaults.
 EOM
 pause
 
+cat << EOM
+-------------------------------------------------------------------------------
+Desktop-installer should generally be run from a text console using a direct
+root login, rather than through su or sudo.  This will ensure a proper
+environment for X11 testing.
+
+If you are re-running desktop-installer to make changes that do not involve
+the graphics setup, running via su or sudo should be OK.
+-------------------------------------------------------------------------------
+EOM
+pause
+
 while [ 0$SETUP_LEVEL != 01 ] && [ 0$SETUP_LEVEL != 02 ]; do
     cat << EOM
 
