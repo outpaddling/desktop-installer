@@ -48,7 +48,7 @@ distributions.  The post-install script itself is far easier to maintain and
 unlike separate distributions, the resulting desktop system is a
 nearly pristine FreeBSD system with minimal differences from the default
 install.  The system can therefore be maintained and upgraded using
-traditional FreeBSD command-line tools (pkg_add, adduser, freebsd-update,
+traditional FreeBSD command-line tools (pkg install, adduser, freebsd-update,
 etc.), or stock tools of the chosen desktop suite.
 
 It also supports all
@@ -87,7 +87,7 @@ everything every few years, since data on magnetic disks can fade over time
 and read errors will eventually occur.
 
 .B Desktop-installer
-can install software from source or from binary packages (pkg_add -r).
+can install software from source or from binary packages (pkg install).
 Binary packages install much faster (seconds per package, vs minutes
 per port built from source).  However, installing from ports allows you
 to have the very latest software, and to control build options.
@@ -109,13 +109,13 @@ use -STABLE or -CURRENT, but be prepared to resolve dependency issues.
 
 If you do not choose to install software from source,
 .B desktop-installer
-installs most packages over the network using "pkg_add -r",
+installs most packages over the network using "pkg install",
 but occasionally using ports where necessary.  (Some software cannot
 be distributed as a binary package for licensing reasons.)
 
 2. Install desktop-installer:
 
-    pkg_add -r desktop-installer
+    pkg install desktop-installer
 
 or (if you have a ports tree installed)
 
