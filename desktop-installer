@@ -1221,7 +1221,7 @@ kde5_packages()
 	multimedia/transcode \
 	sysutils/k3b \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	x11-themes/kde-gtk-config
+	x11-themes/plasma5-kde-gtk-config
     
     cdrecord_perms
     
@@ -2349,6 +2349,21 @@ EOM
 if [ `whoami` != 'root' ]; then
     printf "Desktop-installer must be run by root.\n"
     exit 1
+fi
+
+if [ `tty` == /dev/ttyv0 ]; then
+    cat << EOM
+
+You are currently running on ttyv0.  This may cause log messages to interfere
+with your desktop-installer interactions.  You may want to switch to another
+virtual console by typing Ctrl+Alt+F2 (or equivalent if this is a virtual
+machine).
+
+EOM
+    read -p 'Continue on ttyv0? y/[n] ' continue
+    if [ 0$continue != 0y ]; then
+	exit
+    fi
 fi
 
 # Causes missing pkg-descr errors!
