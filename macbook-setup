@@ -1,9 +1,0 @@
-#!/bin/sh -e
-
-if dmidecode | grep -i macbook; then
-    printf "MacBook detected."
-    
-    # loader.conf:
-    # atp_load="YES"
-    # acpi_video_load="YES"
-fi
