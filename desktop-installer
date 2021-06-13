@@ -2529,7 +2529,8 @@ else
     # Update base system and ports
     current_time=$(date '+%s')
     current_time=$((current_time / 3600))
-    sys_update_file=$CONFIG_DIR/last-system-update
+    # FIXME: Factor out to auto-last-update?
+    sys_update_file=/root/.config/auto-admin/last-system-update
     if [ -e $sys_update_file ]; then
 	last_update=$(cat $sys_update_file)
 	# printf "$last_update $current_time $((current_time - 24))\n"
@@ -2553,7 +2554,6 @@ else
 	printf "System will restart following update.\n"
 	printf "Rerun desktop-installer again after reboot.\n"
 	pause
-	printf "$current_time\n" > $sys_update_file
 	auto-update-system --yes
     fi
 fi
