@@ -166,8 +166,8 @@ install_xorg()
 	x11/xsm \
 	x11-drivers/xf86-video-mga \
 	x11-drivers/xf86-video-vesa
-    auto-mark-package-critical xorg
-    
+    auto-mark-package-critical xorg xdm
+
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for qterminal
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
@@ -305,11 +305,9 @@ EOM
 	    case $selection in
 	    1)
 		display_manager=xdm
-		auto-mark-package-critical xdm
 		;;
 	    2)
 		display_manager=slim
-		auto-mark-package-critical slim
 		;;
 	    *)
 		printf "Invalid selection: $selection\n"
@@ -965,7 +963,6 @@ Enabling sddm will terminate any sessions running under other display
 managers such as xdm or gdm.
 EOM
     line
-    auto-mark-package-critical sddm
     resp=`auto-ask enable-sddm "Enable SDDM graphical login? (y/n)" y`
     if [ 0"$resp" = 0'y' ]; then
 	dm_msg
@@ -1175,13 +1172,11 @@ EOM
 	    if [ $install = y ]; then
 		# Don't log build output
 		auto-install-packages -s $port
+		auto-mark-package-critical $(auto-print-make-variable $port PKGBASE)
 	    fi
 	else
 	    install_packages $port
 	fi
-    done
-    for port in $selected_ports; do
-	auto-mark-package-critical $(basename $port)
     done
 
     # In case someone installs chromium later
@@ -1622,8 +1617,8 @@ xfce4_config()
 {
     # From x11-wm/xfce4-session/pkg-message:
     install_packages x11-wm/xfce4
-    auto-mark-package-critical xfce4
-    
+    auto-mark-package-critical xfce
+
     # Allow members of operator group to shut down and restart from
     # XFCE4 logout panel
     enable_user_shutdown
@@ -1642,11 +1637,11 @@ wmaker_config()
 {
     enable_user_shutdown
     install_packages x11-wm/windowmaker x11-wm/wmakerconf
+    auto-mark-package-critical windomaker wmakerconf
     startup_scripts WMAKER
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
-    auto-mark-package-critical windomaker wmakerconf
 }
 
 
@@ -1658,11 +1653,11 @@ fluxbox_config()
 {
     enable_user_shutdown
     install_packages x11-wm/fluxbox x11-themes/fluxbox-tenr-styles-pack
+    auto-mark-package-critical fluxbox
     startup_scripts FLUXBOX
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
-    auto-mark-package-critical fluxbox
 }
 
 
@@ -1674,11 +1669,11 @@ icewm_config()
 {
     enable_user_shutdown
     install_packages x11-wm/icewm
+    auto-mark-package-critical icewm
     startup_scripts ICEWM
     xorg_config light
     install_packages math/galculator x11/xlockmore x11/xscreensaver
     auto-automount-setup || true
-    auto-mark-package-critical icewm
 }
 
 
@@ -1690,11 +1685,11 @@ lxde_config()
 {
     enable_user_shutdown
     install_packages x11/lxde-meta
+    auto-mark-package-critical lxde-meta
     startup_scripts LXDE
     xorg_config slim
     auto-automount-setup || true
     lxde_packages
-    auto-mark-package-critical lxde-meta
 }
 
 
@@ -1706,11 +1701,11 @@ lxqt_config()
 {
     enable_user_shutdown
     install_packages x11-wm/lxqt
+    auto-mark-package-critical lxqt
     startup_scripts LXQT
     xorg_config slim
     auto-automount-setup || true
     lxqt_packages
-    auto-mark-package-critical lxqt
 }
 
 
@@ -1724,7 +1719,7 @@ kde5_config()
     export PATH
     
     install_packages x11/kde5 x11/sddm
-    auto-mark-package-critical kde5     # sddm added by sddm_config
+    auto-mark-package-critical kde5 sddm
     startup_scripts KDE5
     xorg_config sddm
     kde5_packages
@@ -1740,8 +1735,12 @@ gnome3_config()
     # Gnome3
     if [ $1 = 'lite' ]; then
 	# FIXME: gnome3-lite is no longer a separate port
-	# install_packages needs to support FLAVORS
+	# auto-install-packages needs to support FLAVORS
 	# Support via auto-print-make-variable --flavor?
+	# Also add support to auto-mark-package-critical for using
+	# category/port instead of package and use
+	# auto-print-make-variable --flavor
+	
 	# install_packages x11/gnome3-lite
 	pkg install -y gnome3-lite
 	auto-mark-package-critical gnome3-lite
@@ -1843,6 +1842,7 @@ cde_config()
 {
     # ksh needed for CDE to function, groff needed for man pages
     install_packages x11/cde shells/ksh93 textproc/groff
+    auto-mark-package-critical cde
     # Needed only for calendar
     # auto-enable-service rpcbind desktop-installer
     # auto-enable-service dtcms desktop-installer
@@ -1860,7 +1860,6 @@ cde_config()
     fi
     cp $DATADIR/CDE/cde.desktop $LOCALBASE/share/xsessions
     xorg_config sddm
-    auto-mark-package-critical cde
 }
 
 
@@ -2349,21 +2348,6 @@ EOM
 if [ `whoami` != 'root' ]; then
     printf "Desktop-installer must be run by root.\n"
     exit 1
-fi
-
-if [ `tty` == /dev/ttyv0 ]; then
-    cat << EOM
-
-You are currently running on ttyv0.  This may cause log messages to interfere
-with your desktop-installer interactions.  You may want to switch to another
-virtual console by typing Ctrl+Alt+F2 (or equivalent if this is a virtual
-machine).
-
-EOM
-    read -p 'Continue on ttyv0? y/[n] ' continue
-    if [ 0$continue != 0y ]; then
-	exit
-    fi
 fi
 
 # Causes missing pkg-descr errors!
