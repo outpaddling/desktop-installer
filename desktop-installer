@@ -364,16 +364,18 @@ EOM
     fi
     if [ $use_moused != 'n' ]; then
 	mouse_port=`get_mouse_port`
-	printf "Adding mouse device: $mouse_port\n"
-	auto-set-conf-var moused_port "$mouse_port" $RC_CONF desktop-installer
-	auto-enable-service moused desktop-installer
-    
-	# Restart moused after suspend
-	if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
-	    sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
+	if [ $mouse_port != unknown_mouse ]; then
+	    printf "Adding mouse device: $mouse_port\n"
+	    auto-set-conf-var moused_port "$mouse_port" $RC_CONF desktop-installer
+	    auto-enable-service moused desktop-installer
+	
+	    # Restart moused after suspend
+	    if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
+		sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
 /usr/sbin/service moused restart \
 \
 exit 0|g' $RC_RESUME
+	    fi
 	fi
     else
 	if [ -e /var/run/moused.pid ]; then
@@ -413,7 +415,9 @@ EOM
 	if [ 0$use_moused != 0'y' ]; then
 	    #mouse_port=`awk '($2 == "<Touchpad>") || ($4 == "Touchpad") { print $1 }' /var/run/dmesg.boot | cut -d ':' -f 1 | uniq`
 	    mouse_port=`get_mouse_port`
-	    sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
+	    if [ $mouse_port != unknown_mouse ]; then
+		sed -i '' "s|/dev/sysmouse|$mouse_port|g" $HOME/xorg.conf.new
+	    fi
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
 	line
@@ -1587,15 +1591,19 @@ samba_config()
 enable_user_shutdown()
 
 {
-    # Apparently obsolete
-    # cp ${DATADIR}/org.freedesktop.consolekit.pkla \
-    #    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
-    
-    # New method
-    install_packages sysutils/polkit
-    auto-mark-package-critical polkit
-    local rules_file="${LOCALBASE}/etc/polkit-1/rules.d/51-user-shutdown.rules"
-	cat << EOM >> $rules_file
+    # polkit unavailable on aarch64 due to rust build issues.
+    # Not absolutely critical, so continue without it if we must.
+    # It's a huge build, so don't try to fall back on source build.
+    if pkg rquery '%e' polkit > /dev/null; then
+	install_packages p5-Locale-gettext devel/icu sysutils/polkit
+	auto-mark-package-critical polkit
+
+	# Apparently obsolete
+	# cp ${DATADIR}/org.freedesktop.consolekit.pkla \
+	#    ${LOCALBASE}/etc/polkit-1/localauthority/50-local.d
+	
+	# New method
+	cat << EOM >> ${LOCALBASE}/etc/polkit-1/rules.d/51-user-shutdown.rules
 polkit.addRule(function (action, subject) {
   if (action.id == "org.freedesktop.consolekit.system.restart" ||
       action.id == "org.freedesktop.consolekit.system.stop"
@@ -1604,8 +1612,9 @@ polkit.addRule(function (action, subject) {
   }
 });
 EOM
-    chown -Rh polkitd ${LOCALBASE}/etc/polkit-1
-    printf "Users must be in the operator group to use shutdown, restart, etc.\n"
+	chown -Rh polkitd ${LOCALBASE}/etc/polkit-1
+	printf "Users must be in the operator group to use shutdown, restart, etc.\n"
+    fi
 }
 
 
@@ -2782,7 +2791,7 @@ esac
 # Broken and of questionable value: samba_config
 
 faac_lame_install
-auto-fusefs-install
+auto-fusefs-install || true # Tolerate failure
 
 # Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
 cups=`auto-ask use-lagg 'Configure CUPS printing services? (y/n)' n`
