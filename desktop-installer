@@ -1595,7 +1595,7 @@ enable_user_shutdown()
     # Not absolutely critical, so continue without it if we must.
     # It's a huge build, so don't try to fall back on source build.
     if pkg rquery '%e' polkit > /dev/null; then
-	install_packages p5-Locale-gettext devel/icu sysutils/polkit
+	install_packages devel/p5-Locale-gettext devel/icu sysutils/polkit
 	auto-mark-package-critical polkit
 
 	# Apparently obsolete
