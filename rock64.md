@@ -8,14 +8,14 @@ be fixed to enable popular desktop environments and applications.  We are
 also awaiting infrastructure improvements to speed up the package build cycle
 for aarch64.
 
-The $200 [https://www.pine64.org/pinebook-pro/](PINEBOOK Pro) looks very
+The $200 [PINEBOOK Pro](https://www.pine64.org/pinebook-pro/) looks very
 promising as a low-cost laptop capable of competing with x86-based PCs.
-The [https://www.pine64.org/rockpro64/](ROCKPro 64) is an equivalent SBC that
+The [ROCKPro 64](https://www.pine64.org/rockpro64) is an equivalent SBC that
 can be configured as a desktop system.  Unfortunately, both are out of stock
 at present due to a global parts shortage.
 
 If you would like to experiment or contribute in the meantime, the
-[https://www.pine64.org/devices/single-board-computers/rock64/](ROCK64)
+[ROCK64](https://www.pine64.org/devices/single-board-computers/rock64/)
 is very inexpensive and powerful enough for many typical uses,
 with up to 4 GiB RAM and 4 1.5 GHz cores.  It can boot from a microSD card
 and also accommodate an eMMC module via a bus connector on top of the board.
