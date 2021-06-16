@@ -1,7 +1,20 @@
-# FreeBSD and ARM Processors
+# FreeBSD and ARM-based Single Board Computers
 
-FreeBSD provides two ways to install on ARM-based single board computers
-(SBCs).  If your SBC can boot from USB, you can load one of the USB images
+Desktop-installer has preliminary support for ARM-based single board
+computers (SBCs), though much work remains to be done before they are viable
+for everyday use.  As of June, 2021, the vast majority of FreeBSD ports
+are building successfully on AARCH64, though a few key packages still need to
+be fixed to enable popular desktop environments and applications.  We are
+also awaiting infrastructure improvements to speed up the package build cycle
+for aarch64.
+
+The $200 PINEBOOK Pro looks like a very promising low-cost laptop capable of
+competing with x86-based PCs.  The ROCKPro 64 is an equivalent SBC that could
+be used as a desktop system.  Unfortunately, they are out of stock at present
+due to a global parts shortage.
+
+FreeBSD provides two ways to install on ARM-based
+SBCs.  If your SBC can boot from USB, you can load one of the USB images
 onto a USB stick and install from it just as you would an x86-based PC.
 Some SBCs cannot do this and others may require some configuration to enable
 USB boot.
