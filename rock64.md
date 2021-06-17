@@ -100,7 +100,7 @@ The FreeBSD pre-built image has no swap space configured, so your processes
 will be limited to physical RAM by default.  Given that the ROCK64 has at
 most 4 GiB RAM, this could prove very limiting.
 
-If you only have a microSD card, swapping will be extremely slow. OptiBench
+If you only have a microSD card, swapping will be extremely slow. MST-Bench
 on my ROCK64 microSD showed average write throughput of about 6 MB/s and
 read throughput of 24 MB/s.  A modern mechanical disk will provide over
 100 MB/s both read and write, while a eMMC or SSD will typically provide
