@@ -48,7 +48,7 @@ Copy the uncompressed image to the microSD card, e.g. using dd:
 
 1. Insert microSD into slot or adapter
 
-2. Find out what device name FreeBSD has assigned to it, e.g. /dev/da0:
+2. Find out what device name has been assigned to it, e.g. /dev/da0:
 
 ```dmesg```
 
@@ -94,7 +94,7 @@ See https://wiki.freebsd.org/arm/RockChip for recommendations.
     9.  Run "su" and enter "root" as the password.
     10.  Run "passwd" to change the default password for root.
 
-3.  Configure swap space
+## Configure swap space
 
 The FreeBSD pre-built image has no swap space configured, so your processes
 will be limited to physical RAM by default.  Given that the ROCK64 has at
