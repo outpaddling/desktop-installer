@@ -612,19 +612,85 @@ EOM
 
 startup_scripts()
 {
-    if [ $# != 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4\n"
+    if [ $# -lt 1 ]; then
+	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4|OTHER\n"
 	exit 1
     fi
+    local de=$1
 
-    subdir=${DATADIR}/$1
+    case $de in
+    CDE)
+	session_cmd="$LOCALBASE/dt/bin/dtsession"
+	;;
+    CINNAMON)
+	session_cmd="$LOCALBASE/bin/cinammon-session"
+	;;
+    FLUXBOX)
+	session_cmd="$LOCALBASE/bin/startfluxbox"
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	;;
+    GNOME3)
+	session_cmd="$LOCALBASE/bin/gnome-session"
+	;;
+    ICEWM)
+	session_cmd="$LOCALBASE/bin/icewm-session"
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	;;
+    KDE5)
+	session_cmd='startplasma-x11'
+	;;
+    LUMINA)
+	session_cmd="$LOCALBASE/bin/start-lumina-desktop"
+	;;
+    LXDE)
+	session_cmd="$LOCALBASE/bin/startlxde"
+	;;
+    LXQT)
+	session_cmd="$LOCALBASE/bin/startlxqt"
+	;;
+    MATE)
+	session_cmd="$LOCALBASE/bin/mate-session"
+	;;
+    WMAKER)
+	session_cmd="$LOCALBASE/bin/wmaker"
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	;;
+    XFCE4)
+	session_cmd="$LOCALBASE/bin/startxfce4"
+	;;
+    
+    OTHER)
+	local de_port=$2
+	local session_cmd
+	cat << EOM
+
+We need to congifure the X11 startup scripts to start the proper session.
+The command for this can be found in ${PORTSDIR}/$de_port/pkg-plist
+in case you do not know it.  We will display the commands in pkg-plist
+after you press Enter.
+
+Anter wither the absoluate pathname (e.g. /usr/local/bin/afterstep) or
+just the command name (e.g. afterstep).
+
+EOM
+	pause
+	grep '^bin/' $PORTSDIR/$de_port/pkg-plist | more
+	printf "Enter the command for starting the session: "
+	read session_cmd
+	;;
+    *)
+	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
+	exit 1
+    esac
+
+    local subdir=${DATADIR}/$de
     
     # Update default xinitrc to start selected desktop
     # FIXME: Use auto-replace-file?  Only after updating to allow
     # use of pre-desktop-installer or other extensions.
     # FIXME: Back-up to desktop-specific name and allow a second desktop
     # installation to overwrite if appropriate
-    xinitrc=/root/.xinitrc
+    local xinitrc=/root/.xinitrc
     if [ ! -e $xinitrc ]; then
 	printf "Installing $xinitrc...\n"
 	cp $subdir/xinitrc $xinitrc
@@ -644,52 +710,10 @@ EOM
 	    cp $subdir/xinitrc $xinitrc
 	fi
     fi
+    if [ $de = OTHER ]; then
+	sed -i '' -e "s|start-session|$session_cmd|g" $xinitrc
+    fi
     
-    case $1 in
-    CDE)
-	session="$LOCALBASE/dt/bin/dtsession"
-	;;
-    CINNAMON)
-	session="$LOCALBASE/bin/cinammon-session"
-	;;
-    FLUXBOX)
-	session="$LOCALBASE/bin/startfluxbox"
-	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
-	;;
-    GNOME3)
-	session="$LOCALBASE/bin/gnome-session"
-	;;
-    ICEWM)
-	session="$LOCALBASE/bin/icewm-session"
-	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
-	;;
-    KDE5)
-	session='startplasma-x11'
-	;;
-    LUMINA)
-	session="$LOCALBASE/bin/start-lumina-desktop"
-	;;
-    LXDE)
-	session="$LOCALBASE/bin/startlxde"
-	;;
-    LXQT)
-	session="$LOCALBASE/bin/startlxqt"
-	;;
-    MATE)
-	session="$LOCALBASE/bin/mate-session"
-	;;
-    WMAKER)
-	session="$LOCALBASE/bin/wmaker"
-	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
-	;;
-    XFCE4)
-	session="$LOCALBASE/bin/startxfce4"
-	;;
-    *)
-	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
-	exit 1
-    esac
-
     # Moved from $X11BASE/lib/X11/xdm in xdm 1.1.11_8
     xdm_base=$X11BASE/etc/X11/xdm
     
@@ -707,7 +731,7 @@ for local_xsession in \$aa_dir/xsession.*; do
     fi
 done
 
-exec $session
+exec $session_cmd
 EOM
     chmod 755 $di_xsession
 
@@ -1639,7 +1663,7 @@ xfce4_config()
 
 
 ##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
+#   Configure the system to run the WindowMaker lightweight desktop.
 ##########################################################################
 
 wmaker_config()
@@ -1655,7 +1679,7 @@ wmaker_config()
 
 
 ##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
+#   Configure the system to run the Fluxbox lightweight desktop.
 ##########################################################################
 
 fluxbox_config()
@@ -1671,7 +1695,7 @@ fluxbox_config()
 
 
 ##########################################################################
-#   Configure the system to run the XFCE4 lightweight desktop.
+#   Configure the system to run the ICEWM lightweight desktop.
 ##########################################################################
 
 icewm_config()
@@ -1879,6 +1903,39 @@ dtlogin_config()
     # printf "Reboot to test dtlogin.\n"
     printf "Run $LOCALBASE/dt/bin/dtlogin as root to start a session.\n"
     pause
+}
+
+
+##########################################################################
+#   Configure the system to run a custom-selected DE or WM
+##########################################################################
+
+other_config()
+{
+    local de_port
+    cat << EOM
+
+We now need to know which port installs your desktop environment or
+window manager.  Most reside under $PORTSDIR/x11-wm, though some may
+also be under $PORTSDIR/x11.  Be sure to enter the category and port
+name separated by a /.
+
+EOM
+    printf "Enter category/name (e.g. x11-wm/afterstep): "
+    read de_port
+    
+    # From x11-wm/xfce4-session/pkg-message:
+    install_packages $de_port
+    auto-mark-package-critical $(auto-print-make-variable $de_port PKGBASE)
+
+    # Allow members of operator group to shut down and restart from
+    # XFCE4 logout panel
+    enable_user_shutdown
+    
+    # Generate a custom script instead
+    startup_scripts OTHER $de_port
+    xorg_config xdm
+    auto-automount-setup || true
 }
 
 
@@ -2641,6 +2698,7 @@ while [ $valid_selection = 0 ]; do
     printf "12. MATE Desktop\n"
     printf "13. WindowMaker Lightweight Window Manager\n"
     printf "14. XFCE4 Lightweight Desktop\n"
+    printf "15. Custom (enter your own port and session command)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2651,7 +2709,7 @@ while [ $valid_selection = 0 ]; do
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 14 ]; then
+       [ $desktop_selection -gt 15 ]; then
 	valid_selection=0
     fi
 done
@@ -2780,6 +2838,10 @@ case $desktop_selection in
     DESKTOP=xfce4
     xfce4_config
     ;;
+15)
+    DESKTOP=other
+    other_config
+    ;;
 *)
     printf "Invalid desktop selection.\n\n"
 esac
@@ -2838,8 +2900,8 @@ users, or installing software by running
 
 NOTE:
 
-Some software was installed by building from source to avert potential
-compatibility issues or to respect software license restrictions.
+Some software may ave been installed by building from source to avert
+potential compatibility issues or to respect software license restrictions.
 
 You MUST use auto-admin or auto-update-system to ensure that packages
 installed from source are updated from source.  Running "pkg upgrade" directly
@@ -2850,6 +2912,11 @@ EOM
 while [ 0"$resp" != 0"got it" ]; do
     read -p 'Type "got it" to continue. ' resp
 done
+
+auto_admin=`auto-ask auto_admin "Run auto-admin now to add users or install additional software? (y/n)" y`
+if [ $auto_admin = y ]; then
+    auto-admin
+fi
 
 cat << EOM
 
