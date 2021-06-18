@@ -677,6 +677,7 @@ EOM
 	grep '^bin/' $PORTSDIR/$de_port/pkg-plist | more
 	printf "Enter the command for starting the session: "
 	read session_cmd
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     *)
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
@@ -1914,11 +1915,15 @@ other_config()
 {
     local de_port
     cat << EOM
-
+============================================================================
 We now need to know which port installs your desktop environment or
 window manager.  Most reside under $PORTSDIR/x11-wm, though some may
 also be under $PORTSDIR/x11.  Be sure to enter the category and port
 name separated by a /.
+
+Note also that not everything in x11-wm is a window manager or
+desktop-environment.  Be sure to do your homework before choosing a
+port.
 
 EOM
     printf "Enter category/name (e.g. x11-wm/afterstep): "
@@ -2711,6 +2716,19 @@ while [ $valid_selection = 0 ]; do
        [ $desktop_selection -lt 1 ] || \
        [ $desktop_selection -gt 15 ]; then
 	valid_selection=0
+    fi
+    
+    if [ $desktop_selection = 15 ]; then
+    cat << EOM
+
+Be aware that support for custom desktop environments and window managers
+is extremely limited.  Testing every environment available in the FreeBSD
+ports tree is not feasible without a very large team of volunteers, so if
+you encounter problems with a custom environment, please plan to become
+part of the team and contribute a solution rather than ask for assistance.
+
+EOM
+    pause
     fi
 done
 
