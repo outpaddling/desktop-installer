@@ -372,7 +372,7 @@ EOM
 	    # Restart moused after suspend
 	    if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
 		sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
-/usr/sbin/service moused restart \
+# /usr/sbin/service moused restart \
 \
 exit 0|g' $RC_RESUME
 	    fi
@@ -2061,16 +2061,11 @@ network_config()
     # Restart network and run ntpdate after suspend
     # Normally don't like to work around FreeBSD shortcomings, but the wide
     # variety of network drivers and ACPI implementations make this
-    # impossible to keep up with on the back end.
+    # impossible to keep up with on the back end.  Background this so it
+    # doesn't delay desktop restart.
     if ! fgrep -q "$LOCALBASE/sbin/auto-network-restart" $RC_RESUME; then
 	sed -i '.orig' -E "s|exit 0|# Added by desktop-installer \\
-$LOCALBASE/sbin/auto-network-restart \\
-\\
-exit 0|g" $RC_RESUME
-    fi
-    if ! fgrep -q "$LOCALBASE/sbin/auto-fix-date" $RC_RESUME; then
-	sed -i '.orig' -E "s|exit 0|# Added by desktop-installer \\
-$LOCALBASE/sbin/auto-fix-date\\
+$LOCALBASE/sbin/auto-network-restart && $LOCALBASE/sbin/auto-fix-date &\\
 \\
 exit 0|g" $RC_RESUME
     fi
