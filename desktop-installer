@@ -1835,7 +1835,7 @@ mate_config()
 lumina_packages()
 {
     # Packages specific to Lumina
-    # qterminal is buggy and now depends on lxqt, so not including it anymore
+    # qterminal was buggy but seems to have improved
     # lilyterm is a good alternative, although not QT based
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
@@ -1844,7 +1844,7 @@ lumina_packages()
 	graphics/qt5-imageformats \
 	graphics/phototonic \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	math/galculator x11/lilyterm
+	math/galculator x11/qterminal
 
     cdrecord_perms
 }
