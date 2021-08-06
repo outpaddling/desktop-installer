@@ -369,7 +369,7 @@ EOM
 	    auto-set-conf-var moused_port "$mouse_port" $RC_CONF desktop-installer
 	    auto-enable-service moused desktop-installer
 	
-	    # Restart moused after suspend
+	    # Moused sometimes crashes during suspend/resume (sig 11)
 	    if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
 		sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
 /usr/sbin/service moused restart \
