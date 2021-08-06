@@ -372,7 +372,7 @@ EOM
 	    # Restart moused after suspend
 	    if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
 		sed -i '.orig' -E 's|exit 0|# Added by desktop-installer \
-# /usr/sbin/service moused restart \
+/usr/sbin/service moused restart \
 \
 exit 0|g' $RC_RESUME
 	    fi
