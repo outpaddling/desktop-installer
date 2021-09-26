@@ -2559,6 +2559,10 @@ EOM
 pause
 
 check_inodes
+if [ ! -e /usr/src/sys ]; then
+    printf "Installing src tree...\n"
+    auto-install-base-components src
+fi
 
 if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
