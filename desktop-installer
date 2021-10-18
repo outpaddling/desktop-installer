@@ -1247,7 +1247,7 @@ kde5_packages()
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/plasma5-kde-gtk-config
     
-    cdrecord_perms
+    # cdrecord_perms
     
     # Prevent nepomuk startup errors
     # Should this be a dependency for something in the KDE5 collection?
@@ -1265,7 +1265,7 @@ kde5_packages()
 cdrecord_perms()
 {
     # /dev/cd* and /dev/xpt* should be set by other code
-    chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
+    # chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
 }
 
 
@@ -1846,7 +1846,8 @@ lumina_packages()
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	math/galculator x11/qterminal
 
-    cdrecord_perms
+    # FIXME: Find a secure way to enable cdrecord
+    # cdrecord_perms
 }
 
 
@@ -2009,7 +2010,7 @@ EOM
 	case $lid_state in
 	1)
 	    auto-set-lid-switch-mode S3
-	    chmod 4555 /usr/sbin/acpiconf
+	    chmod 555 /usr/sbin/acpiconf
 	    ;;
 	2)
 	    auto-set-lid-switch-mode NONE
@@ -2559,6 +2560,10 @@ EOM
 pause
 
 check_inodes
+if [ ! -e /usr/src/sys ]; then
+    printf "Installing src tree...\n"
+    auto-install-base-components src
+fi
 
 if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
