@@ -1178,6 +1178,15 @@ install_common_ports()
 	fi
     done
     for port in $selected_ports; do
+	if [ $port = editors/libreoffice ]; then
+	    cat << EOM
+
+To enable spell checking in libreoffice, you will need the hunspell
+dictionaries for your language, e.g. en-hunspell for English.
+
+EOM
+	    pause
+	fi
 	rdescr=$(pkg rquery %e $port 2> /dev/null || true)
 	if [ -z "${rdescr}" ]; then
 	    printf "Binary package for $port is not available.\n"
