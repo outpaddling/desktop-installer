@@ -77,53 +77,6 @@ EOM
 }
 
 
-##########################################################################
-#   Add entries to devfs.conf
-#   A reboot is required to fully test the changes
-##########################################################################
-
-update_devfs_conf()
-{
-    for dev in $*; do
-	if ! grep -q "^perm[ $(printf '\t')]*${dev}" $DEVFS_CONF; then
-	    printf "Adding $dev to defvs.conf.\n"
-	    printf "\n# Added by desktop-installer:\n" >> $DEVFS_CONF
-	    printf "perm\t${dev}\t0660\n" >> $DEVFS_CONF
-	    printf "own\t${dev}\troot:operator\n" >> $DEVFS_CONF
-	else
-	    printf "Entry already exists in devfs.conf for $dev.\n"
-	fi
-    done
-}
-
-
-##########################################################################
-#   Add entries to devfs.rules and restart devfs to test.
-##########################################################################
-
-update_devfs_rules()
-{
-    if [ ! -e $DEVFS_RULES ]; then
-	printf "[system=10]\n" > $DEVFS_RULES
-    fi
-    auto-enable-service devd desktop-installer
-    auto-set-conf-var devfs_system_ruleset '"system"' $RC_CONF desktop-installer
-    
-    group=$1
-    shift
-    for dev in $*; do
-	if ! fgrep -qw "'${dev}*'" $DEVFS_RULES; then
-	    printf "Adding $dev to defvs.rules.\n"
-	    printf "# Added by desktop-installer.\n" >> $DEVFS_RULES
-	    printf "add path '${dev}*' mode 0660 group $group\n" >> $DEVFS_RULES
-	else
-	    printf "Entry already exists in devfs.rules for $dev.\n"
-	fi
-    done
-    service devfs restart
-}
-
-
 vbox_guest()
 {
     sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX
@@ -1330,61 +1283,6 @@ lxqt_packages()
 
 
 ##########################################################################
-#   Install and configure the CUPS printing system.
-##########################################################################
-
-cups_config()
-{
-    printf "Configuring cups...\n"
-    install_packages \
-	print/cups \
-	print/hplip \
-	print/foomatic-db-engine \
-	print/gutenprint
-    auto-mark-package-critical cups hplip foomatic-db-engine gutenprint
-    
-    # FIXME
-    # foomatic-db-hpijs and hpijs appear to be redundant.
-    # 2014-11-16: The hpijs package is broken, as does the foomatic-db-hpijs
-    # *port*, so as much as I hate to work around bugs in other software,
-    # we'll install hpijs from source for now.  This print driver is just
-    # too important to leave out.
-    #cd $PORTSDIR/print/hpijs
-    #make deinstall reinstall
-    
-    update_devfs_rules cups unlpt ulpt lpt
-    
-    # FIXME: Is this still necessary?
-    # Older ports have lpt-cupsd.conf, newer ulpt-cupsd.conf
-    if [ -f ${LOCALBASE}/share/examples/cups/ulpt-cupsd.conf ]; then
-	if [ ! -f ${LOCALBASE}/etc/devd/ulpt-cupsd.conf ]; then
-	    mkdir -p ${LOCALBASE}/etc/devd
-	    cp ${LOCALBASE}/share/examples/cups/ulpt-cupsd.conf ${LOCALBASE}/etc/devd/
-	fi
-    
-	# Fix missing semicolons in cups 1.4.6 $LOCALBASE/etc/devd/ulpt-cupsd.conf
-	if [ -e $LOCALBASE/etc/devd/ulpt-cupsd.conf ]; then
-	    sed -i '' -e 's|}$|};|g' $LOCALBASE/etc/devd/ulpt-cupsd.conf
-	fi
-    elif [ -f ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ]; then
-	if [ ! -f ${LOCALBASE}/etc/devd/lpt-cupsd.conf ]; then
-	    mkdir -p ${LOCALBASE}/etc/devd
-	    cp ${LOCALBASE}/share/examples/cups/lpt-cupsd.conf ${LOCALBASE}/etc/devd/
-	fi
-    fi
-
-    # FIXME: mime.types is no longer installed
-    # Uncomment octet-stream line
-    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-    #    ${LOCALBASE}/etc/cups/mime.types
-    #sed -i pre-desktop-installer 's|#[ \t]*application/octet-stream|application/octet-stream|g' \
-    #    ${LOCALBASE}/etc/cups/mime.convs
-    
-    auto-enable-service cupsd desktop-installer
-}
-
-
-##########################################################################
 #   Configure the system so that CD and DVD drives are usable by
 #   anyone in the operator group.
 ##########################################################################
@@ -1396,8 +1294,8 @@ external_drive_config()
     #add path 'cd*' mode 0666
     #add path 'pass*' mode 0666
     #add path 'xpt*' mode 0666
-    update_devfs_rules operator cd da pass xpt
-    update_devfs_conf cd0 cd1 fd0 fd1
+    auto-update-devfs-rules operator cd da pass xpt
+    auto-update-devfs-conf cd0 cd1 fd0 fd1
     
     if ! fgrep -q '#/dev/cd' $FSTAB; then
 	sed -i pre-desktop-installer 's|/dev/cd|#/dev/cd|g' $FSTAB
@@ -1530,7 +1428,7 @@ usb_serial_config()
     auto-set-conf-var uplcom_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
-    update_devfs_rules operator ugen cuaU uhid usbctl usb/ video
+    auto-update-devfs-rules operator ugen cuaU uhid usbctl usb/ video
 }
 
 
@@ -1566,7 +1464,7 @@ bluetooth_config()
     auto-set-conf-var ng_ubt_load '"YES"' $LOADER_CONF desktop-installer
     
     # USB/serial adapters
-    update_devfs_rules operator ng_ubt
+    auto-update-devfs-rules operator ng_ubt
 }
 
 ##########################################################################
@@ -1577,7 +1475,7 @@ serial_config()
 {
     # serial ports cuau on 8.x?
     # Serial ports
-    update_devfs_conf cuad0 cuad1 cuau0 cuau1
+    auto-update-devfs-conf cuad0 cuad1 cuau0 cuau1
 }
 
 
@@ -2882,10 +2780,10 @@ esac
 faac_lame_install
 auto-fusefs-install || true # Tolerate failure
 
-# Requires lots of prerequisites, including X11 packages.  Do after cup of tea.
-cups=`auto-ask use-lagg 'Configure CUPS printing services? (y/n)' n`
+# Requires lots of prerequisites, including X11 packages.
+cups=`auto-ask cups-setup 'Configure CUPS printing services? (y/n)' n`
 if [ $cups = y ]; then
-    cups_config
+    auto-cups-setup
 fi
 
 # After network_config
