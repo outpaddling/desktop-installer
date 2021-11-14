@@ -79,25 +79,26 @@ EOM
 
 vbox_guest()
 {
-    sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX
+    sysctl kern.vm_guest | fgrep -iq vbox
     return $?
 }
 
 parallels_guest()
 {
     sysctl kern.vm_guest | fgrep -iq parallels
+    return $?
 }
 
 vmware_guest()
 {
     sysctl kern.vm_guest | fgrep -iq vmware
+    return $?
 }
 
 vm_guest()
 {
     # FIXME: Add support for other hypervisors and emulators
     vbox_guest || parallels_guest || vmware_guest
-    
     return $?
 }
 
