@@ -595,6 +595,9 @@ startup_scripts()
 	;;
     LUMINA)
 	session_cmd="$LOCALBASE/bin/start-lumina-desktop"
+	# FIXME: Should not be necessary
+	# Doesn't completely solve resize issues, but seems to help
+	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
     LXDE)
 	session_cmd="$LOCALBASE/bin/startlxde"
@@ -2490,24 +2493,18 @@ else
     auto-check-ports-branch
     
     # Update base system and ports
-    current_time=$(date '+%s')
-    current_time=$((current_time / 3600))
-    # FIXME: Factor out to auto-last-update?
-    sys_update_file=/root/.config/auto-admin/last-system-update
-    if [ -e $sys_update_file ]; then
-	last_update=$(cat $sys_update_file)
-	# printf "$last_update $current_time $((current_time - 24))\n"
-	if [ $last_update -ge $((current_time - 24)) ]; then
-	    printf "Last update time less than 24 hours ago.\n"
-	    update_default=n
-	else
-	    printf "Last update time more than 24 hours ago.\n"
-	    update_default=y
-	fi
-    else
+
+    if [ $(auto-last-update) = unknown ]; then
 	printf "Last update time is unknown.\n"
 	update_default=y
+    elif [ $(auto-last-update) -le 24 ]; then
+	printf "Last update time less than 24 hours ago.\n"
+	update_default=n
+    else
+	printf "Last update time more than 24 hours ago.\n"
+	update_default=y
     fi
+    
     printf "Update and reboot system before proceeding? (y/n) [$update_default] "
     read update_system
     if [ 0$"update_system" != 0y ] && [ 0"$update_system" != 0n ]; then
