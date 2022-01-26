@@ -24,6 +24,14 @@ FreeBSD ports tree.  More than a dozen of the most popular desktops are
 explicitly supported and any other can be configured using the "Custom"
 option.
 
+To use "Custom", you need only know the category/portname of the desktop you
+want, and the command for starting the desktop from xinit or xsession,
+e.g. start-lumina-desktop for the Lumina desktop.  This command can be found
+in category/portname/pkg-plist.  The only other advantage to explicitly
+supported desktops is automatic installation of a few common utilities, such
+as qpdfview and qterminal for Lumina.  You can easily install the utilities
+you want using "pkg install" or "auto-admin" after a Custom desktop install.
+
 This is a post-install script, i.e. one that you run AFTER doing a standard
 operating system installation via install media such as a USB stick, DVD,
 or PXE.  ( See details below. )
