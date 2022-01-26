@@ -19,20 +19,23 @@ desktop-installer
 The
 .B desktop-installer
 script automates the process of configuring a FreeBSD machine as a desktop
-system running KDE, Gnome, LXDE, or XFCE.  Other desktop systems exist and
-support for them may be added in the future.
+system running any desktop environemnt or simple window manager in the
+FreeBSD ports tree.  More than a dozen of the most popular desktops are
+explicitly supported and any other can be configured using the "Custom"
+option.
 
 This is a post-install script, i.e. one that you run AFTER doing a standard
-operating system installation with sysinstall.  ( See details below. )
+operating system installation via install media such as a USB stick, DVD,
+or PXE.  ( See details below. )
 
-The desktop configuration process requires installing many ports/packages and
-configuring many different subsystems, which can be a daunting task
-for all but the most seasoned users.
+The FreeBSD desktop configuration process requires installing many
+ports/packages and configuring many different subsystems, which can be a
+daunting task for all but the most seasoned users.
 
 .B Desktop-installer
 installs all the software necessary for the chosen desktop
 as well as common desktop-independent packages such as CUPS, Firefox,
-OpenOffice.org, etc.
+LibreOffice.org, etc.
 
 It also configures system services and settings to facilitate
 convenient use of CD/DVD drives, USB ports, etc.
@@ -40,8 +43,7 @@ convenient use of CD/DVD drives, USB ports, etc.
 .SH "MOTIVATION"
 
 This script is meant to provide a middle-ground between totally manual
-configuration and complete distributions such as DesktopBSD, GhostBSD,
-and PC-BSD.
+configuration and complete distributions such as GhostBSD or Ubuntu Linux.
 
 The post-install script approach has some advantages over complete
 distributions.  The post-install script itself is far easier to maintain and 
@@ -51,9 +53,11 @@ install.  The system can therefore be maintained and upgraded using
 traditional FreeBSD command-line tools (pkg install, adduser, freebsd-update,
 etc.), or stock tools of the chosen desktop suite.
 
-It also supports all
-platforms that run FreeBSD, whereas distributions are limited to the most
-popular architectures.
+For easy management of common system settings, try the auto-admin menu.
+
+Desktop-installer supports all CPU architectures that run FreeBSD and all
+supported FreeBSD versions, whereas distributions are generally limited to
+one version on AMD64.
 
 .SH "BASIC USE"
 
@@ -68,20 +72,24 @@ The recommended install options are a basic user system including:
 .na
 All binaries
 Docs in your preferred language(s)
-All source code
-The ports tree
+Source code
 .ad
 .fi
+
+Installing the ports tree from the installation media is a waste of time.
+It would only be replaced with a git clone by desktop installer.
+
+If you neglect to install the source tree, desktop-installer will install it
+for you.
 
 It is best to use
 .B desktop-installer
 on a pristine FreeBSD installation.
 
 .B Desktop-installer
-can also be used to upgrade all the software on 
-an existing system, but there are more
-possibilities for failure here since it is impossible to predict what
-kinds of system hacks it might encounter.  Also, it's generally
+can also be used to upgrade all the software on an existing system, but there
+are too many possibilities for failure to support here since it is impossible
+to predict what kinds of system hacks it might encounter.  Also, it's generally
 a good idea to back up your data, wipe your disk clean, and reinstall
 everything every few years, since data on magnetic disks can fade over time
 and read errors will eventually occur.
@@ -90,27 +98,16 @@ and read errors will eventually occur.
 can install software from source or from binary packages (pkg install).
 Binary packages install much faster (seconds per package, vs minutes
 per port built from source).  However, installing from ports allows you
-to have the very latest software, and to control build options.
+to install on systems for which binary packages are not maintained.
 
-If you enjoy a simple life, install a -RELEASE version rather
-than -STABLE or -CURRENT, and install the ports tree from sysinstall,
-not using portsnap or cvs.  With a -RELEASE version, ports and packages
-will be installed from a snapshot taken when the release was built.
-This will mean you're not running the very latest of all the ports/packages,
-but the ports and packages will all be compatible with each other.
-
-If you plan to install software from source, you can install the ports
-tree by any means.  Portsnap will install the latest frameworks, whereas
-sysinstall will install a snapshot of the ports tree from the release date.
-
-More adventurous users, and those who want
-to help the FreeBSD project by testing the latest software can
-use -STABLE or -CURRENT, but be prepared to resolve dependency issues.
+If you enjoy a simple life, install a -RELEASE or -STABLE version rather
+than -CURRENT.  If you would like to help the project move forward by
+testing the latest changes, run -CURRENT.
 
 If you do not choose to install software from source,
 .B desktop-installer
-installs most packages over the network using "pkg install",
-but occasionally using ports where necessary.  (Some software cannot
+installs most packages over the network using "pkg install", but falling
+back on build-from-source where necessary.  (e.g. some software cannot
 be distributed as a binary package for licensing reasons.)
 
 2. Install desktop-installer:
@@ -125,18 +122,15 @@ or (if you have a ports tree installed)
 or if you want the latest development version of desktop-installer, get the
 latest jb-ports from MASTER_SITES and run
 
-    reinstall-jb-port desktop-installer
+    pkg install auto-admin
+    auto-freebsd-wip-checkout
+    wip-reinstall-port auto-admin
+    wip-reinstall-port desktop-installer
 
 3. Run desktop-installer:
 
-a. Run rehash if using a csh-based shell
-
-b. desktop-installer
-
-c. Follow the instructions on your screen.
-
-.SH BUGS
-Too many to document.
+    rehash  # If using tcsh and just installed desktop-installer
+    desktop-installer
 
 .SH "SEE ALSO"
 auto-admin
