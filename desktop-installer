@@ -632,12 +632,12 @@ The command for this can be found in ${PORTSDIR}/$de_port/pkg-plist
 in case you do not know it.  We will display the commands in pkg-plist
 after you press Enter.
 
-Anter wither the absoluate pathname (e.g. /usr/local/bin/afterstep) or
-just the command name (e.g. afterstep).
+Enter the absoluate pathname (e.g. /usr/local/bin/afterstep) or just the
+command name (e.g. afterstep).
 
 EOM
 	pause
-	grep '^bin/' $PORTSDIR/$de_port/pkg-plist | more
+	grep 'bin/' $PORTSDIR/$de_port/pkg-plist | more
 	printf "Enter the command for starting the session: "
 	read session_cmd
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
