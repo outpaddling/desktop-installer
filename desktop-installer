@@ -573,7 +573,7 @@ EOM
 startup_scripts()
 {
     if [ $# -lt 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME3|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4|OTHER\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4|OTHER\n"
 	exit 1
     fi
     local de=$1
@@ -589,7 +589,7 @@ startup_scripts()
 	session_cmd="$LOCALBASE/bin/startfluxbox"
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	;;
-    GNOME3)
+    GNOME)
 	session_cmd="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
@@ -766,7 +766,7 @@ EOM
 
 
 ##########################################################################
-#   Enable XDM.  Note that KDE uses sddm and Gnome3 uses gdm, so this is
+#   Enable XDM.  Note that KDE uses sddm and Gnome uses gdm, so this is
 #   for XFCE4 and other lightweight desktops.
 ##########################################################################
 
@@ -1207,7 +1207,7 @@ faac_lame_install()
 
 ##########################################################################
 #   Install packages useful to KDE5 users.  These packages will have
-#   alternatives under KDE and Gnome3.
+#   alternatives under KDE and Gnome.
 ##########################################################################
 
 kde5_packages()
@@ -1243,7 +1243,7 @@ cdrecord_perms()
 
 ##########################################################################
 #   Install packages useful to XFCE4 users.  These packages will have
-#   alternatives under KDE and Gnome3.
+#   alternatives under KDE and Gnome.
 ##########################################################################
 
 xfce4_packages()
@@ -1270,7 +1270,7 @@ xfce4_packages()
 
 ##########################################################################
 #   Install packages useful to LXDE users.  These packages will have
-#   alternatives under KDE and Gnome3.
+#   alternatives under KDE and Gnome.
 ##########################################################################
 
 lxde_packages()
@@ -1282,7 +1282,7 @@ lxde_packages()
 
 ##########################################################################
 #   Install packages useful to LXQT users.  These packages will have
-#   alternatives under KDE and Gnome3.
+#   alternatives under KDE and Gnome.
 ##########################################################################
 
 lxqt_packages()
@@ -1344,7 +1344,7 @@ EOM
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome3, and various other
+#   Enable procfs.  This is required by Gnome, and various other
 #   packages.
 ##########################################################################
 
@@ -1678,26 +1678,26 @@ kde5_config()
 
 
 ##########################################################################
-#   Configure the system to run the Gnome3 desktop.
+#   Configure the system to run the Gnome desktop.
 ##########################################################################
 
-gnome3_config()
+gnome_config()
 {
-    # Gnome3
+    # Gnome
     if [ $1 = 'lite' ]; then
-	# FIXME: gnome3-lite is no longer a separate port
+	# FIXME: gnome-lite is no longer a separate port
 	# auto-install-packages needs to support FLAVORS
 	# Support via auto-print-make-variable --flavor?
 	# Also add support to auto-mark-package-critical for using
 	# category/port instead of package and use
 	# auto-print-make-variable --flavor
 	
-	# install_packages x11/gnome3-lite
-	pkg install -y gnome3-lite
-	auto-mark-package-critical gnome3-lite
+	# install_packages x11/gnome-lite
+	pkg install -y gnome-lite
+	auto-mark-package-critical gnome-lite
     else
-	install_packages x11/gnome3
-	auto-mark-package-critical gnome3
+	install_packages x11/gnome
+	auto-mark-package-critical gnome
     fi
     
     # GDM must be installed even for startx to work during X11 test
@@ -1706,7 +1706,7 @@ gnome3_config()
     install_packages x11/gdm
     auto-mark-package-critical gdm
     
-    startup_scripts GNOME3
+    startup_scripts GNOME
     xorg_config gdm
     dbus_config
 }
@@ -1746,7 +1746,7 @@ mate_config()
 
 ##########################################################################
 #   Install packages useful to Lumina users.  These packages will have
-#   alternatives under KDE and Gnome3.
+#   alternatives under KDE and Gnome.
 ##########################################################################
 
 lumina_packages()
@@ -2604,8 +2604,8 @@ while [ $valid_selection = 0 ]; do
     printf "2.. CDE (For nostalgia only, not fully functional or secure)\n"
     printf "3.. Cinnamon Desktop\n"
     printf "4.. Fluxbox Lightweight Window Manager\n"
-    printf "5.. Gnome3 Desktop\n"
-    printf "6.. Gnome3 Lite Desktop\n"
+    printf "5.. Gnome Desktop\n"
+    printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
     printf "8.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
     printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
@@ -2728,12 +2728,12 @@ case $desktop_selection in
     fluxbox_config
     ;;
 5)
-    DESKTOP=gnome3
-    gnome3_config full
+    DESKTOP=gnome
+    gnome_config full
     ;;
 6)
-    DESKTOP=gnome3
-    gnome3_config lite
+    DESKTOP=gnome
+    gnome_config lite
     ;;
 7)
     DESKTOP=icewm
