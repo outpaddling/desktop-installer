@@ -2582,14 +2582,14 @@ menu and install it manually.  In this case, desktop-installer will still do
 most of the work necessary to produce a functional desktop system.
 
 KDE is the most feature-rich and is well-supported on FreeBSD, but it also
-requires the most hardware resources.
+requires a lot of hardware resources.  Not suitable for low-end hardware
+like netbooks or VM guests with limited RAM and disk.
 
-Lumina desktop is very small, fast, intuitive, and attractive and is developed
-on FreeBSD.
-
-* As of version 1.6.0, Lumina does not always update the screen properly when
-resizing a VirtualBox window with guest additions installed.  If you are
-running under VirtualBox, another lightweight DE may run more cleanly.
+Lumina desktop is very small, fast, intuitive, and attractive and was
+developed on FreeBSD.  However, as of version 1.6.2, Lumina does not
+update the screen properly when resizing a VirtualBox window with guest
+additions installed.  If you are running under VirtualBox, another
+lightweight DE may run more cleanly.
 
 EOM
 line
@@ -2602,16 +2602,16 @@ while [ $valid_selection = 0 ]; do
     line
     printf "1.. No desktop software (I'll install my own later)\n"
     printf "2.. CDE (For nostalgia only, not fully functional or secure)\n"
-    printf "3.. Cinnamon Desktop\n"
+    printf "3.. Cinnamon Desktop (Gnome 3 derivative)\n"
     printf "4.. Fluxbox Lightweight Window Manager\n"
-    printf "5.. Gnome Desktop\n"
+    printf "5.. Gnome Desktop (Feature-rich and resource-intensive)\n"
     printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
-    printf "8.. KDE 5 Desktop (Most feature-rich and resource-intensive)\n"
+    printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
     printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
     printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
     printf "11. LXQT Lightweight Desktop\n"
-    printf "12. MATE Desktop\n"
+    printf "12. MATE Desktop (Gnome 2 derivative)\n"
     printf "13. WindowMaker Lightweight Window Manager\n"
     printf "14. XFCE4 Lightweight Desktop\n"
     printf "15. Custom (enter your own port and session command)\n"
