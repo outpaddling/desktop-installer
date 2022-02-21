@@ -599,6 +599,9 @@ startup_scripts()
     KDE5)
 	session_cmd='startplasma-x11'
 	;;
+    KODI)
+	session_cmd="kodi-standalone"
+	;;
     LUMINA)
 	session_cmd="$LOCALBASE/bin/start-lumina-desktop"
 	# FIXME: Should not be necessary
@@ -1678,6 +1681,24 @@ kde5_config()
 
 
 ##########################################################################
+#   Configure the system as a Kodi multimedia appliance
+##########################################################################
+
+kodi_config()
+{
+    PATH=${PATH}:${LOCALBASE}/kde5/bin
+    export PATH
+    
+    # FIXME: dbus should be a kodi dep
+    install_packages multimedia/kodi x11/sddm devel/dbus
+    auto-mark-package-critical kodi sddm
+    startup_scripts KODI
+    xorg_config sddm
+    # kodi_packages
+}
+
+
+##########################################################################
 #   Configure the system to run the Gnome desktop.
 ##########################################################################
 
@@ -2608,13 +2629,14 @@ while [ $valid_selection = 0 ]; do
     printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
     printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
-    printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
-    printf "11. LXQT Lightweight Desktop\n"
-    printf "12. MATE Desktop (Gnome 2 derivative)\n"
-    printf "13. WindowMaker Lightweight Window Manager\n"
-    printf "14. XFCE4 Lightweight Desktop\n"
-    printf "15. Custom (enter your own port and session command)\n"
+    printf "9.. Kodi standalone multimedia appliance\n"
+    printf "10. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "11. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "12. LXQT Lightweight Desktop\n"
+    printf "13. MATE Desktop (Gnome 2 derivative)\n"
+    printf "14. WindowMaker Lightweight Window Manager\n"
+    printf "15. XFCE4 Lightweight Desktop\n"
+    printf "16. Custom (enter your own port and session command)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2744,30 +2766,34 @@ case $desktop_selection in
     kde5_config
     ;;
 9)
+    DESKTOP=kodi
+    kodi_config
+    ;;
+10)
     DESKTOP=lumina
     lumina_config
     ;;
-10)
+11)
     DESKTOP=lxde
     lxde_config
     ;;
-11)
+12)
     DESKTOP=lxqt
     lxqt_config
     ;;
-12)
+13)
     DESKTOP=mate
     mate_config
     ;;
-13)
+14)
     DESKTOP=wmaker
     wmaker_config
     ;;
-14)
+15)
     DESKTOP=xfce4
     xfce4_config
     ;;
-15)
+16)
     DESKTOP=other
     other_config
     ;;
