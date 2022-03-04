@@ -599,9 +599,9 @@ startup_scripts()
     KDE5)
 	session_cmd='startplasma-x11'
 	;;
-    KODI)
-	session_cmd="kodi-standalone"
-	;;
+    #KODI)
+    #    session_cmd="kodi-standalone"
+    #    ;;
     LUMINA)
 	session_cmd="$LOCALBASE/bin/start-lumina-desktop"
 	# FIXME: Should not be necessary
@@ -2629,14 +2629,14 @@ while [ $valid_selection = 0 ]; do
     printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
     printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
-    printf "9.. Kodi standalone multimedia appliance\n"
-    printf "10. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "11. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
-    printf "12. LXQT Lightweight Desktop\n"
-    printf "13. MATE Desktop (Gnome 2 derivative)\n"
-    printf "14. WindowMaker Lightweight Window Manager\n"
-    printf "15. XFCE4 Lightweight Desktop\n"
-    printf "16. Custom (enter your own port and session command)\n"
+    #printf "9.. Kodi standalone multimedia appliance\n"
+    printf "9. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "11. LXQT Lightweight Desktop\n"
+    printf "12. MATE Desktop (Gnome 2 derivative)\n"
+    printf "13. WindowMaker Lightweight Window Manager\n"
+    printf "14. XFCE4 Lightweight Desktop\n"
+    printf "15. Custom (enter your own port and session command)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
@@ -2765,35 +2765,35 @@ case $desktop_selection in
     DESKTOP=kde5
     kde5_config
     ;;
+#9)
+#    DESKTOP=kodi
+#    kodi_config
+#    ;;
 9)
-    DESKTOP=kodi
-    kodi_config
-    ;;
-10)
     DESKTOP=lumina
     lumina_config
     ;;
-11)
+10)
     DESKTOP=lxde
     lxde_config
     ;;
-12)
+11)
     DESKTOP=lxqt
     lxqt_config
     ;;
-13)
+12)
     DESKTOP=mate
     mate_config
     ;;
-14)
+13)
     DESKTOP=wmaker
     wmaker_config
     ;;
-15)
+14)
     DESKTOP=xfce4
     xfce4_config
     ;;
-16)
+15)
     DESKTOP=other
     other_config
     ;;
