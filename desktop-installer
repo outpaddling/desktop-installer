@@ -2532,6 +2532,21 @@ else
 	update_default=y
     fi
     
+    cat << EOM
+
+It's best to make sure all installed ports/packages are up-to-date before
+installing new ones.  In theory this should not be necessary as the system
+is designed to automatically update dependencies as needed.  However, to
+trust this is to assume that every port lists every dependency version
+perfectly.  In reality, dependency updates are occasionally missed, which
+could lead to runtime issues.  Updating everything at once will lead to a
+more stable system in the long-run.
+
+If you are running desktop-installer on a system with previously installed
+packages, it's a good idea to update before proceeding.
+
+EOM
+    
     printf "Update and reboot system before proceeding? (y/n) [$update_default] "
     read update_system
     if [ 0$"update_system" != 0y ] && [ 0"$update_system" != 0n ]; then
