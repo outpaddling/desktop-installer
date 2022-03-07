@@ -2645,7 +2645,7 @@ while [ $valid_selection = 0 ]; do
     printf "7.. IceWM Lightweight Window Manager\n"
     printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
     #printf "9.. Kodi standalone multimedia appliance\n"
-    printf "9. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
+    printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
     printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
     printf "11. LXQT Lightweight Desktop\n"
     printf "12. MATE Desktop (Gnome 2 derivative)\n"
