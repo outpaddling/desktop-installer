@@ -1921,13 +1921,18 @@ Some ACPI functions such as suspend/resume are not standardized across all
 hardware, and therefore may or may not function on open source systems such
 as BSD and Linux.
 
-Enabling suspend/resume when a laptop is closed/opened may cause problems
-on some hardware.
+Enabling suspend/resume when a laptop is closed/opened works on most
+popular hardware, but may cause problems on less common models.  If it
+works, the battery will generally last at least a few days in sleep mode.
+However, the system will not be able to shut itself down when the battery
+level is critical, which could lead to a deep discharge that ruins the
+battery.
 
-On the other hand, allowing a laptop to run while closed may lead to
-overheating and hardware damage.
+Allowing a laptop to run while closed may lead to overheating and
+hardware damage.
 
-The safest option is to shut down when the laptop is closed.
+The safest option is to shut down when the laptop is closed.  This also
+maximizes battery run time.
 
 Enabling suspend/resume here will only attempt a basic configuration.  If
 it does not work properly, it may still be possible to make it work with
@@ -1936,7 +1941,7 @@ some additional research and manual configuration of ACPI or APM settings.
 See the acpi and apm man pages, the FreeBSD handbook, and the FreeBSD
 ACPI web sites for more information.
 
-1.. Enable suspend/resume (Sleep state = S3, may cause system lockup)
+1.. Enable suspend/resume (Sleep state = S3, may cause problems in rare cases)
 2.. Let system run while closed (Sleep state = NONE, may cause hardware damage)
 3.. Shut down system when closed (Sleep state = S5, safest option)
 
