@@ -2627,10 +2627,7 @@ requires a lot of hardware resources.  Not suitable for low-end hardware
 like netbooks or VM guests with limited RAM and disk.
 
 Lumina desktop is very small, fast, intuitive, and attractive and was
-developed on FreeBSD.  However, as of version 1.6.2, Lumina does not
-update the screen properly when resizing a VirtualBox window with guest
-additions installed.  If you are running under VirtualBox, another
-lightweight DE may run more cleanly.
+developed on FreeBSD.
 
 EOM
 line
@@ -2649,9 +2646,8 @@ while [ $valid_selection = 0 ]; do
     printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
     printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
-    #printf "9.. Kodi standalone multimedia appliance\n"
-    printf "9.. Lumina Lightweight Desktop (Recommended outside VirtualBox)\n"
-    printf "10. LXDE Lightweight Desktop (Deprecated in favor of LXQT)\n"
+    printf "9.. Lumina Lightweight Desktop\n"
+    printf "10. LXDE Lightweight Desktop (Replaced by LXQT, but still maintained)\n"
     printf "11. LXQT Lightweight Desktop\n"
     printf "12. MATE Desktop (Gnome 2 derivative)\n"
     printf "13. WindowMaker Lightweight Window Manager\n"
