@@ -1865,8 +1865,11 @@ desktop-environment.  Be sure to do your homework before choosing a
 port.
 
 EOM
-    printf "Enter category/name (e.g. x11-wm/afterstep): "
-    read de_port
+    de_port=""
+    while ! echo $de_port | fgrep -q '/'; do
+	printf "Enter category/name (e.g. x11-wm/afterstep): "
+	read de_port
+    done
     
     # From x11-wm/xfce4-session/pkg-message:
     install_packages $de_port
