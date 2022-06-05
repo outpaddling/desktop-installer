@@ -129,7 +129,7 @@ install_xorg()
     auto-mark-package-critical xorg xdm
 
     # Install additional fonts before Xorg -configure
-    # Liberation fonts are good for qterminal
+    # Liberation fonts are good for terminals
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
 	x11-fonts/fira x11-fonts/droid-fonts-ttf
 
@@ -1791,8 +1791,8 @@ mate_config()
 lumina_packages()
 {
     # Packages specific to Lumina
-    # qterminal was buggy but seems to have improved
-    # lilyterm is a good alternative, although not QT based
+    # coreterminal is light, clean, and has some unique features among
+    # QT-based apps like snap to rows/cols during resize
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
 	multimedia/transcode \
@@ -1800,7 +1800,7 @@ lumina_packages()
 	graphics/qt5-imageformats \
 	graphics/phototonic \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	math/galculator x11/qterminal
+	math/galculator x11/coreterminal
 
     # FIXME: Find a secure way to enable cdrecord
     # cdrecord_perms
