@@ -1112,11 +1112,6 @@ install_common_ports()
     if [ ! -e $NASD_CONF ]; then
 	cp $NASD_CONF.eg $NASD_CONF
     fi
-    
-    # Daemon and software for USB web cams
-    # As of 2019-07 interferes with uhid
-    # Also switch to auto-webcam-setup when it's ready
-    # webcam_config
 
     if [ $SETUP_LEVEL = 2 ]; then
 	linux_config
@@ -2857,8 +2852,9 @@ if [ $cups = y ]; then
     auto-cups-setup
 fi
 
+# As of 2019-07 interferes with uhid
 webcam=`auto-ask webcamd-setup 'Configure webcam? (y/n)' n`
-if [ $cups = y ]; then
+if [ $webcam = y ]; then
     auto-webcamd-setup
 fi
 
