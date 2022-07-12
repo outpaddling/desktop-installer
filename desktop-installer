@@ -2857,6 +2857,11 @@ if [ $cups = y ]; then
     auto-cups-setup
 fi
 
+webcam=`auto-ask webcamd-setup 'Configure webcam? (y/n)' n`
+if [ $cups = y ]; then
+    auto-webcamd-setup
+fi
+
 # After network_config
 install_common_ports
 
