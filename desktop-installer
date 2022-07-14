@@ -2853,9 +2853,9 @@ if [ $cups = y ]; then
 fi
 
 # As of 2019-07 interferes with uhid
-webcam=`auto-ask webcamd-setup 'Configure webcam? (y/n)' n`
+webcam=`auto-ask webcam-setup 'Configure webcam? (y/n)' n`
 if [ $webcam = y ]; then
-    auto-webcamd-setup
+    auto-webcam-setup
 fi
 
 # After network_config
