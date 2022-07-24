@@ -2853,9 +2853,13 @@ if [ $cups = y ]; then
 fi
 
 # As of 2019-07 interferes with uhid
-webcam=`auto-ask webcam-setup 'Configure webcam? (y/n)' n`
-if [ $webcam = y ]; then
-    auto-webcam-setup
+if grep -iq '^ugen.*camera' /var/run/dmesg.boot; then
+    webcam=`auto-ask webcam-setup 'Configure webcam? (y/n)' n`
+    if [ $webcam = y ]; then
+	auto-webcam-setup || true
+    fi
+else
+    printf "No webcam detected.\n"
 fi
 
 # After network_config
