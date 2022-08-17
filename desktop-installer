@@ -1128,7 +1128,7 @@ install_common_ports()
     
     # FIXME: Problem with auto-package-installed: graphics/gtkam
     
-    common_ports="security/keepassxc sysutils/bsdstats www/firefox \
+    common_ports="security/keepassxc www/firefox \
 	mail/thunderbird editors/libreoffice multimedia/vlc"
     
     for port in $common_ports; do
@@ -1139,7 +1139,7 @@ install_common_ports()
 	    fi
 	    printf '\n'
 	    case $port in
-	    'sysutils/bsdstats'|'security/keepassx')
+	    'security/keepassx')
 		resp=`auto-ask install-$port "Install $port? (y/n)" y`
 		;;
 	    *)
