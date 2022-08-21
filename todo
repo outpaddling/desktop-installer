@@ -1,5 +1,6 @@
 
-Basic firewall?
+XDM Reboot, Shutdown, Restart X11 buttons:
+    Center on main display rather than span of multiple monitors
 
 https://forums.freebsd.org/threads/macbook-pro-5-1-realtek-alc889a-sound-setup.56061/
 
@@ -31,17 +32,20 @@ Explain need for wireless drivers
 
 Install anacron?
     one suggestion from vans9@yandex.ru
-    I've meant those peoriodic tasks that are already in /etc/crontab - daily, weekly, monthly. They seem to run almost never at desktops, that work on daily basis and are switched off at evening. But. the other side of enabling the the periodic through anacron is that roots mail will be spammed with the periodic reports. To avoid this, there shoud be line in periodic.conf making periodic to write it's repots to file, and syslod-ng rotating this files and maybe other things should be done..... So it's an overtask for the desktop-installer possibly.
 
-Separate code for general setup and desktop installation? (vans)
+    I've meant those periodic tasks that are already in /etc/crontab - daily,
+    weekly, monthly. They seem to run almost never at desktops, that work on
+    daily basis and are switched off at evening. But. the other side of
+    enabling the the periodic through anacron is that roots mail will be
+    spammed with the periodic reports. To avoid this, there shoud be line
+    in periodic.conf making periodic to write it's repots to file, and
+    syslod-ng rotating this files and maybe other things should be done.....
+    So it's an overtask for the desktop-installer possibly.
 
-***************************************************************************
 Linimon:
 
 There are several structural problems:
 
- 1) the assumption that dmidecode and acpi sysctls exist.  (In my
-    hacking I have worked around that.)
  2) the assumption that any port/pkg install failure is fatal.
  3) the lack of correctly determining whether a pkg is available
     to install.
@@ -73,7 +77,7 @@ should be immediately followed by something like:
 
     rdescr=$(pkg rquery %e $pkg 2> /dev/null || true)
     if [ -z "${rdescr}" ]; then
-        printf "Unfortunately, recommended package $pkg is not available for your system.\n"
+	printf "Unfortunately, recommended package $pkg is not available for your system.\n"
     else
 
 I can generate a patch for the ones in common_packages().  But it
@@ -92,4 +96,4 @@ Specific change: I do not believe cups_config() should be in the
 "just the essentials" selection.  I have hacked it out for now.
 
 ------------------------------------------------------------------
-***************************************************************************
+
