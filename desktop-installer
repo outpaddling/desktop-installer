@@ -1268,7 +1268,7 @@ xfce4_packages()
     install_packages math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xfce4-screensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes graphics/evince
+	misc/xfce4-wm-themes print/xreader
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
