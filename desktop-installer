@@ -2502,7 +2502,7 @@ also likely experience occasional regressions (things stop working) such as
 browsers crashing, printing not working from LibreOffice, etc.
 
 You can guard against major problems by using auto-update-system to perform
-all upgradees and auto-mark-package-critical to block upgrades when critical
+all upgrades and auto-mark-package-critical to block upgrades when critical
 packages are broken.  Desktop-installer does this automatically for your
 chosen desktop environment, login manager, and many other key components.
 
