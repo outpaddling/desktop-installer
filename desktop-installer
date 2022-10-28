@@ -564,12 +564,26 @@ moused_config()
 	    auto-enable-service moused desktop-installer
 	
 	    # Moused sometimes crashes during suspend/resume (sig 11)
-	    if ! fgrep -q '/usr/sbin/service moused' $RC_RESUME; then
-		sed -i '.orig' -E "s|exit 0|# Added by desktop-installer\\
-/usr/sbin/service moused restart\\
-# End desktop-installer addition\\
-\\
-exit 0|g" $RC_RESUME
+	    if ! fgrep -q '/usr/local/sbin/auto-fix-date' $RC_RESUME; then
+		# Insert before last line (should be exit 0)
+		sed -i .orig '$ i\
+# Added by desktop-installer\
+/usr/local/sbin/auto-fix-date\
+# End desktop-installer addition\
+\
+' $RC_RESUME
+	    fi
+
+	    if ! fgrep -q '/usr/sbin/automount -fu' $RC_SUSPEND; then
+		# Insert before logger, one of the last housekeeping
+		# chores before zzz
+		sed -i .orig '/^\/usr\/bin\/logger/i\
+# Added by desktop-installer\
+# Mounts will cause hangs if we wake up on a different network\
+/usr/sbin/automount -fu\
+# End desktop-installer addition\
+\
+' $RC_SUSPEND
 	    fi
 	fi
     else
@@ -2412,6 +2426,7 @@ DEVFS_RULES='/etc/devfs.rules'
 RC_CONF='/etc/rc.conf'
 LOADER_CONF='/boot/loader.conf'
 RC_RESUME='/etc/rc.resume'
+RC_SUSPEND='/etc/rc.suspend'
 TTYS='/etc/ttys'
 FSTAB='/etc/fstab'
 NASD_CONF="$LOCALBASE/etc/nasd.conf"
