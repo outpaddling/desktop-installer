@@ -1334,7 +1334,7 @@ external_drive_config()
     #add path 'cd*' mode 0666
     #add path 'pass*' mode 0666
     #add path 'xpt*' mode 0666
-    auto-update-devfs-rules operator cd da pass xpt
+    auto-update-devfs-rules operator cd da pass xpt mmcsd
     auto-update-devfs-conf cd0 cd1 fd0 fd1
     
     if ! fgrep -q '#/dev/cd' $FSTAB; then
