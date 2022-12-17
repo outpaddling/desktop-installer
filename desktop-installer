@@ -258,7 +258,7 @@ xorg_config()
 Choose a display manager:
 
 1.. XDM augmented with Shutdown, Reboot, and Restart X11 buttons
-2.. SLiM
+2.. SDDM
 
 EOM
 	    selection=$(auto-ask display-manager "Display manager selection? " 1)
@@ -267,7 +267,7 @@ EOM
 		display_manager=xdm
 		;;
 	    2)
-		display_manager=slim
+		display_manager=sddm
 		;;
 	    *)
 		printf "Invalid selection: $selection\n"
@@ -388,7 +388,7 @@ EOM
     touchpad_tap_enable
     
     # Patch for VirtualBox guest additions
-    if vbox_guest && [ -e /etc/X11/xorg.conf ]; then
+    if vbox_guest && [ -e $XORG_CONF ]; then
 	awk '
 	{
 	    if ( $1 == "Driver" && $2 == "\"mouse\"" )
@@ -405,8 +405,8 @@ EOM
 	    {
 		print $0;
 	    }
-	}'   /etc/X11/xorg.conf > /etc/X11/xorg.conf.vbox
-	mv -f /etc/X11/xorg.conf.vbox /etc/X11/xorg.conf
+	}'   $XORG_CONF > $XORG_CONF.vbox
+	mv -f $XORG_CONF.vbox $XORG_CONF
     fi
     
     success=0
@@ -532,6 +532,7 @@ manager (gdm, sddm, slim, xdm), please terminate now or answer 'n' to
 the following question and rerun desktop-installer from a virtual terminal.
 
 EOM
+    # Debug printf "Running ${display_manager}_config...\n"
     pause
     ${display_manager}_config
 }
@@ -996,6 +997,7 @@ EOM
 	xdm_disable
 	gdm_disable
 	slim_disable
+	install_packages x11/sddm
 	auto-enable-service sddm desktop-instaler
     fi
 }
@@ -1620,7 +1622,7 @@ wmaker_config()
     install_packages x11-wm/windowmaker x11-wm/wmakerconf
     auto-mark-package-critical windomaker wmakerconf
     startup_scripts WMAKER
-    xorg_config light
+    xorg_config xdm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
 }
@@ -1636,7 +1638,7 @@ fluxbox_config()
     install_packages x11-wm/fluxbox x11-themes/fluxbox-tenr-styles-pack
     auto-mark-package-critical fluxbox
     startup_scripts FLUXBOX
-    xorg_config light
+    xorg_config xdm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
 }
@@ -1652,7 +1654,7 @@ icewm_config()
     install_packages x11-wm/icewm
     auto-mark-package-critical icewm
     startup_scripts ICEWM
-    xorg_config light
+    xorg_config xdm
     install_packages math/galculator x11/xlockmore x11/xscreensaver
     auto-automount-setup || true
 }
