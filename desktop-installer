@@ -14,7 +14,9 @@
 
 line()
 {
-    printf "=============================================================================\n"
+    cat << EOM
+===========================================================================
+EOM
 }
 
 
@@ -45,11 +47,13 @@ install_packages()
 	if [ ! -e $PORTSDIR/$pkg ]; then
 	    cat << EOM
 
+===========================================================================
 Error: $pkg does not exist.  Please report this issue at
 
     https://github.com/outpaddling/desktop-installer/issues
 
 It may not be critical, so we will attempt to continue the setup.
+===========================================================================
 
 EOM
 	    pause
@@ -255,6 +259,7 @@ xorg_config()
 	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
 	    cat << EOM
 
+===========================================================================
 Choose a display manager:
 
 1.. XDM with Shutdown, Reboot, and Restart X11 buttons
@@ -262,6 +267,7 @@ Choose a display manager:
     
 2.. SDDM
     Reveals user names on login screen.  Security risk on public computers.
+===========================================================================
 
 EOM
 	    selection=$(auto-ask display-manager "Display manager selection? " 1)
@@ -282,21 +288,25 @@ EOM
     if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
 	cat << EOM
 
+===========================================================================
 X11 already running, so we won't mess with the graphics drivers.  If you
 want desktop-installer to help you change them, shut down X11 and run
 desktop-installer from a text console.
+===========================================================================
 
 EOM
 	pause
     else
 	cat << EOM
 
+===========================================================================
 Graphics drivers must be configured once, followed by a reboot to properly
 test them before attempting to start X11.  If you guess wrong which graphics
 driver/DRM combination to use, you may need to repeat this process and try
 again.  Answer 'y' if you want to to use the guided driver configurator or
 'n' if you want to fall back on the generic SCFB or VESA drivers or configure
 your graphics manually later.
+===========================================================================
 
 EOM
 	
@@ -314,9 +324,11 @@ EOM
     
     cat << EOM
     
+===========================================================================
 Using moused may be useful for text virtual terminals, but is not necessary
 for X11.  However, on some systems, enabling moused may work around issues
 with Xorg mouse drivers.
+===========================================================================
 
 EOM
     
@@ -328,6 +340,7 @@ EOM
     line
     cat << EOM
 
+===========================================================================
 Xorg is now meant to be configuration-free.  Generating an xorg.conf file
 should only be necessary if you want to override the default resolution or
 other options.
@@ -337,6 +350,7 @@ Overrides can also be done with xorg.conf fragments in $XORG_CONF_DIR.
 Note that the process of generating xorg.conf could, in rare cases, cause
 your display to freeze, but rest assured that FreeBSD is still running.
 You can restart by typing Ctrl+Alt+F1 followed by Ctrl+Alt+Del.
+===========================================================================
 
 EOM
 
@@ -359,10 +373,12 @@ EOM
     else
 	cat << EOM
 
+===========================================================================
 Hardware mouse cursor support is a feature of Xorg that sometimes interacts
 badly with video drivers and provides no noticeable benefit to typical Unix
 desktop users.  We can avoid hardware cursor issues by turning on software
 cursor support.
+===========================================================================
 
 EOM
     fi
@@ -415,6 +431,8 @@ EOM
     success=0
     while [ $success != 1 ]; do
 	cat << EOM
+
+===========================================================================
 You may wish to add monitor settings to the
 Monitor section (HorizSync and VertRefresh) to allow the X11 server
 to optimize your display settings, e.g.
@@ -428,8 +446,9 @@ to optimize your display settings, e.g.
     VertRefresh 50.0 - 100.0
 
 These settings can be found in the monitor manual.
+===========================================================================
+
 EOM
-	line
     
 	if [ $generate_xorg = y ]; then
 	    resp=`auto-ask edit-xorg "Edit xorg.conf? (y/n)" n`
@@ -440,8 +459,10 @@ EOM
     
 	cat << EOM
     
+===========================================================================
 The first test of X11 may take a minute to start up, as the desktop
 system creates all new configuration files.
+===========================================================================
     
 EOM
 	if ps axw | fgrep 'bin/X' | fgrep -qv grep; then
@@ -457,8 +478,10 @@ EOM
 	if [ 0"$resp" = 0'y' ]; then
 	    cat << EOM
 
+===========================================================================
 Starting your selected desktop environment.  Log out (do not shut down or
 restart) to resume desktop-installer.
+===========================================================================
 
 EOM
 	    pause
@@ -467,12 +490,18 @@ EOM
 		success=1
 	    else
 		cat << EOM
+
+===========================================================================
 X11 seems to have failed to start.  Viewing your Xorg log...
+===========================================================================
+
 EOM
 		pause
 		$MORE /var/log/Xorg.0.log
 		line
 		cat << EOM
+
+===========================================================================
 Your chipset is
 
 $(grep Chipset /var/log/Xorg.0.log)
@@ -482,6 +511,7 @@ graphics/drm-kmod, which supports newer devices than th base DRM..
 
 If you are using an older video chipset (as many server motherboards do),
 you may need an Xorg video driver that is not installed by default.
+===========================================================================
 
 EOM
 
@@ -529,10 +559,12 @@ EOM
     # Install display manager
     cat << EOM
 
+===========================================================================
 Display managers should not be reconfigured from a running X11 session.
 If you are running this under X11 now and plan to enable a new display
 manager (gdm, sddm, slim, xdm), please terminate now or answer 'n' to
 the following question and rerun desktop-installer from a virtual terminal.
+===========================================================================
 
 EOM
     # Debug printf "Running ${display_manager}_config...\n"
@@ -666,6 +698,7 @@ startup_scripts()
 	local session_cmd
 	cat << EOM
 
+===========================================================================
 We need to congifure the X11 startup scripts to start the proper session.
 The command for this can be found in ${PORTSDIR}/$de_port/pkg-plist
 in case you do not know it.  We will display the commands in pkg-plist
@@ -673,6 +706,7 @@ after you press Enter.
 
 Enter the absoluate pathname (e.g. /usr/local/bin/afterstep) or just the
 command name (e.g. afterstep).
+===========================================================================
 
 EOM
 	pause
@@ -700,10 +734,12 @@ EOM
     else
 	cat << EOM
 
+===========================================================================
 The .xinitrc file controls which window manager / desktop system is run when
 starting X11 manually (not from a display manager / graphical login screen).
 If you are switching to a different desktop system, you may want to answer 'y'
 here.
+===========================================================================
 
 EOM
 	printf "$xinitrc already exists.\n"
@@ -765,6 +801,7 @@ dm_msg()
 {
     cat << EOM
 
+===========================================================================
 Starting display manager.  After the login screen appears, press Ctrl+Alt+F1
 (or Host-key+F1 in VirtualBox) to return to this screen and complete the
 desktop-installer setup.
@@ -774,6 +811,7 @@ If for any reason you cannot switch back to this text console, run
     pkill desktop-installer
 
 and then restart desktop-installer from $(pwd).
+===========================================================================
 
 EOM
     pause
@@ -788,6 +826,7 @@ dm_msg_exit()
 {
     cat << EOM
 
+===========================================================================
 Starting the display manager.  Desktop-installer will then exit.
 Re-run desktop-installer from
 
@@ -798,6 +837,7 @@ it will not remember your previous answers.
 
 Don't forget to terminate the shell running in this terminal, especially
 if you are logged in as root!
+===========================================================================
 
 EOM
     pause
@@ -872,9 +912,13 @@ gdm_config()
 
     line
     cat << EOM
+
+===========================================================================
 Warning:
 Enabling gdm will terminate any sessions running under other display
 managers such as xdm or sddm.
+===========================================================================
+
 EOM
     line
     resp=`auto-ask enable-gdm "Enable GDM graphical login? (y/n)" y`
@@ -969,9 +1013,13 @@ slim_config()
     
     line
     cat << EOM
+
+===========================================================================
 Warning:
 Enabling SLiM will terminate any sessions running under other display
 managers such as xdm or sddm.
+===========================================================================
+
 EOM
     line
     resp=`auto-ask enable-slim "Enable SLiM graphical login? (y/n)" y`
@@ -989,9 +1037,13 @@ EOM
 sddm_config()
 {
     cat << EOM
+
+===========================================================================
 Warning:
 Enabling sddm will terminate any sessions running under other display
 managers such as xdm or gdm.
+===========================================================================
+
 EOM
     line
     resp=`auto-ask enable-sddm "Enable SDDM graphical login? (y/n)" y`
@@ -1079,6 +1131,7 @@ linux_config()
     if [ ! -e /compat/linux/bin/bash ]; then
 	cat << EOM
 
+===========================================================================
 FreeBSD's Linux compatibility module allows you to run closed-source Linux
 binaries in cases where you don't have access to the source code to compile
 a program directly for FreeBSD.
@@ -1095,6 +1148,7 @@ FreeBSD ports from existing CentOS Yum packages is extremely easy.
 
 FreeBSD's Linux compatibility also provides Linux procfs, sysfs, and tmpfs
 for applications that require it.
+===========================================================================
 
 EOM
 	install_linux=$(auto-ask linux-compat 'Configure Linux compatibility? (y/n)' n)
@@ -1153,7 +1207,7 @@ install_common_ports()
     
     for port in $common_ports; do
 	if ! auto-package-installed $port && [ -d $PORTSDIR/$port ]; then
-	    printf '\n---------------------------------------------------------------------------\n'
+	    line
 	    if [ -e $PORTSDIR/$port/pkg-descr ]; then
 		cat $PORTSDIR/$port/pkg-descr
 	    fi
@@ -1180,8 +1234,10 @@ install_common_ports()
 	if [ $port = editors/libreoffice ]; then
 	    cat << EOM
 
+===========================================================================
 To enable spell checking in libreoffice, you will need the hunspell
 dictionaries for your language, e.g. en-hunspell for English.
+===========================================================================
 
 EOM
 	    pause
@@ -1191,6 +1247,7 @@ EOM
 	    printf "Binary package for $port is not available.\n"
 	    cat << EOM
 
+===========================================================================
 Possible reasons:
 
 1. $port is not compatible with $(uname -m)
@@ -1203,6 +1260,7 @@ BROKEN or FOR_ARCHS.
 
 If you believe it should work on $(uname -m), you can try installing from
 source, but this may take a long time.
+===========================================================================
 
 EOM
 	    install=`auto-ask try-from-source-$port 'Try installing from source? (y/n)' n`
@@ -1363,10 +1421,12 @@ java_config()
     if ! auto-package-installed java/icedtea-web; then
 	cat << EOM
 
+===========================================================================
 If you are running on a mainstream hardware platform with Java support,
 you can install the icedtea-web plugin for running Java programs from
 the web.  Check the openjdk ports for the latest supported platforms.
 If you are not sure your platform supports Java, answer 'n' here.
+===========================================================================
 
 EOM
 	resp=`auto-ask install-java "Install icedtea Java plugin? (y/n)" n`
@@ -1445,8 +1505,10 @@ nfs_client_config()
     auto-autofs-nfs-setup || true
     cat << EOM
 
+===========================================================================
 NFS shares on the local network should be accessible via autofs under
 /net/<server-hostname>/.
+===========================================================================
 
 EOM
 }
@@ -1887,6 +1949,7 @@ other_config()
 {
     local de_port
     cat << EOM
+
 ============================================================================
 We now need to know which port installs your desktop environment or
 window manager.  Most reside under $PORTSDIR/x11-wm, though some may
@@ -1896,6 +1959,7 @@ name separated by a /.
 Note also that not everything in x11-wm is a window manager or
 desktop-environment.  Be sure to do your homework before choosing a
 port.
+============================================================================
 
 EOM
     de_port=""
@@ -1952,6 +2016,7 @@ power_config()
 
     if sysctl -a | fgrep -q dev.acpi_lid.0; then
 	cat << EOM
+
 ============================================================================
 Some ACPI functions such as suspend/resume are not standardized across all
 hardware, and therefore may or may not function on open source systems such
@@ -1980,6 +2045,7 @@ ACPI web sites for more information.
 1.. Enable suspend/resume (Sleep state = S3, may cause problems in rare cases)
 2.. Let system run while closed (Sleep state = NONE, may cause hardware damage)
 3.. Shut down system when closed (Sleep state = S5, safest option)
+===========================================================================
 
 EOM
 	lid_state=`auto-ask lid-state 'Action to take when laptop is closed?' 3`
@@ -2123,7 +2189,7 @@ check_inodes()
 	df -i
 	cat << EOM
     
--------------------------------------------------------------------------------
+===========================================================================
 
 			    *** WARNING ***
 
@@ -2137,7 +2203,7 @@ This system has $inodes.
 You can increase the number of inodes by reformatting the partition
 with newfs using -f to reduce the fragment size and/or -i to reduce
 the number of bytes/inode.  Run "man newfs" for more information.
--------------------------------------------------------------------------------
+===========================================================================
     
 EOM
 	resp=`auto-ask inodes-ok 'Continue with installation? (y/n)' n`
@@ -2171,6 +2237,7 @@ usermount_config()
     line
     cat << EOM
 
+===========================================================================
 You may configure sudo to allow users to mount and unmount removable media,
 without entering a password, using commands such as
 
@@ -2186,12 +2253,14 @@ Note:
     This will only grant members of the "operator" group rights to mount
     specific devices.  It will not grant anyone rights to run arbitrary
     commands.
+===========================================================================
 
 EOM
 
     pause
     cat << EOM
 
+===========================================================================
 XFCE4 mount plugin should be configured with the following commands:
 
     sudo auto-mount-any %d %m
@@ -2205,6 +2274,7 @@ Important notes:
 
     Unplugging a mounted USB or Firewire drive can cause filesystem damage.
     Do not grant mount privileges to untrusted users.
+===========================================================================
 
 EOM
     resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
@@ -2299,6 +2369,7 @@ disable_write_cache()
 {
     cat << EOM
 
+===========================================================================
 The built-in write cache of modern hard disks causes the disk controller to
 tell the operating system that data has been committed to the disk media when
 it really is only in a memory buffer.  This can cause filesystems to be marked
@@ -2321,11 +2392,13 @@ and run "fsck -fy" on all UFS+su+j filesystems.  This will restore consistency
 to the filesystem (though it will not recover data lost in the write cache).
 If you don't mind doing this after each improper shutdown, then the default
 configuration is probably best and no action is necessary here.
+===========================================================================
 
 EOM
     pause
     cat << EOM
 
+===========================================================================
 Disabling the hardware write cache will prevent this issue, but may hurt
 performance, especially on slow disks. If maximum performance is more
 important to you than avoiding this issue, then leave write cache enabled.
@@ -2342,18 +2415,21 @@ filesystems.  Running fsck on a UFS filesystem generally does not take long
 anyway and only needs to be completed for the root filesystem during boot.
 Thanks to soft updates, it is actually safe to mount a dirty filesystem, so
 most filesystems can be checked in the background after booting is complete.
+===========================================================================
 
 EOM
     pause
 
     cat << EOM
 
+===========================================================================
 You can disable write cache right now by answering 'y' below, with the change
 taking effect after the next reboot.
 
 To disable the journal, you must manually boot to single-user mode and run:
 
     $LOCALBASE/sbin/auto-su+j-toggle off
+===========================================================================
 
 EOM
     disable_cache=$(auto-ask disable-write-cache "Disable write cache?" n)
@@ -2373,12 +2449,15 @@ EOM
 firewall_config()
 {
     cat << EOM
+
+===========================================================================
 Most systems should have a firewall configured to block incoming network
 traffic, protecting the system from malicious users.  You can configure a
 basic IPFW firewall now with virtually no effort and customize the rules later.
 
 Note that this will likely terminate any existing ssh connections, so answer
 no here unless you know what you're doing.
+===========================================================================
 
 EOM
     firewall_config=$(auto-ask configure-firewall "Configure a basic firewall? (y/n)" y)
@@ -2442,7 +2521,7 @@ test -e $LOADER_CONF || touch $LOADER_CONF
 
 cat << EOM
 
--------------------------------------------------------------------------------
+===========================================================================
 Desktop-installer automates the configuration of a FreeBSD desktop/laptop
 system.  You will be guided through the process and asked some basic
 questions, as well as a few that may require some thought and research.
@@ -2452,45 +2531,54 @@ in the base system since the last release of desktop-installer.  If this
 happens, you can manually fix the issue and simply run desktop-installer
 again.
 
-Please report any failures of this nature to the maintainer, and send a patch
-if possible.
+Please report any failures of this nature at:
 
-When asked whether to install software or enable a service, answering
-'n' will not deinstall previously installed software or disable previously
-enabled services.  Once you have answered 'y' to a question posed by
-desktop-installer, you will need to manually reverse the decision by editing
-the appropriate system file(s), which will contain comments enclosing options
-added by desktop-installer.
+https://www.freebsd.org/support/bugreports/
+===========================================================================
 
-Answers to most configuration questions will be saved in the file
-./auto-ask-responses.txt.  If this file is present in the current directory
-when you run desktop-installer again, your previous responses will be
-the defaults.
--------------------------------------------------------------------------------
 EOM
 pause
 
 cat << EOM
--------------------------------------------------------------------------------
+
+===========================================================================
+When asked whether to install software or enable a service, answering
+'n' will not deinstall previously installed software or disable previously
+enabled services.  Once you have answered 'y' to a question posed by
+desktop-installer, you will need to manually reverse the decision by editing
+the appropriate system file(s), such as $RC_CONF and $LOADER_CONF,
+which will contain comments enclosing options added by desktop-installer.
+
+Answers to most configuration questions will be saved in the file
+~/.config/auto-ask-responses.txt.  If this file is present when you run
+desktop-installer again, your previous responses will be the defaults.
+===========================================================================
+
+EOM
+pause
+
+cat << EOM
+
+===========================================================================
 Desktop-installer should generally be run from a text console using a direct
 root login, rather than through su or sudo.  This will ensure a proper
 environment for X11 testing.
+===========================================================================
 
-If you are re-running desktop-installer to make changes that do not involve
-the graphics setup, running via su or sudo should be OK.
--------------------------------------------------------------------------------
 EOM
 pause
 
 while [ 0$SETUP_LEVEL != 01 ] && [ 0$SETUP_LEVEL != 02 ]; do
     cat << EOM
 
+===========================================================================
 You may now choose between a simplified setup process with fewer questions,
 using reasonable defaults where possible, or an advanced setup providing
 you full control over all configuration options.
 
 1.. Just the essentials
 2.. Advanced options
+===========================================================================
 
 EOM
     SETUP_LEVEL=`auto-ask setup-level 'Your choice? ' 1`
@@ -2498,7 +2586,7 @@ done
 
 cat << EOM
 
--------------------------------------------------------------------------------
+===========================================================================
 FreeBSD by default installs packages from quarterly snapshots, which provide
 an added layer of quality control beyond the normal ports QA.  Quarterly
 ports/packages receive only bug fixes and minor updates, no major upgrades,
@@ -2509,14 +2597,14 @@ If you would prefer to use the latest bleeding-edge packages, answer 'y' here.
 Before doing so, make sure your platform supports this.  Some second-tier
 platforms such as powerpc may only provide quarterly packages for some FreeBSD
 versions.
--------------------------------------------------------------------------------
+===========================================================================
 
 EOM
 pause
 
 cat << EOM
 
--------------------------------------------------------------------------------
+===========================================================================
 When using latest packages, updates to some packages may become available
 almost every day.  You will have access to all the latest features, but will
 also likely experience occasional regressions (things stop working) such as
@@ -2535,7 +2623,7 @@ Note that switching back to quarterly from latest is not trivial, as
 configuration files from the latest version of an application may not be
 compatible with the older version in quarterly.  So switch to latest only if
 you're prepared to stay with it.
--------------------------------------------------------------------------------
+===========================================================================
 
 EOM
 pause
@@ -2577,6 +2665,7 @@ else
     
     cat << EOM
 
+===========================================================================
 It's best to make sure all installed ports/packages are up-to-date before
 installing new ones.  In theory this should not be necessary as the system
 is designed to automatically update dependencies as needed.  However, to
@@ -2587,6 +2676,7 @@ more stable system in the long-run.
 
 If you are running desktop-installer on a system with previously installed
 packages, it's a good idea to update before proceeding.
+===========================================================================
 
 EOM
     
@@ -2621,16 +2711,14 @@ fi
 clear
 cat << EOM
 
-==================
-Source or packages
-==================
-
+===========================================================================
 Building from source is not necessary on architectures for which binary
 packages are maintained and it takes a lot longer (possibly a full day or more
 for the entire desktop setup).
 
 In any case, make sure that BOTH your installed binary packages and ports
 are kept up-to-date with "pkg update" and "portsnap".
+===========================================================================
 
 EOM
 
@@ -2654,6 +2742,7 @@ fi
 line
 cat << EOM
 
+===========================================================================
 Time to select a desktop environment.
 
 Select "No desktop software" if you plan to use something not listed in the
@@ -2666,6 +2755,7 @@ like netbooks or VM guests with limited RAM and disk.
 
 Lumina desktop is very small, fast, intuitive, and attractive and was
 developed on FreeBSD.
+===========================================================================
 
 EOM
 line
@@ -2708,11 +2798,13 @@ while [ $valid_selection = 0 ]; do
     if [ $desktop_selection = 15 ]; then
     cat << EOM
 
+===========================================================================
 Be aware that support for custom desktop environments and window managers
 is extremely limited.  Testing every environment available in the FreeBSD
 ports tree is not feasible without a very large team of volunteers, so if
 you encounter problems with a custom environment, please plan to become
 part of the team and contribute a solution rather than ask for assistance.
+===========================================================================
 
 EOM
     pause
@@ -2729,8 +2821,12 @@ if vbox_guest; then
     auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
     line
     cat << EOM
+
+===========================================================================
 Note: You may need to enable I/O APIC in the VirtualBox system settings, or
 the system timer may not function properly.
+===========================================================================
+
 EOM
     line
     pause
@@ -2778,11 +2874,13 @@ auto-detect-laptops
 # Install GUI
 cat << EOM
 
+===========================================================================
 Installation of Xorg and your chosen desktop will now begin.  This can be a
 very long process, depending on the speed of your Internet connection and disk.
 On a modern machine, using binary packages (not installing from source), this
 may take less than 15 minutes.  Installing from source on a slow machine could
 take a day or more.
+===========================================================================
 
 EOM
 
@@ -2894,6 +2992,7 @@ fi
 if [ 0$enable_wireless = 0'y' ]; then
     cat << EOM
 
+===========================================================================
 FreeBSD's lagg (link aggregation) driver can be used to configure your WiFi
 interface as a failover for an Ethernet interface.  This will enable automatic
 switching between WiFi and Ethernet when you plug/unplug a network cable.
@@ -2903,6 +3002,7 @@ this only if you really plan to use Ethernet sometimes.  If you will only use
 WiFi on this machine, answer 'n' here.
 
 Enabling lagg will update your $RC_CONF and requires a reboot.
+===========================================================================
 
 EOM
     lagg=`auto-ask use-lagg 'Configure lagg for WiFi? (y/n)' n`
@@ -2914,6 +3014,7 @@ fi
 
 cat << EOM
 
+===========================================================================
 You can spend years exploring all the amazing features of FreeBSD, but for now
 you can perform basic systems management like updating your system, adding
 users, or installing software by running
@@ -2929,6 +3030,7 @@ You MUST use auto-admin or auto-update-system to ensure that packages
 installed from source are updated from source.  Running "pkg upgrade" directly
 will either replace them with binary packages from the FreeBSD project or
 not upgrade them at all.
+===========================================================================
 
 EOM
 while [ 0"$resp" != 0"got it" ]; do
@@ -2942,11 +3044,13 @@ fi
 
 cat << EOM
 
+===========================================================================
 Please report problems with desktop-installer at
 	
     https://github.com/outpaddling/desktop-installer/issues
 
 We hope you enjoy your new desktop system!
+===========================================================================
 
 EOM
 pause
