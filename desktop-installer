@@ -997,7 +997,8 @@ EOM
 	xdm_disable
 	gdm_disable
 	slim_disable
-	install_packages x11/sddm
+	install_packages x11/sddm x11-themes/sddm-freebsd-black-theme
+	cp $DATADIR/SDDM/sddm.conf $LOCALBASE/etc
 	auto-enable-service sddm desktop-instaler
     fi
 }
@@ -2686,7 +2687,7 @@ while [ $valid_selection = 0 ]; do
     printf "12. MATE Desktop (Gnome 2 derivative)\n"
     printf "13. WindowMaker Lightweight Window Manager\n"
     printf "14. XFCE4 Lightweight Desktop\n"
-    printf "15. Custom (enter your own port and session command)\n"
+    printf "15. Custom (enter your own category/port and session command)\n"
     line
     
     # Check dmesg.boot for cpu speed and memory size, and check df
