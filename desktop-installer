@@ -257,8 +257,11 @@ xorg_config()
 
 Choose a display manager:
 
-1.. XDM augmented with Shutdown, Reboot, and Restart X11 buttons
+1.. XDM with Shutdown, Reboot, and Restart X11 buttons
+    Simple and secure.  Does not reveal user names on login screen.
+    
 2.. SDDM
+    Reveals user names on login screen.  Security risk on public computers.
 
 EOM
 	    selection=$(auto-ask display-manager "Display manager selection? " 1)
