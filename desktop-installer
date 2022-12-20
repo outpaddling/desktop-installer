@@ -1363,30 +1363,6 @@ xfce4_packages()
 
 
 ##########################################################################
-#   Install packages useful to LXDE users.  These packages will have
-#   alternatives under KDE and Gnome.
-##########################################################################
-
-lxde_packages()
-{
-    # Packages specific to lxde
-    install_packages math/galculator x11/xlockmore
-}
-
-
-##########################################################################
-#   Install packages useful to LXQT users.  These packages will have
-#   alternatives under KDE and Gnome.
-##########################################################################
-
-lxqt_packages()
-{
-    # Packages specific to lxqt
-    install_packages math/galculator x11/xlockmore
-}
-
-
-##########################################################################
 #   Configure the system so that CD and DVD drives are usable by
 #   anyone in the operator group.
 ##########################################################################
@@ -1736,9 +1712,9 @@ lxde_config()
     install_packages x11/lxde-meta
     auto-mark-package-critical lxde-meta
     startup_scripts LXDE
-    xorg_config slim
+    xorg_config light
     auto-automount-setup || true
-    lxde_packages
+    install_packages math/galculator x11/xlockmore
 }
 
 
@@ -1752,9 +1728,9 @@ lxqt_config()
     install_packages x11-wm/lxqt
     auto-mark-package-critical lxqt
     startup_scripts LXQT
-    xorg_config slim
+    xorg_config light
     auto-automount-setup || true
-    lxqt_packages
+    install_packages math/galculator x11/xlockmore
 }
 
 
@@ -1839,7 +1815,7 @@ cinnamon_config()
     auto-mark-package-critical cinnamon
     
     startup_scripts CINNAMON
-    xorg_config slim
+    xorg_config sddm
     dbus_config
 }
 
@@ -1855,7 +1831,7 @@ mate_config()
     auto-mark-package-critical mate
     
     startup_scripts MATE
-    xorg_config slim
+    xorg_config sddm
     auto-automount-setup || true
 }
 
