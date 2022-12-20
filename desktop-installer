@@ -1714,7 +1714,7 @@ lxde_config()
     startup_scripts LXDE
     xorg_config light
     auto-automount-setup || true
-    install_packages math/galculator x11/xlockmore
+    install_packages math/galculator x11/xlockmore x11/coreterminal
 }
 
 
@@ -1730,7 +1730,7 @@ lxqt_config()
     startup_scripts LXQT
     xorg_config light
     auto-automount-setup || true
-    install_packages math/galculator x11/xlockmore
+    install_packages math/galculator x11/xlockmore x11/coreterminal
 }
 
 
