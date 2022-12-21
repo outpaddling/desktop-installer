@@ -235,7 +235,7 @@ EOM
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|slim|light|gdm|sddm|dtlogin\n"
+	printf "Usage: xorg_config xdm|slim|xdm_sddm|gdm|sddm|dtlogin\n"
 	exit 1
     else
 	display_manager=$1
@@ -255,7 +255,7 @@ xorg_config()
 	fi
     fi
 
-    if [ $display_manager = light ]; then
+    if [ $display_manager = xdm_sddm ]; then
 	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
 	    cat << EOM
 
@@ -1648,7 +1648,7 @@ xfce4_config()
     # XFCE4 logout panel
     enable_user_shutdown
     startup_scripts XFCE4
-    xorg_config light
+    xorg_config xdm_sddm
     xfce4_packages
     auto-automount-setup || true
 }
@@ -1712,7 +1712,7 @@ lxde_config()
     install_packages x11/lxde-meta
     auto-mark-package-critical lxde-meta
     startup_scripts LXDE
-    xorg_config light
+    xorg_config xdm_sddm
     auto-automount-setup || true
     install_packages math/galculator x11/xlockmore x11/coreterminal
 }
@@ -1728,7 +1728,7 @@ lxqt_config()
     install_packages x11-wm/lxqt
     auto-mark-package-critical lxqt
     startup_scripts LXQT
-    xorg_config light
+    xorg_config xdm_sddm
     auto-automount-setup || true
     install_packages math/galculator x11/xlockmore x11/coreterminal
 }
@@ -1872,7 +1872,7 @@ lumina_config()
     auto-mark-package-critical lumina
     
     startup_scripts LUMINA
-    xorg_config light
+    xorg_config xdm_sddm
     auto-automount-setup || true
     # Make GTK2 apps look nice
     cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
