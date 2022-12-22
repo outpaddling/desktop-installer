@@ -1175,6 +1175,7 @@ install_common_ports()
     # Install these after X11 and desktop
     if [ 0$enable_wireless = 0'y' ]; then
 	install_packages net-mgmt/wifimgr
+	install_wifi_drivers
     fi
     
     install_packages audio/nas
@@ -2100,58 +2101,62 @@ exit 0|g" $RC_RESUME
 	    default_wireless='n'
 	fi
 	enable_wireless=`auto-ask install-wireless "Configure wireless networking? (y/n)" $default_wireless`
-	if [ 0"$enable_wireless" = 0y ]; then
-	    # add wlans_{dev}0="wlan0" to rc.conf
-	    # FIXME: The real solution should detect all wireless devices,
-	    # not just those enumerated here.
-	    start_cwd=`pwd`
-	    cd $PORTSDIR/net
-	    # ipw and iwi are in GENERIC kernel, so don't load their kmods
-	    for driver in bwi bwn malo; do
-		if ! auto-package-installed net/$driver-firmware-kmod; then
-		    cd $driver-firmware-kmod
-		    if make -DBATCH clean reinstall; then
-			auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
-		    else
-			printf "Failed to install $driver-firmware-kmod.\n"
-		    fi
-		    cd ..
-		fi
-	    done
-	    cd $start_cwd
-	    # Check bwi before bwn.  They support the same devices, but
-	    # bwi seems to work better.
-	    # Driver name must not contain _ unless it's a variant as in
-	    # rtwn_pci.  We'll have to recode this section otherwise.
-	    # Both rtwn_pci and rtwn_usb appear as device rtwn0.
-	    drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
-	    for driver in $drivers; do
-		if kldload if_${driver} > /dev/null 2>&1; then
-		    printf "Loaded $driver.\n"
-		fi
-	    done
-	    
-	    for driver in $drivers; do
-		# Strip off _usb or _pci to get device name
-		WIFI_DEVICE=${driver%_*}0
-		if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
-		    # FIXME: Check also for ${driver}1, ${driver}2, etc.
-		    # Also could use a better test than this simple grep.
-		    dmesg | grep -q "^$WIFI_DEVICE"; then
-		    printf "Found wireless device $WIFI_DEVICE.\n"
-		    auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
-			$RC_CONF desktop-installer
-		    # Not necessary for drivers which are in the GENERIC kernel, but
-		    # it shouldn't hurt.
-		    auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
-		    break   # Configure only one wireless device!
-		fi
-	    done
-	    auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
-	fi
     else
 	enable_wireless='n'
     fi
+}
+
+
+install_wifi_drivers()
+
+{
+    # add wlans_{dev}0="wlan0" to rc.conf
+    # FIXME: The real solution should detect all wireless devices,
+    # not just those enumerated here.
+    start_cwd=`pwd`
+    cd $PORTSDIR/net
+    # ipw and iwi are in GENERIC kernel, so don't load their kmods
+    for driver in bwi bwn malo; do
+	if ! auto-package-installed net/$driver-firmware-kmod; then
+	    cd $driver-firmware-kmod
+	    if make -DBATCH clean reinstall; then
+		auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
+	    else
+		printf "Failed to install $driver-firmware-kmod.\n"
+	    fi
+	    cd ..
+	fi
+    done
+    cd $start_cwd
+    # Check bwi before bwn.  They support the same devices, but
+    # bwi seems to work better.
+    # Driver name must not contain _ unless it's a variant as in
+    # rtwn_pci.  We'll have to recode this section otherwise.
+    # Both rtwn_pci and rtwn_usb appear as device rtwn0.
+    drivers="an ath bwi bwn ipw iwi iwn malo mwl ral rtwn_pci rtwn_usb rum run uath upgt urtw urtwn wpi zyd"
+    for driver in $drivers; do
+	if kldload if_${driver} > /dev/null 2>&1; then
+	    printf "Loaded $driver.\n"
+	fi
+    done
+    
+    for driver in $drivers; do
+	# Strip off _usb or _pci to get device name
+	WIFI_DEVICE=${driver%_*}0
+	if grep -q "^$WIFI_DEVICE" /var/run/dmesg.boot || \
+	    # FIXME: Check also for ${driver}1, ${driver}2, etc.
+	    # Also could use a better test than this simple grep.
+	    dmesg | grep -q "^$WIFI_DEVICE"; then
+	    printf "Found wireless device $WIFI_DEVICE.\n"
+	    auto-set-conf-var wlans_$WIFI_DEVICE '"wlan0"' \
+		$RC_CONF desktop-installer
+	    # Not necessary for drivers which are in the GENERIC kernel, but
+	    # it shouldn't hurt.
+	    auto-set-conf-var "if_${driver}_load" '"YES\"' $LOADER_CONF desktop-installer
+	    break   # Configure only one wireless device!
+	fi
+    done
+    auto-set-conf-var ifconfig_wlan0 '"WPA DHCP"' $RC_CONF desktop-installer
 }
 
 
