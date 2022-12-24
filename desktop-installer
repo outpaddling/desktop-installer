@@ -235,7 +235,7 @@ EOM
 xorg_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: xorg_config xdm|slim|xdm_sddm|gdm|sddm|dtlogin\n"
+	printf "Usage: xorg_config xdm|slim|xdm_sddm|gdm_sddm|sddm|dtlogin\n"
 	exit 1
     else
 	display_manager=$1
@@ -264,16 +264,53 @@ Choose a display manager:
 
 1.. XDM with Shutdown, Reboot, and Restart X11 buttons
     Simple and secure.  Does not reveal user names on login screen.
+    Does not support multiple desktop environments.
     
 2.. SDDM
-    Reveals user names on login screen.  Security risk on public computers.
+    May reveal user names on login screen, which is not secure on public
+    computers.  Supports multiple desktop environments.
 ===========================================================================
 
 EOM
-	    selection=$(auto-ask display-manager "Display manager selection? " 1)
+	    selection=$(auto-ask xdm-sddm "Display manager selection? " 1)
 	    case $selection in
 	    1)
 		display_manager=xdm
+		;;
+	    2)
+		display_manager=sddm
+		;;
+	    *)
+		printf "Invalid selection: $selection\n"
+	    esac
+	done
+    fi
+
+    if [ $display_manager = gdm_sddm ]; then
+	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
+	    cat << EOM
+
+===========================================================================
+Choose a display manager:
+
+1.. GDM (Gnome Display Manager)
+    May reveal user names on login screen, which is not secure on public
+    computers.  Supports multiple desktop environments.
+    
+2.. SDDM
+    May reveal user names on login screen, which is not secure on public
+    computers.  Supports multiple desktop environments.
+===========================================================================
+
+EOM
+	    selection=$(auto-ask gdm-sddm "Display manager selection? " 1)
+	    case $selection in
+	    1)
+		display_manager=gdm
+		# GDM must be installed before startx for X11 test
+		# Can't wait for gdm_config()
+		install_packages x11/gdm
+		auto-mark-package-critical gdm
 		;;
 	    2)
 		display_manager=sddm
@@ -1793,14 +1830,8 @@ gnome_config()
 	auto-mark-package-critical gnome
     fi
     
-    # GDM must be installed even for startx to work during X11 test
-    # FIXME: Do we need to install x11/gdm here, or can we leave it to
-    # gdm_config?
-    install_packages x11/gdm
-    auto-mark-package-critical gdm
-    
     startup_scripts GNOME
-    xorg_config gdm
+    xorg_config gdm_sddm
     dbus_config
 }
 
