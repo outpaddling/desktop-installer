@@ -1089,8 +1089,11 @@ EOM
 	xdm_disable
 	gdm_disable
 	slim_disable
-	install_packages x11/sddm x11-themes/sddm-freebsd-black-theme
-	cp $DATADIR/SDDM/sddm.conf $LOCALBASE/etc
+	
+	# FIXME: Session menu is not currently scrollable, so some sessions
+	# are unreachable if the list is large.  PR 268541
+	# install_packages x11/sddm x11-themes/sddm-freebsd-black-theme
+	# cp $DATADIR/SDDM/sddm.conf $LOCALBASE/etc
 	auto-enable-service sddm desktop-instaler
     fi
 }
