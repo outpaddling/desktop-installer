@@ -16,10 +16,14 @@ desktop-installer
 
 .SH "DESCRIPTION"
 
+The FreeBSD desktop configuration process requires installing many
+ports/packages and configuring many different subsystems, which can be a
+daunting task for all but the most seasoned users.
+
 The
 .B desktop-installer
 script automates the process of configuring a FreeBSD machine as a desktop
-system running any desktop environemnt or simple window manager in the
+system running any desktop environment or simple window manager in the
 FreeBSD ports tree.  More than a dozen of the most popular desktops are
 explicitly supported and any other can be configured using the "Custom"
 option.
@@ -29,16 +33,13 @@ want, and the command for starting the desktop from xinit or xsession,
 e.g. start-lumina-desktop for the Lumina desktop.  This command can be found
 in category/portname/pkg-plist.  The only other advantage to explicitly
 supported desktops is automatic installation of a few common utilities, such
-as qpdfview and qterminal for Lumina.  You can easily install the utilities
+as qpdfview and coreterminal for Lumina.  You can easily install the utilities
 you want using "pkg install" or "auto-admin" after a Custom desktop install.
 
-This is a post-install script, i.e. one that you run AFTER doing a standard
-operating system installation via install media such as a USB stick, DVD,
-or PXE.  ( See details below. )
-
-The FreeBSD desktop configuration process requires installing many
-ports/packages and configuring many different subsystems, which can be a
-daunting task for all but the most seasoned users.
+.B Desktop-installer
+is a post-install script, i.e. one that you run AFTER doing a standard
+operating system and booting the new installation for the first time.
+( See details below. )
 
 .B Desktop-installer
 installs all the software necessary for the chosen desktop
@@ -85,10 +86,10 @@ Source code
 .fi
 
 Installing the ports tree from the installation media is a waste of time.
-It would only be replaced with a git clone by desktop installer.
+It will be replaced with a git clone by desktop installer.
 
 If you neglect to install the source tree, desktop-installer will install it
-for you.
+for you automatically.
 
 It is best to use
 .B desktop-installer
@@ -99,13 +100,14 @@ can also be used to upgrade all the software on an existing system, but there
 are too many possibilities for failure to support here since it is impossible
 to predict what kinds of system hacks it might encounter.  Also, it's generally
 a good idea to back up your data, wipe your disk clean, and reinstall
-everything every few years, since data on magnetic disks can fade over time
+everything every few years, since data on magnetic disks can fall victim
+to "bit rot" (magnetic polarity fades over time)
 and read errors will eventually occur.
 
 .B Desktop-installer
 can install software from source or from binary packages (pkg install).
-Binary packages install much faster (seconds per package, vs minutes
-per port built from source).  However, installing from ports allows you
+Binary packages install much faster (seconds per package, vs minutes or
+hours per port built from source).  However, installing from ports allows you
 to install on systems for which binary packages are not maintained.
 
 If you enjoy a simple life, install a -RELEASE or -STABLE version rather
@@ -127,8 +129,8 @@ or (if you have a ports tree installed)
     cd /usr/ports/sysutils/desktop-installer
     make install
 
-or if you want the latest development version of desktop-installer, get the
-latest jb-ports from MASTER_SITES and run
+or if you want the latest development version of desktop-installer, install
+from the latest freebsd-ports-wip:
 
     pkg install auto-admin
     auto-freebsd-wip-checkout
