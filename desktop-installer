@@ -2838,7 +2838,9 @@ install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
 
 power_config
 if vbox_guest; then
-    auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
+    # Forgot to document the reason for this, but doesn't seem necessary
+    # anymore as of 2023-02-18, virtualbox-ose-6.1.36
+    # auto-set-conf-var kern.timecounter.hardware i8254 $LOADER_CONF desktop-installer
     line
     cat << EOM
 
