@@ -1354,7 +1354,6 @@ kde5_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
-	multimedia/transcode \
 	sysutils/k3b \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	x11-themes/plasma5-kde-gtk-config
@@ -1888,7 +1887,6 @@ lumina_packages()
     # QT-based apps like snap to rows/cols during resize
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
-	multimedia/transcode \
 	print/qpdfview \
 	graphics/qt5-imageformats \
 	graphics/phototonic \
