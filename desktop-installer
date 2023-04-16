@@ -1092,7 +1092,13 @@ EOM
 	
 	# FIXME: Session menu is not currently scrollable, so some sessions
 	# are unreachable if the list is large.  PR 268541
-	install_packages x11/sddm # x11-themes/sddm-freebsd-black-theme
+	# install_packages x11-themes/sddm-freebsd-black-theme
+	
+	# Needed for reboot and shutdown button on SDDM screen: PR 270835
+	# Maybe should be a dependency for sddm?
+	install_packages sysutils/consolekit2
+	
+	install_packages x11/sddm
 	auto-mark-package-critical sddm
 	cp $DATADIR/SDDM/sddm.conf $LOCALBASE/etc
 	if auto-service-enabled sddm; then
