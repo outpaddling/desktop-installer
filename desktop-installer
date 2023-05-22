@@ -104,10 +104,17 @@ hyper_v_guest()
     test $(sysctl -n kern.vm_guest) = hv
 }
 
+qemu_guest()
+
+{
+    sysctl dev.ukbd.0 | fgrep -iq qemu
+    return $?
+}
+
 vm_guest()
 {
     # FIXME: Add support for other hypervisors and emulators
-    vbox_guest || parallels_guest || vmware_guest || hyper_v_guest
+    vbox_guest || parallels_guest || vmware_guest || hyper_v_guest || qemu_guest
     
     return $?
 }
