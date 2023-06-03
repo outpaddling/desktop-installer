@@ -2253,135 +2253,6 @@ dbus_config()
 
 ##########################################################################
 #   Function description:
-#       Set up user-mounting of cdroms, usb disks
-#
-#   Arguments:
-#       None
-#
-#   History:
-#   Date        Name        Modification
-#   2013-03-03  Jason Bacon Begin
-##########################################################################
-
-usermount_config()
-{
-    line
-    cat << EOM
-
-===========================================================================
-You may configure sudo to allow users to mount and unmount removable media,
-without entering a password, using commands such as
-
-    sudo mount /removable/cdrom0
-    sudo auto-mount-any /removable/flash0
-
-It also enables the use of the xfce4-mount-plugin.
-
-If you are using an automounter, answer 'n' here.
-
-Note:
-
-    This will only grant members of the "operator" group rights to mount
-    specific devices.  It will not grant anyone rights to run arbitrary
-    commands.
-===========================================================================
-
-EOM
-
-    pause
-    cat << EOM
-
-===========================================================================
-XFCE4 mount plugin should be configured with the following commands:
-
-    sudo auto-mount-any %d %m
-    sudo umount %m
-
-This will configure typical mount points for CD/DVD and USB flash
-devices.  To add more options, edit /etc/fstab and add another drop-in
-file similar to $LOCALBASE/etc/sudoers.d/mount.
-
-Important notes:
-
-    Unplugging a mounted USB or Firewire drive can cause filesystem damage.
-    Do not grant mount privileges to untrusted users.
-===========================================================================
-
-EOM
-    resp=`auto-ask usermount-config 'Configure sudo for removable media mounting? (y/n)' n`
-    if [ 0$resp = 0y ]; then
-	# DEPRECATE: Use scontrol eject
-	#install_packages sysutils/mcweject
-	#cp ${LOCALBASE}/share/examples/mcweject/eject.allow ${LOCALBASE}/etc
-	#chmod 600 ${LOCALBASE}/etc/eject.allow
-	install_packages security/sudo
-	gamin_dir="$LOCALBASE/etc/gamin"
-	mkdir -p $gamin_dir
-	rm -f $gamin_dir/gaminrc
-	
-	sudoers=$LOCALBASE/etc/sudoers.d/mount
-	printf "%%operator ALL=(ALL) NOPASSWD: " > $sudoers
-	chmod 440 $sudoers
-	
-	printf "# Added by auto-admin from desktop-installer\n" >> /etc/fstab
-	for device in cdrom flash; do
-	    for num in 0 1; do
-		
-		# Create mount points
-		mount_point=/removable/${device}${num}
-		mkdir -p $mount_point
-		chown root:operator $mount_point
-		chmod 770 $mount_point
-		
-		# Update fstab
-		case $device in
-		cdrom)
-		    dev="/dev/cd${num}"
-		    type='cd9660'
-		    options='ro,noauto'
-		    ;;
-		flash)
-		    dev="# /dev/da${num}s1"
-		    type='msdosfs'
-		    options='rw,noauto'
-		    ;;
-		*)
-		    ;;
-		esac
-		auto-append-line "$mount_point" \
-		    "$dev\t$mount_point\t$type\t$options\t0\t0" \
-		    /etc/fstab nocomment
-		
-		# Update sudoers drop-in
-		printf " $LOCALBASE/sbin/auto-mount-any $dev $mount_point, /sbin/umount $dev, /sbin/umount $mount_point," >> $sudoers
-		
-		# Add custom commands
-		# Where do we put this to make it global default?
-		# From .config/xfce4/panel/xfce4-mount-plugin-24.rc
-		#mount_command=sudo mount %m
-		#umount_command=sudo umount -f %m
-		
-		# Prevent gam_server from accessing mount points
-		printf "poll $mount_point\n" >> $gamin_dir/gaminrc
-	    done
-	done
-	printf "# End auto-admin addition\n" >> /etc/fstab
-	
-	# Remove trailing comma
-	sed -i '' -e 's|,$||g' $sudoers
-	
-	# Restart gam_server
-	if ! pkill gam_server; then
-	    printf "Note: gam_server was not running.\n"
-	fi
-    fi
-    printf "poll /dist\n" >> $gamin_dir/gaminrc
-    line
-}
-
-
-##########################################################################
-#   Function description:
 #       Disable write cache in disk controller to ensure clean filesystem
 #       after a power outage. Otherwise, the journal can be fooled into
 #       thinking the filesystem is clean after a write transaction.
@@ -2990,7 +2861,9 @@ case $desktop_selection in
 esac
 
 # Must come after desktop installation.  Configures gamin.
-# Broken sudo config
+# Depends on sudo, which has major security issues
+# https://www.zdnet.com/article/10-years-old-sudo-bug-lets-linux-users-gain-root-level-access/
+# https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3156
 # usermount_config
 
 # Broken and of questionable value: samba_config
