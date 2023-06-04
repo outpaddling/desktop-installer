@@ -12,9 +12,17 @@
 # Use xrandr to separate them.  Assuming monitors are side-by-side,
 # so xwininfo is fine for height.
 # width=`xwininfo -root | awk '$1 == "Width:" { print $2 }'`
+
+# Uncomment these to debug
+# xwininfo -root > /root/xwininfo
+# xrandr --screen 0 > /root/xrandr
+
 height=`xwininfo -root | awk '$1 == "Height:" { print $2 }'`
-width=`xrandr --screen 0 | grep primary | awk '{ print $4 }' \
-    | awk -F x '{ print $1 }'`
+
+# First component of field containing ####x###+#+#
+width=`xrandr --screen 0 | grep -E '[0-9]+x[0-9]+\+[0-9]+\+[0-9]+' | awk -F x '{ print $1 }' | awk '{ print $NF }'`
+
+printf "width = $width height = $height\n" > /root/dims
 
 # Primary display could be on left or right.  3rd value in xrandr output
 # is the offset of the left edge of a monitor, e.g.
