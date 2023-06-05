@@ -1,6 +1,7 @@
 
-XDM Reboot, Shutdown, Restart X11 buttons:
-    Center on main display rather than span of multiple monitors
+Add auto-update-system cron config
+
+Utilize qmediamanager
 
 https://forums.freebsd.org/threads/macbook-pro-5-1-realtek-alc889a-sound-setup.56061/
 
