@@ -38,7 +38,8 @@ if [ $# != 0 ]; then
     usage
 fi
 
-pkgin -y install digest fetch git cvs gmake
+pkgin -y install auto-admin     # Should be installed as a dep
+pkgin -y install digest fetch git cvs gmake xz
 if [ ! -e /usr/bin/gcc ]; then
     auto-install-base-components comp
 fi
@@ -47,6 +48,20 @@ if [ ! -e /usr/share/man ]; then
 fi
 if [ ! -e /usr/X11R7 ]; then
     auto-install-base-components xbase xcomp xetc xfont xserver
+fi
+
+if [ ! -e /usr/pkgsrc ]; then
+    cd /usr
+    ftp ftp://ftp.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+    tar -zxvf pkgsrc.tar.xz
+fi
+
+if [ ! -e /usr/pkgsrc/wip ]; then
+    printf "Install pkgsrc-wip? y/[n] "
+    read wip
+    if [ 0"$wip" = 0y ]; then
+	auto-pkgsrc-wip-checkout
+    fi
 fi
 
 cat << EOM
@@ -79,10 +94,6 @@ EOM
     ;;
 
 esac
-
-# Hangs startx before reboot
-pkgin -y install xdm
-cp /usr/pkg/share/examples/rc.d/xdm /etc/rc.d
 
 ##########################################################################
 #   From guide
