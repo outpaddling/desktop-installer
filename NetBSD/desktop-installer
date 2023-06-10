@@ -1,0 +1,115 @@
+#!/bin/sh -e
+
+##########################################################################
+#   Synopsis:
+#       
+#   Description:
+#       NetBSD desktop-installer
+#
+#   Arguments:
+#       
+#   Returns:
+#
+#   Examples:
+#
+#   Files:
+#
+#   Environment:
+#
+#   See also:
+#       
+#   History:
+#   Date        Name        Modification
+#   2023-06-10  Charlie &,,,Begin
+##########################################################################
+
+usage()
+{
+    printf "Usage: $0\n"
+    exit 1
+}
+
+
+##########################################################################
+#   Main
+##########################################################################
+
+if [ $# != 0 ]; then
+    usage
+fi
+
+pkgin -y install digest fetch git cvs gmake
+if [ ! -e /usr/bin/gcc ]; then
+    auto-install-base-components comp
+fi
+if [ ! -e /usr/share/man ]; then
+    auto-install-base-components man
+fi
+if [ ! -e /usr/X11R7 ]; then
+    auto-install-base-components xbase xcomp xetc xfont xserver
+fi
+
+cat << EOM
+
+1.. CTWM (NetBSD default)
+2.. XFCE
+
+EOM
+printf "Selection? "
+read de
+
+case $de in
+1)
+    ;;
+
+2)
+    XDM_CONF=/etc/X11/xdm/xdm-config
+    pkgin -y install xfce4
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/startxfce4
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+*)
+    printf "Invalid selection.\n"
+    exit 1
+    ;;
+
+esac
+
+# Hangs startx before reboot
+pkgin -y install xdm
+cp /usr/pkg/share/examples/rc.d/xdm /etc/rc.d
+
+##########################################################################
+#   From guide
+##########################################################################
+
+cp /usr/pkg/share/examples/rc.d/dbus /etc/rc.d
+# FIXME: Use auto-enable-service
+fgrep -q dbus= /etc/rc.conf || echo "dbus=YES" >> /etc/rc.conf
+service dbus restart
+
+fgrep -q xdm= /etc/rc.conf || echo "xdm=YES" >> /etc/rc.conf
+
+# FIXME: Use auto-something
+xsession=/etc/X11/xdm/Xsession
+if [ ! -e $xsession.ctwm ]; then
+    mv $xsession $xsession.ctwm
+    echo 'exec xfce4-session' > $xsession
+fi
+
+if ! ps ax | grep bin/xdm | grep -v grep; then
+    service xdm restart
+fi
+
+for app in firefox thunderbird keepassxc; do
+    printf "Install $app? y/[n] "
+    read install
+    if [ 0"$install" = 0y ]; then
+	pkgin -y install $app
+    fi
+done
