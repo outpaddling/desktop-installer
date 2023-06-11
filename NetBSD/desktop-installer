@@ -1,23 +1,9 @@
 #!/bin/sh -e
 
 ##########################################################################
-#   Synopsis:
-#       
 #   Description:
 #       NetBSD desktop-installer
 #
-#   Arguments:
-#       
-#   Returns:
-#
-#   Examples:
-#
-#   Files:
-#
-#   Environment:
-#
-#   See also:
-#       
 #   History:
 #   Date        Name        Modification
 #   2023-06-10  Charlie &,,,Begin
@@ -60,6 +46,7 @@ if [ ! -e /usr/pkgsrc/wip ]; then
     printf "Install pkgsrc-wip? y/[n] "
     read wip
     if [ 0"$wip" = 0y ]; then
+	cd /usr/pkgsrc
 	auto-pkgsrc-wip-checkout
     fi
 fi
@@ -67,19 +54,84 @@ fi
 cat << EOM
 
 1.. CTWM (NetBSD default)
-2.. XFCE
+2.. Gnome
+3.. LXDE
+4.. LXQT
+5.. XFCE
 
 EOM
 printf "Selection? "
 read de
 
+XDM_CONF=/etc/X11/xdm/xdm-config
+xsession=/etc/X11/xdm/Xsession
+
 case $de in
 1)
+    if [ -e $xsession.ctwm ]; then
+	mv -f $xsession.ctwm $xsession
+    fi
     ;;
 
 2)
-    XDM_CONF=/etc/X11/xdm/xdm-config
+    pkgin -y install gnome
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec gnome-session' > $xsession
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/gnome-session
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+3)
+    pkgin -y install lxde
+
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec startlxde' > $xsession
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/startlxde
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+4)
+    pkgin -y install lxqt
+
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec lxtq-session' > $xsession
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/startlxqt
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+5)
     pkgin -y install xfce4
+
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec xfce4-session' > $xsession
+    
     cat << EOM > $HOME/.xinitrc
 #!/bin/sh -e
 
@@ -95,6 +147,11 @@ EOM
 
 esac
 
+# Hangs startx before reboot
+# part of xbase?
+# pkgin -y install xdm 
+# cp /usr/pkg/share/examples/rc.d/xdm /etc/rc.d
+
 ##########################################################################
 #   From guide
 ##########################################################################
@@ -105,13 +162,6 @@ fgrep -q dbus= /etc/rc.conf || echo "dbus=YES" >> /etc/rc.conf
 service dbus restart
 
 fgrep -q xdm= /etc/rc.conf || echo "xdm=YES" >> /etc/rc.conf
-
-# FIXME: Use auto-something
-xsession=/etc/X11/xdm/Xsession
-if [ ! -e $xsession.ctwm ]; then
-    mv $xsession $xsession.ctwm
-    echo 'exec xfce4-session' > $xsession
-fi
 
 if ! ps ax | grep bin/xdm | grep -v grep; then
     service xdm restart
