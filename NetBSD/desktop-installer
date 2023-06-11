@@ -55,9 +55,11 @@ cat << EOM
 
 1.. CTWM (NetBSD default)
 2.. Gnome
-3.. LXDE
-4.. LXQT
-5.. XFCE
+3.. KDE
+4.. LXDE
+5.. LXQT
+6.. MATE
+7.. XFCE
 
 EOM
 printf "Selection? "
@@ -90,6 +92,23 @@ EOM
     ;;
 
 3)
+    pkgin -y install kde
+
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec startkde' > $xsession
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/startlxde
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+4)
     pkgin -y install lxde
 
     # FIXME: Use auto-something
@@ -106,7 +125,7 @@ EOM
     fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
     ;;
 
-4)
+5)
     pkgin -y install lxqt
 
     # FIXME: Use auto-something
@@ -123,7 +142,24 @@ EOM
     fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
     ;;
 
-5)
+6)
+    pkgin -y install mate
+
+    # FIXME: Use auto-something
+    if [ ! -e $xsession.ctwm ]; then
+	mv $xsession $xsession.ctwm
+    fi
+    echo 'exec mate-session' > $xsession
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+/usr/pkg/bin/mate-session
+EOM
+    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    ;;
+
+7)
     pkgin -y install xfce4
 
     # FIXME: Use auto-something
