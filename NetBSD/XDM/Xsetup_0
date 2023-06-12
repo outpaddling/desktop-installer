@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# xconsole -geometry 480x130-50-50 -daemon -notify -verbose -fn fixed -exitOnFail
+
+# put me in /etc/X11/xdm
+
+# Use NetBSD logo as background instead default steelblue
+# /usr/X11R7/bin/xsetroot -solid steelblue
+/usr/pkg/bin/feh --bg-fill /usr/pkg/share/desktop-installer/XDM/netbsd-background.jpg
+
+# Add shutdown, reboot, restart X11 buttons
+# xwininfo sees multiple monitors as one big screen
+# Use xrandr to separate them.  Assuming monitors are side-by-side,
+# so xwininfo is fine for height.
+# width=`xwininfo -root | awk '$1 == "Width:" { print $2 }'`
+
+# Uncomment these to debug
+# xwininfo -root > /root/xwininfo
+# xrandr --screen 0 > /root/xrandr
+
+height=`xwininfo -root | awk '$1 == "Height:" { print $2 }'`
+
+# First component of field containing ####x###+#+#
+width=`xrandr --screen 0 | grep -E '[0-9]+x[0-9]+\+[0-9]+\+[0-9]+' | awk -F x '{ print $1 }' | awk '{ print $NF }'`
+
+printf "width = $width height = $height\n" > /root/dims
+
+# Primary display could be on left or right.  3rd value in xrandr output
+# is the offset of the left edge of a monitor, e.g.
+# VGA-1 connected primary 1280x1024+1925+0
+left_edge=`xrandr --screen 0 | grep primary | awk '{ print $4 }' \
+    | awk -F [x\+] '{ print $3 }'`
+
+x=$(( $left_edge + ($width - 150) / 2 ))
+y=$(( ($height - 10) / 2 + 160 ))
+/usr/pkg/share/desktop-installer/XDM/xdmshutdown -geometry +$x+$y &
+echo $! > /var/run/xdmshutdown.pid

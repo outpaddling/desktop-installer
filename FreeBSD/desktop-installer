@@ -2112,22 +2112,6 @@ EOM
 }
 
 
-boot_splash_config()
-{
-    # FIXME: Detect VESA and modules instead of assuming based on
-    # ARCH
-    if [ $ARCH != 'powerpc' ]; then
-	# FIXME: Not all video cards work.  VESA support issue?
-	printf "Configuring boot splash screen...\n"
-	cp ${DATADIR}/splash.bmp /boot
-	auto-set-conf-var vesa_load '"YES"' $LOADER_CONF desktop-installer
-	auto-set-conf-var splash_bmp_load '"YES"' $LOADER_CONF desktop-installer
-	auto-set-conf-var bitmap_load '"YES"' $LOADER_CONF desktop-installer
-	auto-set-conf-var bitmap_name '"/boot/splash.bmp"' $LOADER_CONF desktop-installer
-    fi
-}
-
-
 network_config()
 {
     auto-append-line ServerAliveInterval 'ServerAliveInterval 5' $SSHDIR/ssh_config desktop-installer
