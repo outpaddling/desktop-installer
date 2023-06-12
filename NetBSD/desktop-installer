@@ -200,8 +200,8 @@ service dbus restart
 fgrep -q xdm= /etc/rc.conf || echo "xdm=YES" >> /etc/rc.conf
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
-# FIXME: Use auto-replace-file
-cp -f /usr/pkg/share/desktop-installer/XDM/Xsetup_0 /etc/X11/xdm
+auto-replace-file /usr/pkg/share/desktop-installer/XDM/Xsetup_0 /etc/X11/xdm/Xsetup_0
+auto-replace-file /usr/pkg/share/desktop-installer/XDM/GiveConsole /etc/X11/xdm/GiveConsole
 
 if ! ps ax | grep bin/xdm | grep -v grep; then
     service xdm restart
