@@ -25,7 +25,7 @@ if [ $# != 0 ]; then
 fi
 
 pkgin -y install auto-admin     # Should be installed as a dep
-pkgin -y install digest fetch git cvs gmake xz feh
+pkgin -y install digest fetch git cvs gmake xz feh tk
 
 for base_set in comp man xbase xetc xcomp xfont xserver; do
     if [ ! -e /etc/mtree/set.$base_set ]; then
