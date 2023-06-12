@@ -1,0 +1,153 @@
+.TH desktop-installer 1
+.SH NAME    \" Section header
+.PP
+desktop-installer \- Quickly configure a NetBSD desktop system
+
+\" Convention:
+\" Underline anything that is typed verbatim - commands, etc.
+
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+desktop-installer
+.ad
+.fi
+
+.SH "DESCRIPTION"
+
+The NetBSD desktop configuration process requires installing many
+packages and configuring many different subsystems, which can be a
+daunting task for all but the most seasoned users.
+
+The
+.B desktop-installer
+script automates the process of configuring a NetBSD machine as a desktop
+system running any desktop environment or simple window manager in the
+pkgsrc tree.  Several of the most popular desktops are
+explicitly supported and any other can be configured using the "Custom"
+option.
+
+To use "Custom", you need only know the category/packagename of the desktop you
+want, and the command for starting the desktop from xinit or xsession,
+e.g. xfce4-session for the XFCE desktop.  This command can be found
+in category/packagename/pkg-plist.  The only other advantage to explicitly
+supported desktops is automatic installation of a few common utilities.
+You can easily install the utilities
+you want using "pkgin install" or "auto-admin" after a Custom desktop install.
+
+.B Desktop-installer
+is a post-install script, i.e. one that you run AFTER doing a standard
+operating system and booting the new installation for the first time.
+( See details below. )
+
+.B Desktop-installer
+installs all the software necessary for the chosen desktop
+as well as common desktop-independent packages such as CUPS, Firefox,
+LibreOffice.org, etc.
+
+It also configures system services and settings to facilitate
+convenient use of CD/DVD drives, USB ports, etc.
+
+.SH "MOTIVATION"
+
+This script is meant to provide a middle-ground between totally manual
+configuration and complete distributions such as GhostBSD or Ubuntu Linux.
+
+The post-install script approach has some advantages over complete
+distributions.  The post-install script itself is far easier to maintain and 
+unlike separate distributions, the resulting desktop system is a
+nearly pristine NetBSD system with minimal differences from the default
+install.  The system can therefore be maintained and upgraded using
+traditional NetBSD command-line tools (pkgin install, adduser, NetBSD-update,
+etc.), or stock tools of the chosen desktop suite.
+
+For easy management of common system settings, try the auto-admin menu.
+
+Desktop-installer supports all CPU architectures that run NetBSD and all
+supported NetBSD versions, whereas distributions are generally limited to
+one version on AMD64.
+
+.SH "BASIC USE"
+
+To use
+.B desktop-installer:
+
+1. Install a basic NetBSD system.
+
+The recommended install options are a basic user system including:
+
+.nf
+.na
+All binaries
+Docs in your preferred language(s)
+Source code
+.ad
+.fi
+
+Installing the ports tree from the installation media is a waste of time.
+It will be replaced with a git clone by desktop installer.
+
+If you neglect to install the source tree, desktop-installer will install it
+for you automatically.
+
+It is best to use
+.B desktop-installer
+on a pristine NetBSD installation.
+
+.B Desktop-installer
+can also be used to upgrade all the software on an existing system, but there
+are too many possibilities for failure to support here since it is impossible
+to predict what kinds of system hacks it might encounter.  Also, it's generally
+a good idea to back up your data, wipe your disk clean, and reinstall
+everything every few years, since data on magnetic disks can fall victim
+to "bit rot" (magnetic polarity fades over time)
+and read errors will eventually occur.
+
+.B Desktop-installer
+can install software from source or from binary packages (pkgin install).
+Binary packages install much faster (seconds per package, vs minutes or
+hours per port built from source).  However, installing from ports allows you
+to install on systems for which binary packages are not maintained.
+
+If you enjoy a simple life, install a -RELEASE or -STABLE version rather
+than -CURRENT.  If you would like to help the project move forward by
+testing the latest changes, run -CURRENT.
+
+If you do not choose to install software from source,
+.B desktop-installer
+installs most packages over the network using "pkgin install", but falling
+back on build-from-source where necessary.  (e.g. some software cannot
+be distributed as a binary package for licensing reasons.)
+
+2. Install desktop-installer:
+
+    pkgin install desktop-installer
+
+or (if you have a ports tree installed)
+
+    cd /usr/ports/sysutils/desktop-installer
+    make install
+
+or if you want the latest development version of desktop-installer, install
+from the latest NetBSD-ports-wip:
+
+    pkgin install auto-admin
+    auto-pkgsrc-wip-checkout
+    wip-reinstall-port auto-admin
+    wip-reinstall-port desktop-installer
+
+3. Run desktop-installer:
+
+    rehash  # If using tcsh and just installed desktop-installer
+    desktop-installer
+
+.SH "SEE ALSO"
+auto-admin
+
+.SH AUTHOR
+.nf
+.na
+J. Bacon
+Acadix Consulting, LLC
+
