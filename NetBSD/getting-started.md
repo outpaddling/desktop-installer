@@ -20,14 +20,22 @@
 
 ## Post-installation
 
+Below are instructions for getting started with wip/desktop-installer.
+Once the tool matures, it will become available via pkgin, and these
+instructions will be simplified.
+
 ```
-pkgin install auto-admin cvs git
+pkgin install auto-admin cvs git fetch digest cwrappers mktools
 cd /usr
 ftp ftp://ftp.NetBSD.org/pub/pkgsrc/stable/pkgsrc.tar.gz
 tar -zxvf pkgsrc.tar.gz
 cd /usr/pkgsrc
 auto-pkgsrc-wip-checkout
+auto-install-base-components comp xcomp
 cd desktop-installer
 make install
 desktop-installer
+
+Now just follow the instructions on the screen to set up your desktop
+system.
 ```
