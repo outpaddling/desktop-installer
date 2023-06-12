@@ -914,8 +914,6 @@ xdm_config()
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
-	# Xstartup does not get executed on FreeBSD 7.2 or 8.0
-	# auto-replace-file ${DATADIR}/XDM/Xstartup $xdm_base/Xstartup
 	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
 	# Pretty up the login
