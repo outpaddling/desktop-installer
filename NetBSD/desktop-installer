@@ -26,15 +26,15 @@ fi
 
 pkgin -y install auto-admin     # Should be installed as a dep
 pkgin -y install digest fetch git cvs gmake xz feh
-if [ ! -e /usr/bin/gcc ]; then
-    auto-install-base-components comp
-fi
-if [ ! -e /usr/share/man ]; then
-    auto-install-base-components man
-fi
-if [ ! -e /usr/X11R7 ]; then
-    auto-install-base-components xbase xcomp xetc xfont xserver
-fi
+
+for base_set in comp man xbase xetc xcomp xfont xserver; do
+    if [ ! -e /etc/mtree/set.$base_set ]; then
+	printf "Installing $set...\n"
+	auto-install-base-components $base_set
+    else
+	printf "$base_set already installed.\n"
+    fi
+done
 
 if [ ! -e /usr/pkgsrc ]; then
     cd /usr
@@ -182,11 +182,6 @@ EOM
     ;;
 
 esac
-
-# Hangs startx before reboot
-# part of xbase?
-# pkgin -y install xdm 
-# cp /usr/pkg/share/examples/rc.d/xdm /etc/rc.d
 
 ##########################################################################
 #   From guide
