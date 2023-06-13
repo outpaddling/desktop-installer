@@ -17,6 +17,49 @@ usage()
 
 
 ##########################################################################
+#   Function description:
+#       Create a global Xsession file
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name        Modification
+#   2023-06-13  Charlie &,,,Begin
+##########################################################################
+
+create_xsession()
+{
+    if [ $# != 1 ]; then
+	printf "Usage: create_xsession session-command\n"
+	exit 1
+    fi
+    session_cmd=$1
+    
+    # FIXME: Use auto-something
+    if [ ! -e $XSESSION.ctwm ]; then
+	mv $XSESSION $XSESSION.ctwm
+    fi
+    
+    # Need ck-launch for consolekit to function
+    cat << EOM > $XSESSION
+#!/bin/sh
+
+exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+EOM
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+EOM
+
+    auto-append-line 'DisplayManager*authName' \
+	'DisplayManager*authName: MIT-MAGIC-COOKIE-1' $XDM_CONF nocomment
+}
+
+
+##########################################################################
 #   Main
 ##########################################################################
 
@@ -26,7 +69,7 @@ fi
 
 # Should have been installed as a dep, but just in case
 pkgin -y install auto-admin
-pkgin -y install digest fetch git cvs gmake xz feh tk
+pkgin -y install digest fetch git cvs gmake xz feh tk consolekit
 
 if ! auto-package-installed security/mozilla-rootcerts-openssl; then
     printf "Install mozilla root certs? (Needed to access many sites) [y]/n "
@@ -70,123 +113,64 @@ cat << EOM
 5.. LXQT
 6.. MATE
 7.. XFCE
+8.. Custom
 
 EOM
 printf "Selection? "
 read de
 
 XDM_CONF=/etc/X11/xdm/xdm-config
-xsession=/etc/X11/xdm/Xsession
+XSESSION=/etc/X11/xdm/Xsession
 
 case $de in
 1)
-    if [ -e $xsession.ctwm ]; then
-	mv -f $xsession.ctwm $xsession
+    if [ -e $XSESSION.ctwm ]; then
+	mv -f $XSESSION.ctwm $XSESSION
     fi
-    pkgin install evince
+    pkgin -y install evince
+    rm $HOME/.xinitrc
     ;;
 
 2)
     pkgin -y install gnome evince
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec gnome-session' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/gnome-session
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession gnome-session
     ;;
 
 3)
     pkgin -y install kde
-
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec startkde' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/startlxde
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession startkde
     ;;
 
 4)
     pkgin -y install lxde evince
-
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec startlxde' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/startlxde
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession startlxde
     ;;
 
 5)
     pkgin -y install lxqt evince
-
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec lxtq-session' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/startlxqt
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession lxqt-session
     ;;
 
 6)
     pkgin -y install mate evince
-
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec mate-session' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/mate-session
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession mate-session
     ;;
 
 7)
     pkgin -y install xfce4 evince
-
-    # FIXME: Use auto-something
-    if [ ! -e $xsession.ctwm ]; then
-	mv $xsession $xsession.ctwm
-    fi
-    echo 'exec xfce4-session' > $xsession
-    
-    cat << EOM > $HOME/.xinitrc
-#!/bin/sh -e
-
-/usr/pkg/bin/startxfce4
-EOM
-    fgrep -q 'DisplayManager*authName' $XDM_CONF || echo 'DisplayManager*authName: MIT-MAGIC-COOKIE-1' >> $XDM_CONF
+    create_xsession xfce4-session
     ;;
 
+8)
+    printf "Package name? (Use pkgin search to verify) "
+    read package
+    printf "Session command? (See category/$package/PLIST) "
+    read session_cmd
+    
+    pkgin -y install $package
+    create_xsession $session_cmd
+    ;;
+    
 *)
     printf "Invalid selection.\n"
     exit 1
