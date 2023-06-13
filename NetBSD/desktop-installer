@@ -24,8 +24,17 @@ if [ $# != 0 ]; then
     usage
 fi
 
-pkgin -y install auto-admin     # Should be installed as a dep
+# Should have been installed as a dep, but just in case
+pkgin -y install auto-admin
 pkgin -y install digest fetch git cvs gmake xz feh tk
+
+if ! auto-package-installed security/mozilla-rootcerts-openssl; then
+    printf "Install mozilla root certs? (Needed to access many sites) [y]/n "
+    read mz
+    if [ 0$"mz" != 0n ]; then
+	pkgin -y install mozilla-rootcerts-openssl
+    fi
+fi
 
 for base_set in comp man xbase xetc xcomp xfont xserver; do
     if [ ! -e /etc/mtree/set.$base_set ]; then
@@ -37,6 +46,7 @@ for base_set in comp man xbase xetc xcomp xfont xserver; do
 done
 
 if [ ! -e /usr/pkgsrc ]; then
+    printf "Installing pkgsrc tree...\n"
     cd /usr
     ftp ftp://ftp.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
     tar -zxvf pkgsrc.tar.xz
@@ -73,10 +83,11 @@ case $de in
     if [ -e $xsession.ctwm ]; then
 	mv -f $xsession.ctwm $xsession
     fi
+    pkgin install evince
     ;;
 
 2)
-    pkgin -y install gnome
+    pkgin -y install gnome evince
     # FIXME: Use auto-something
     if [ ! -e $xsession.ctwm ]; then
 	mv $xsession $xsession.ctwm
@@ -109,7 +120,7 @@ EOM
     ;;
 
 4)
-    pkgin -y install lxde
+    pkgin -y install lxde evince
 
     # FIXME: Use auto-something
     if [ ! -e $xsession.ctwm ]; then
@@ -126,7 +137,7 @@ EOM
     ;;
 
 5)
-    pkgin -y install lxqt
+    pkgin -y install lxqt evince
 
     # FIXME: Use auto-something
     if [ ! -e $xsession.ctwm ]; then
@@ -143,7 +154,7 @@ EOM
     ;;
 
 6)
-    pkgin -y install mate
+    pkgin -y install mate evince
 
     # FIXME: Use auto-something
     if [ ! -e $xsession.ctwm ]; then
@@ -160,7 +171,7 @@ EOM
     ;;
 
 7)
-    pkgin -y install xfce4
+    pkgin -y install xfce4 evince
 
     # FIXME: Use auto-something
     if [ ! -e $xsession.ctwm ]; then
@@ -189,23 +200,36 @@ esac
 
 cp /usr/pkg/share/examples/rc.d/dbus /etc/rc.d
 # FIXME: Use auto-enable-service
-fgrep -q dbus= /etc/rc.conf || echo "dbus=YES" >> /etc/rc.conf
-service dbus restart
-
-fgrep -q xdm= /etc/rc.conf || echo "xdm=YES" >> /etc/rc.conf
+auto-enable-service dbus $0
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/pkg/share/desktop-installer/XDM/Xsetup_0 /etc/X11/xdm/Xsetup_0
 auto-replace-file /usr/pkg/share/desktop-installer/XDM/GiveConsole /etc/X11/xdm/GiveConsole
 
-if ! ps ax | grep bin/xdm | grep -v grep; then
-    service xdm restart
+cat << EOM
+
+Enabling XDM will cause the screen to switch to graphics mode.
+
+If you are running desktop-installer on the primary text console,
+you can return to the text console by typing Ctrl+Alt+F1 on most
+systems (or Meta-key + F1 under VirtualBox).
+
+EOM
+printf "Enable XDM graphical login? [y]/n "
+read xdm
+if [ 0"$xdm" != 0n ]; then
+    auto-enable-service xdm $0
 fi
 
-for app in firefox thunderbird keepassxc; do
-    printf "Install $app? y/[n] "
-    read install
-    if [ 0"$install" = 0y ]; then
-	pkgin -y install $app
+for app in www/firefox mail/thunderbird security/keepassxc; do
+    if ! auto-package-installed $app; then
+	printf "Install $app? y/[n] "
+	read install
+	if [ 0"$install" = 0y ]; then
+	    apps="$apps ${app#*/}"
+	fi
     fi
 done
+if [ ! -z "$apps" ]; then
+    pkgin -y install $apps
+fi
