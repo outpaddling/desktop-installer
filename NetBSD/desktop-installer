@@ -127,7 +127,7 @@ case $de in
     if [ -e $XSESSION.ctwm ]; then
 	mv -f $XSESSION.ctwm $XSESSION
     fi
-    pkgin -y install evince
+    pkgin -y install evince xscreensaver
     rm $HOME/.xinitrc
     ;;
 
@@ -142,7 +142,8 @@ case $de in
     ;;
 
 4)
-    pkgin -y install lxde evince
+    # xscreensaver is used if present, but not a dep
+    pkgin -y install lxde evince xscreensaver
     create_xsession startlxde
     ;;
 
@@ -167,7 +168,7 @@ case $de in
     printf "Session command? (See category/$package/PLIST) "
     read session_cmd
     
-    pkgin -y install $package
+    pkgin -y install $package xscreensaver
     create_xsession $session_cmd
     ;;
     
