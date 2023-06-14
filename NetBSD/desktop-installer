@@ -206,12 +206,12 @@ if [ 0"$xdm" != 0n ]; then
     auto-enable-service xdm $0
 fi
 
-for app in www/firefox mail/thunderbird security/keepassxc; do
+for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
 	printf "Install $app? y/[n] "
 	read install
 	if [ 0"$install" = 0y ]; then
-	    apps="$apps ${app#*/}"
+	    apps="$apps ${app}"
 	fi
     fi
 done
