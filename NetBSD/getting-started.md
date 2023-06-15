@@ -54,8 +54,12 @@ pkgin -y install auto-admin cvs git digest cwrappers mktools
 cd /usr/pkgsrc
 auto-pkgsrc-wip-checkout
 
+# Get the latest auto-admin to support desktop-installer, etc.
+cd wip/auto-admin
+make deinstall reinstall
+
 # Install the WIP version of desktop-installer
-cd desktop-installer
+cd ../desktop-installer
 make install
 
 # Set up your desktop

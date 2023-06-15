@@ -206,7 +206,9 @@ if [ 0"$xdm" != 0n ]; then
 fi
 
 # Enable devpubd-based external media mounting
-auto-automount-setup
+# FIXME: Tolerate failure for now, since qmediamagager is
+# difficult to install until a binary package exists
+auto-automount-setup || true
 
 for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
