@@ -3,9 +3,9 @@ On-screen instructions
 
 Update packages and pkgsrc before starting
 
-Integrate automount-devpubd, npmount, qmediamanager
-
 Suspend/resume
+
+Add NetBSD cases to auto-admin menu functions
 
 Additional wireless drivers?
 

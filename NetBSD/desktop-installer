@@ -68,7 +68,6 @@ if [ $# != 0 ]; then
 fi
 
 # Should have been installed as a dep, but just in case
-pkgin -y install auto-admin
 pkgin -y install digest fetch git cvs gmake xz feh tk consolekit
 
 if ! auto-package-installed security/mozilla-rootcerts-openssl; then
@@ -205,6 +204,9 @@ read xdm
 if [ 0"$xdm" != 0n ]; then
     auto-enable-service xdm $0
 fi
+
+# Enable devpubd-based external media mounting
+auto-automount-setup
 
 for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
