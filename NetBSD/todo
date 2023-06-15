@@ -1,6 +1,8 @@
 
 On-screen instructions
 
+Password quality
+
 Update packages and pkgsrc before starting
 
 Suspend/resume
@@ -20,6 +22,4 @@ X11 forwarding
 webcam?
 
 Java/icedtea?
-
-Run auto-admin after (when fully functional on NetBSD)
 
