@@ -19,6 +19,8 @@ CUPS
 
 X11 forwarding
 
+Adapt to NetBSD development version and smartos.org binary packages
+
 webcam?
 
 Java/icedtea?
