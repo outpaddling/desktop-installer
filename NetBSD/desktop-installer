@@ -67,6 +67,24 @@ if [ $# != 0 ]; then
     usage
 fi
 
+cat << EOM
+
+It is best to have all installed packages up-to-date before installing
+more packages, in case not every dependency version is checked
+correctly.  The pkgsrc tree should also be updated in case you
+must install something from source, such as software than cannot
+be redistributed in binary form, and hence has no binary package.
+
+If you have updated recently using auto-update-pkgsrc, auto-update-system,
+of pkgin upgrade and cvs update, then you can skip this step now.
+
+EOM
+printf "Update installed packages and pkgsrc tree? [y]/n "
+read update
+if [ 0"$update" != 0n ]; then
+    auto-update-pkgsrc --defaults
+fi
+
 # Should have been installed as a dep, but just in case
 pkgin -y install digest fetch git cvs gmake xz feh tk consolekit
 
@@ -78,14 +96,26 @@ if ! auto-package-installed security/mozilla-rootcerts-openssl; then
     fi
 fi
 
-for base_set in comp games man modules text xbase xetc xcomp xfont xserver; do
-    if [ ! -e /etc/mtree/set.$base_set ]; then
-	printf "Installing $set...\n"
-	auto-install-base-components $base_set
-    else
-	printf "$base_set already installed.\n"
-    fi
-done
+# Install sets only if running a RELEASE
+# uname -r displays only X.Y
+# For non-release versions, it displays something like 10.0_BETA
+if uname -r | grep -E '^[0-9]+\.[0-9]+$'; then
+    for base_set in comp games man modules text xbase xetc xcomp xfont xserver; do
+	if [ ! -e /etc/mtree/set.$base_set ]; then
+	    printf "Installing $set...\n"
+	    auto-install-base-components $base_set
+	else
+	    printf "$base_set already installed.\n"
+	fi
+    done
+else
+    cat << EOM
+    
+Skipping installation of base sets.  If you don't have all you need,
+you'll have to reinstall the OS.
+
+EOM
+fi
 
 if [ ! -e /usr/pkgsrc ]; then
     printf "Installing pkgsrc tree...\n"
