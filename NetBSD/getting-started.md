@@ -71,24 +71,31 @@ cd ../desktop-installer
 make install
 
 #############################################################################
-# Optional: If you want external media automounting to work, install
-# qmediamanager and dependencies before running desktop-installer.
-# Desktop-installer will try to install them using pkgin, but the
-# packages don't exist yet.
-
-pkgin install qt6-qttools
-# Comment out BUILDLINK_ABI_DEPENDS.qt6 in x11/qt6-qtbase/buildlink3.mk
-# The binary package is behind, so pkgsrc will rebuild it from source,
-# which takes a very long time due to huge dependencies like llvm.
-# The ABI differences are not relevant, so no need to suffer through this.
-cd ../qmediamanager
-make install
-
-#############################################################################
 # Run desktop-installer to configure your desktop environment
 
 cd
 desktop-installer
 
 # Follow the instructions on the screen to set up your desktop system.
+```
+
+```
+#############################################################################
+# Optional: If you want external media automounting to work, install
+# qmediamanager and dependencies.
+# Desktop-installer will try to install them using pkgin, but the
+# packages don't exist yet.
+
+pkgin install qt6-qttools
+
+# Comment out BUILDLINK_ABI_DEPENDS.qt6 in x11/qt6-qtbase/buildlink3.mk
+# The binary package is behind, so pkgsrc will rebuild it from source,
+# which takes a very long time due to huge dependencies like llvm.
+# The ABI differences are not relevant, so no need to suffer through this.
+
+cd ../qmediamanager
+make install
+
+# Desktop-installer tried doing this, but it failed due to missing packages
+auto-automount-setup
 ```
