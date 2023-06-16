@@ -11,7 +11,7 @@
     - USB tablet
     - 2 cores
 
-## NetBSD Installation
+## NetBSD Release Installation
 
 - At least 4 GiB swap recommended
 - BIOS console
@@ -25,7 +25,7 @@
 	- Fetch and unpack pkgsrc (required)
 	- Enable ntpd and ntpdate for real hardware, not for VMs
 	- Do not enable XDM during install, desktop-installer will do this
-	- Other config items are optional
+	- Other configuration items are optional
 - Exit Install System
 - shutdown -p now
 - Remove CD
@@ -99,3 +99,31 @@ make install
 # Desktop-installer tried doing this, but it failed due to missing packages
 auto-automount-setup
 ```
+
+## NetBSD Current/Beta Installation
+
+For non-release versions of NetBSD, auto-install-base-components won't
+work, so all the base sets you need must be selected during OS
+installation.  You can choose "Full install" or choose "Custom install"
+and select the following sets to ensure that desktop-installer will
+work:
+
+    Compiler tools
+    X11 sets (all)
+
+## Optional: Using smartos.org pkgsrc packages
+
+If you would like to use the packages for the latest pkgsrc tree
+available at
+[https://pkgsrc.smartos.org/install-on-netbsd/](https://pkgsrc.smartos.org/install-on-netbsd/),
+do the following:
+
+1. pkgin upgrade
+2. pkgin install mozilla-rootcerts-openssl
+3. Download and run the install script from smartos.org
+4. Comment out VERIFIED_INSTALLATION=always in /usr/pkg/etc/pkg_install.conf
+   so that you can install packages from wip
+
+Then follow the post-installation instructions above as you would for
+any other NetBSD installation.  The main difference is you'll be using
+the latest packages instead of quarterly snapshots.
