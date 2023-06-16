@@ -78,7 +78,7 @@ if ! auto-package-installed security/mozilla-rootcerts-openssl; then
     fi
 fi
 
-for base_set in comp man xbase xetc xcomp xfont xserver; do
+for base_set in comp games man modules text xbase xetc xcomp xfont xserver; do
     if [ ! -e /etc/mtree/set.$base_set ]; then
 	printf "Installing $set...\n"
 	auto-install-base-components $base_set
