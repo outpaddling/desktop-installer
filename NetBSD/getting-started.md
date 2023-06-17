@@ -37,6 +37,7 @@ Starting sometime in July, 2023, the binary package should be available.
 Users can then simply do the following as the root user:
 
 ```
+pkgin upgrade
 pkgin -y install desktop-installer
 desktop-installer
 
@@ -50,6 +51,7 @@ of desktop-installer, follow the instructions below to use wip/desktop-installer
 #############################################################################
 # Quickly install some prerequisites
 
+pkgin upgrade
 pkgin -y install auto-admin cvs git digest cwrappers mktools
 
 #############################################################################
@@ -118,11 +120,24 @@ available at
 [https://pkgsrc.smartos.org/install-on-netbsd/](https://pkgsrc.smartos.org/install-on-netbsd/),
 do the following:
 
-1. pkgin upgrade
+1. pkgin upgrade    # Upgrade the original /usr/pkg to get latest certs
 2. pkgin install mozilla-rootcerts-openssl
-3. Download and run the install script from smartos.org
-4. Comment out VERIFIED_INSTALLATION=always in /usr/pkg/etc/pkg_install.conf
-   so that you can install packages from wip
+3. Download and run the install script from smartos.org.  This entirely
+   replaces /usr/pkg with a new pkgsrc installation.
+4. pkgin upgrade    # Upgrade the new /usr/pkg
+5. mv /usr/pkgsrc /usr/orig.pkgsrc
+6. ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
+7. tar -zxvf pkgsrc.tar.gz -C /usr
+8. In /usr/pkg/etc/pkg_install.conf, change
+
+   VERIFIED_INSTALLATION=always
+   
+   to
+   
+   VERIFIED_INSTALLATION=trusted
+   
+   so that you can install packages from wip (and packages that don't have
+   a binary package due to license restrictions).
 
 Then follow the post-installation instructions above as you would for
 any other NetBSD installation.  The main difference is you'll be using
