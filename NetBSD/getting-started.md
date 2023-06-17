@@ -86,7 +86,7 @@ desktop-installer
 # Desktop-installer will try to install them using pkgin, but the
 # packages don't exist yet.
 
-pkgin install qt6-qttools
+pkgin install qt6-qttools rxvt-unicode glib2-tools
 
 # Comment out BUILDLINK_ABI_DEPENDS.qt6 in x11/qt6-qtbase/buildlink3.mk
 # The binary package is behind, so pkgsrc will rebuild it from source,
