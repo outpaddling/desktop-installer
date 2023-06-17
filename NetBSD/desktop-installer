@@ -178,7 +178,7 @@ case $de in
 
 5)
     pkgin -y install lxqt evince
-    create_xsession lxqt-session
+    create_xsession startlxqt
     ;;
 
 6)
