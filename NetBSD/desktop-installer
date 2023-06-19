@@ -76,7 +76,7 @@ must install something from source, such as software than cannot
 be redistributed in binary form, and hence has no binary package.
 
 If you have updated recently using auto-update-pkgsrc, auto-update-system,
-of pkgin upgrade and cvs update, then you can skip this step now.
+or pkgin upgrade and cvs update, then you can skip this step now.
 
 EOM
 printf "Update installed packages and pkgsrc tree? [y]/n "
