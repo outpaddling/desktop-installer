@@ -1,14 +1,13 @@
 
+Portable, desktop-independent battery monitor
+    Run minimized, show % and time remaining
+    Popup warnings for low battery
+    Auto-shutdown for very low battery
+    Probably a Qt app, see qmediamanager for a model
+
 Add auto-update-system cron config
 
-Utilize qmediamanager
-
 https://forums.freebsd.org/threads/macbook-pro-5-1-realtek-alc889a-sound-setup.56061/
-
-Works for some iMacs:
-
-    hint.hdaa.0.config="ovref"
-    hint.hdaa.0.gpio_config="0=set"
 
 Maybe enable speakers and headphone auto-switch?
 
@@ -21,13 +20,8 @@ Make sure /etc/hosts has a fqdn matching the hostname
     127.0.0.1 localhost.localhost.domain hostname.domain hostname
     same for ::1
 
-List additional video drivers to install in desktop-installer
+List additional video drivers to install
     Server motherboards often have obsolete chipsets
-
-desktop-admin command
-    Add user accounts
-    Run desktop-installer
-    Add additional software
 
 Explain need for wireless drivers
 
@@ -85,16 +79,6 @@ I can generate a patch for the ones in common_packages().  But it
 might be better as a refactoring of install_packages.
 
 I will wait to try that hacking until you say one way or the other.
-
-------------------------------------------------------------------
-
-But, really, nothing should be offered to the newbie user by default
-unless we know ahead of time it will install.
-
-------------------------------------------------------------------
-
-Specific change: I do not believe cups_config() should be in the
-"just the essentials" selection.  I have hacked it out for now.
 
 ------------------------------------------------------------------
 

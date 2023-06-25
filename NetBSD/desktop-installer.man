@@ -85,12 +85,6 @@ Source code
 .ad
 .fi
 
-Installing the ports tree from the installation media is a waste of time.
-It will be replaced with a git clone by desktop installer.
-
-If you neglect to install the source tree, desktop-installer will install it
-for you automatically.
-
 It is best to use
 .B desktop-installer
 on a pristine NetBSD installation.
@@ -107,7 +101,8 @@ and read errors will eventually occur.
 .B Desktop-installer
 can install software from source or from binary packages (pkgin install).
 Binary packages install much faster (seconds per package, vs minutes or
-hours per port built from source).  However, installing from ports allows you
+hours per package built from source).  However, installing from source
+allows you
 to install on systems for which binary packages are not maintained.
 
 If you enjoy a simple life, install a -RELEASE or -STABLE version rather
@@ -124,18 +119,18 @@ be distributed as a binary package for licensing reasons.)
 
     pkgin install desktop-installer
 
-or (if you have a ports tree installed)
+or (if you have a pkgsrc tree installed)
 
-    cd /usr/ports/sysutils/desktop-installer
+    cd /usr/pkgsrc/sysutils/desktop-installer
     make install
 
 or if you want the latest development version of desktop-installer, install
-from the latest NetBSD-ports-wip:
+from the latest NetBSD-pkgsrc-wip:
 
     pkgin install auto-admin
     auto-pkgsrc-wip-checkout
-    wip-reinstall-port auto-admin
-    wip-reinstall-port desktop-installer
+    wip-reinstall-pkg auto-admin
+    wip-reinstall-pkg desktop-installer
 
 3. Run desktop-installer:
 
