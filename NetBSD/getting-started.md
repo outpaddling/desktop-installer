@@ -1,6 +1,13 @@
 
 # Getting started on NetBSD
 
+## To-dos for improving the NetBSD desktop experience
+
+-   More regular binary package builds for both stable (quarterly) and current
+-   Improvements to desktop-environment packages
+-   Improvements to auto-media-format (sysutils/auto-admin)
+    -   Used by qmediamanager
+
 ## System requirements
 
 - 1 GiB RAM minimum
@@ -56,6 +63,8 @@ pkgin -y install desktop-installer
 desktop-installer
 
 # Follow the instructions on the screen to set up your desktop system.
+# If you do not understand a particular question asked by desktop-installer,
+# accepting the default response should be fine in most cases.
 ```
 
 Until then, or if you want to use the latest work-in-progress version
@@ -93,6 +102,8 @@ cd
 desktop-installer
 
 # Follow the instructions on the screen to set up your desktop system.
+# If you do not understand a particular question asked by desktop-installer,
+# accepting the default response should be fine in most cases.
 ```
 
 ```
@@ -134,7 +145,9 @@ do the following:
 5. mv /usr/pkgsrc /usr/orig.pkgsrc
 6. ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
 7. tar -zxvf pkgsrc.tar.gz -C /usr
-8. In /usr/pkg/etc/pkg_install.conf, change
+8. cd /usr/pkgsrc
+9. cvs -q up -dP
+10. In /usr/pkg/etc/pkg_install.conf, change
 
    VERIFIED_INSTALLATION=always
    
