@@ -7,6 +7,7 @@
 -   Improvements to desktop-environment packages
 -   Improvements to auto-media-format (sysutils/auto-admin)
     -   Used by qmediamanager
+-   Add more configuration options to desktop-installer
 
 ## System requirements
 
