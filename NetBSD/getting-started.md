@@ -11,6 +11,20 @@
     - USB tablet
     - 2 cores
 
+## NetBSD Current/Beta Installation
+
+For non-release versions of NetBSD, auto-install-base-components won't
+work, so all the base sets you need must be selected during OS
+installation.  You can choose "Full install" or choose "Custom installation"
+and select the following sets to ensure that desktop-installer will
+work:
+
+    Compiler tools
+    X11 sets (all)
+
+Otherwise, the installation process is the same as for NetBSD releases
+as described below.
+
 ## NetBSD Release Installation
 
 - At least 4 GiB swap recommended
@@ -102,18 +116,10 @@ make install
 auto-automount-setup
 ```
 
-## NetBSD Current/Beta Installation
-
-For non-release versions of NetBSD, auto-install-base-components won't
-work, so all the base sets you need must be selected during OS
-installation.  You can choose "Full install" or choose "Custom install"
-and select the following sets to ensure that desktop-installer will
-work:
-
-    Compiler tools
-    X11 sets (all)
-
 ## Optional: Using smartos.org pkgsrc packages
+
+Some additional packages are available for specific NetBSD versions
+at smartos.org.
 
 If you would like to use the packages for the latest pkgsrc tree
 available at
