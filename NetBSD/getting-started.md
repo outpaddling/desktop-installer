@@ -4,9 +4,11 @@
 ## To-dos for improving the NetBSD desktop experience
 
 -   More regular binary package builds for both stable (quarterly) and current
--   Improvements to desktop-environment packages
+-   Improvements to desktop-environment packages (LXQT, Mate, etc.)
 -   Improvements to auto-media-format (sysutils/auto-admin)
     -   Used by qmediamanager
+    -   mkfs.exfat does not seem to work properly
+    -   newfs requires manual use of disklabel first
 -   Add more configuration options to desktop-installer
 
 ## System requirements
