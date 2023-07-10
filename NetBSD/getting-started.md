@@ -10,6 +10,7 @@
     -   mkfs.exfat does not seem to work properly
     -   newfs requires manual use of disklabel first
 -   Add more configuration options to desktop-installer
+-   Binary updates for the NetBSD base system
 
 ## System requirements
 
