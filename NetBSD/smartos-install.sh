@@ -1,5 +1,5 @@
 #!/bin/sh -e
-
+ 
 #
 # Copy and paste the lines below to install the NetBSD/amd64 set.
 #
@@ -35,6 +35,7 @@ ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
 tar -zxvf pkgsrc.tar.gz -C /usr
 cd pkgsrc
 cvs -q up -dP
-sed -i '' -e 's|VERIFIED_INSTALLATION=always|VERIFIED_INSTALLATION=trusted' \
+
+sed -i'' -e 's|VERIFIED_INSTALLATION=always|VERIFIED_INSTALLATION=trusted|' \
     /usr/pkg/etc/pkg_install.conf
 
