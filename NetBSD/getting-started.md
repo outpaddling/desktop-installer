@@ -145,6 +145,8 @@ do the following:
 2. pkgin install mozilla-rootcerts-openssl
 3. Download and run the install script from smartos.org.  This entirely
    replaces /usr/pkg with a new pkgsrc installation.
+   You can try `ftp https://raw.githubusercontent.com/outpaddling/desktop-installer/master/NetBSD/smartos-install.sh`,
+   but note that this is a copy of the script and it may become outdated.
 4. pkgin upgrade    # Upgrade the new /usr/pkg
 5. mv /usr/pkgsrc /usr/orig.pkgsrc
 6. ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
