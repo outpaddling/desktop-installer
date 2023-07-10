@@ -142,7 +142,7 @@ available at
 do the following:
 
 1. pkgin upgrade    # Upgrade the original /usr/pkg to get latest certs
-2. pkgin install mozilla-rootcerts-openssl
+2. pkgin install mozilla-rootcerts-openssl (needed by smartos install script)
 3. Download and run the install script from smartos.org.  This entirely
    replaces /usr/pkg with a new pkgsrc installation.
    You can try `ftp https://raw.githubusercontent.com/outpaddling/desktop-installer/master/NetBSD/smartos-install.sh`,

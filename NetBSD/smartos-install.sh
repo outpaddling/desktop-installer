@@ -26,3 +26,15 @@ rm -rf /usr/pkg /var/db/pkg /var/db/pkgin
 
 # Install bootstrap kit to /usr/pkg
 tar -zxpf ${BOOTSTRAP_TAR} -C /
+
+cd /usr
+if [ -e pkgsrc ]; then
+    mv pkgsrc orig.pkgsrc
+fi
+ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
+tar -zxvf pkgsrc.tar.gz -C /usr
+cd pkgsrc
+cvs -q up -dP
+sed -i '' -e 's|VERIFIED_INSTALLATION=always|VERIFIED_INSTALLATION=trusted' \
+    /usr/pkg/etc/pkg_install.conf
+
