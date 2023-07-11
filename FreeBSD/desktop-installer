@@ -2095,6 +2095,7 @@ EOM
     
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
+	install_packages x11/zenity
 	auto-append-line battery-shutdown.sh \
 	    $LOCALBASE'/sbin/battery-shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
