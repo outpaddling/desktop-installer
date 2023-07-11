@@ -2093,6 +2093,7 @@ EOM
 	esac
     fi
     
+    # FIXME: Factor out battery-shutdown.sh to a separate port with rc script?
     # Install auto-shutdown script for low battery
     if sysctl -a | fgrep -q hw.acpi.battery; then
 	install_packages x11/zenity
