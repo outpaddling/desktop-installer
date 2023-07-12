@@ -43,7 +43,7 @@ while true; do
 		printf "Battery warning $(date)\n" >> $log
 		display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 		for user in $display_users; do
-		    if su -l $user -c "zenity --display=:0 --warning --text='The battery is very low.\nThe computer will be shut down\nsoon to prevent battery damage.'" > /dev/null; then
+		    if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is very low.\nThe computer will be shut down\nsoon to prevent battery damage.'" > /dev/null; then
 			break
 		    fi
 		done
@@ -51,7 +51,7 @@ while true; do
 		printf "Battery low $(date)\n" >> $log
 		display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 		for user in $display_users; do
-		    if su -l $user -c "zenity --display=:0 --warning --text='The battery is getting low.\nConsider plugging in.'" > /dev/null; then
+		    if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is getting low.\nConsider plugging in.'" > /dev/null; then
 			low_notified=yes
 			break
 		    fi
