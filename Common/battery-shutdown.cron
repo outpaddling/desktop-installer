@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin
+
+* * * * * root /home/bacon/battery-shutdown.sh > /var/log/battery-shutdown 2>&1

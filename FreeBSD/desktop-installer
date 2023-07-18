@@ -2100,8 +2100,14 @@ EOM
 	# Make sure zenity is not tagged as a dependency so it won't
 	# be autoremoved
 	pkg set -y -A 0 zenity
-	auto-append-line battery-shutdown.sh \
-	    $LOCALBASE'/sbin/battery-shutdown.sh &' /etc/rc.local desktop-installer
+	
+	# New system uses cron
+	mkdir $LOCALBASE/etc/cron.d
+	cp $DATADIR/battery-shutdown.cron $LOCALBASE/etc/cron.d/battery-shutdown
+	
+	# Old system ran battery-shutdown as a daemon
+	# auto-append-line battery-shutdown.sh \
+	#    $LOCALBASE'/sbin/battery-shutdown.sh &' /etc/rc.local desktop-installer
 	# Prolong battery life slightly
 	# Causes ThinkPad X201 to stall for 20 seconds during resume from sleep
 	# auto-set-conf-var kern.hz '"100"' $LOADER_CONF desktop-installer
