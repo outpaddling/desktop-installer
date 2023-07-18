@@ -2102,7 +2102,7 @@ EOM
 	pkg set -y -A 0 zenity
 	
 	# New system uses cron
-	mkdir $LOCALBASE/etc/cron.d
+	mkdir -p $LOCALBASE/etc/cron.d
 	cp $DATADIR/battery-shutdown.cron $LOCALBASE/etc/cron.d/battery-shutdown
 	
 	# Old system ran battery-shutdown as a daemon
