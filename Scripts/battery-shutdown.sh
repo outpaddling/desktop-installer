@@ -96,4 +96,5 @@ else
 	    done
     fi
 fi
+printf "Saving previous values to $previous_data...\n"
 printf "$percent $time\n" > $previous_data
