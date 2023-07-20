@@ -29,17 +29,19 @@ else
     previous_percent=101
     previous_time=1000
 fi
+
+time=$( /sbin/sysctl -n hw.acpi.battery.time )
+percent=$( /sbin/sysctl -n hw.acpi.battery.life )
+
 printf "Previous percent = $previous_percent\n"
 printf "Previous time    = $previous_time\n"
+printf "Current percent  = $percent\n"
+printf "Current time     = $time\n"
 
 ac_power=$( /sbin/sysctl -n hw.acpi.acline )
-printf "ac_power = $ac_power\n"
+printf "ac_power         = $ac_power\n"
 
 if [ $ac_power = 0 ]; then
-    time=$( /sbin/sysctl -n hw.acpi.battery.time )
-    percent=$( /sbin/sysctl -n hw.acpi.battery.life )
-    printf "Current percent  = $previous_percent\n"
-    printf "Current time     = $previous_time\n"
     if [ $time -ge 0 ]; then
 	if [ $time -le $critical_time ]; then
 	    printf "Battery down to $critical_time minutes $(date)\n"
@@ -53,7 +55,7 @@ if [ $ac_power = 0 ]; then
 	    printf "Battery down to $warning_time minutes $(date)\n"
 	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
-		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is very low.\nThe computer will be shut down\nsoon to prevent battery damage.'" > /dev/null; then
+		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is very low.\nThe computer will be shut down\nsoon to prevent battery damage.' &" > /dev/null; then
 		    break
 		fi
 	    done
@@ -63,7 +65,7 @@ if [ $ac_power = 0 ]; then
 	    printf "Battery down to $low_time minutes $(date)\n"
 	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
-		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is getting low.\nConsider plugging in.'" > /dev/null; then
+		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is getting low.\nConsider plugging in.' &" > /dev/null; then
 		    break
 		fi
 	    done
@@ -76,21 +78,19 @@ if [ $ac_power = 0 ]; then
 	    printf "Battery down to $low_percent% $(date)\n"
 	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
-		if su -l $user -c "zenity --display=:0 --warning --text='Battery has dropped to $low_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nNow would be a good time to plug in.'" > /dev/null; then
+		if su -l $user -c "zenity --display=:0 --warning --text='Battery has dropped to $low_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nNow would be a good time to plug in.' &" > /dev/null; then
 		    break
 		fi
 	    done
     fi
 else
-    percent=$( /sbin/sysctl -n hw.acpi.battery.life )
-
     # Only show this warning once, when crossing the boundary
     if [ $previous_percent -lt $high_percent ] && \
        [ $percent -ge $high_percent ]; then
 	    printf "Battery up to $high_percent%% $(date)\n"
 	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
-		if su -l $user -c "zenity --display=:0 --warning --text='Battery has reached $high_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nUnplugging now may help your battery last longer.'" > /dev/null; then
+		if su -l $user -c "zenity --display=:0 --warning --text='Battery has reached $high_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nUnplugging now may help your battery last longer.' &" > /dev/null; then
 		    break
 		fi
 	    done
