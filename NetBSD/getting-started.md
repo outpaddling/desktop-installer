@@ -11,6 +11,7 @@
     -   newfs requires manual use of disklabel first
 -   Add more configuration options to desktop-installer
 -   Binary updates for the NetBSD base system
+-   Update key packages such as fusefs-*
 
 ## System requirements
 
