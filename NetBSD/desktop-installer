@@ -45,13 +45,19 @@ create_xsession()
     cat << EOM > $XSESSION
 #!/bin/sh
 
-exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+# ck-launch-session may only be necessary for LXDE to enable reboot,
+# shutdown, etc when exiting the session
+#exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+#exec ck-launch-session $session_cmd
+exec $session_cmd
 EOM
     
     cat << EOM > $HOME/.xinitrc
 #!/bin/sh -e
 
-exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+#exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+#exec ck-launch-session $session_cmd
+exec $session_cmd
 EOM
 
     auto-append-line 'DisplayManager*authName' \
