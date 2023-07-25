@@ -42,7 +42,7 @@ work:
 Otherwise, the installation process is the same as for NetBSD releases
 as described below.
 
-## Insalling smartos.org pkgsrc packages
+## Installing smartos.org pkgsrc packages
 
 Packages for the latest pkgsrc tree available at
 [https://pkgsrc.smartos.org/install-on-netbsd/](https://pkgsrc.smartos.org/install-on-netbsd/).
