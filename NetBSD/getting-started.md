@@ -30,17 +30,34 @@ tools are evolving fast, so we need a system with regularly updated
 packages from pkgsrc-current.  NetBSD releases do not currently meet
 this requirement.
 
-For non-release versions of NetBSD, auto-install-base-components won't
-work, so all the base sets you need must be selected during OS
+For non-release versions of NetBSD, base components cannot be added
+after installation,
+so all the base sets you need must be selected during OS
 installation.  You can choose "Full install" or choose "Custom installation"
-and select the following sets to ensure that desktop-installer will
+and select at least the following sets to ensure that desktop-installer will
 work:
 
     Compiler tools
     X11 sets (all)
 
-Otherwise, the installation process is the same as for NetBSD releases
-as described below.
+Otherwise, the installation process is the same as for NetBSD releases.
+
+### Configuration
+
+Network (hostname only for hostname, domain is asked for after)
+
+Timezone
+
+Root shell
+
+Enable installation of binary packages
+
+Don't fetch and update binary pkgsrc if you plan to use packages from
+smartos.org
+
+ntpd and ntpdate on real hardware only, not on virtual machines
+
+Other options are unimportant to desktop-installer
 
 ## Installing smartos.org pkgsrc packages
 
