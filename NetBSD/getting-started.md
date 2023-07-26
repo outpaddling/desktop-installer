@@ -7,11 +7,13 @@
 -   Improvements to desktop-environment packages (LXQT, Mate, etc.)
 -   Improvements to auto-media-format (sysutils/auto-admin)
     -   Used by qmediamanager
-    -   mkfs.exfat does not seem to work properly
+    -   Upgrade key packages such as fusefs-*
     -   newfs requires manual use of disklabel first
+    -   Interactive fdisk seems to be the only way to create an MBR.
+	FreeBSD's gpart does this quickly and easily:
+	gpart create -s MBR da0
 -   Add more configuration options to desktop-installer
 -   Binary updates for the NetBSD base system
--   Update key packages such as fusefs-*
 
 ## System requirements
 
