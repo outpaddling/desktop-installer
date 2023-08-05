@@ -17,6 +17,9 @@ low_time=30
 low_percent=40
 high_percent=80
 
+# NetBSD laptop, quagga
+xhost + local:
+
 # Start high to detect first drop
 time=1000               # For previous_time if plugged in
 
