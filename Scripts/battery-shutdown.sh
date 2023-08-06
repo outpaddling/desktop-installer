@@ -17,9 +17,6 @@ low_time=30
 low_percent=40
 high_percent=80
 
-# NetBSD laptop, quagga
-xhost + local:
-
 # Start high to detect first drop
 time=1000               # For previous_time if plugged in
 
@@ -44,6 +41,14 @@ printf "Current time     = $time\n"
 ac_power=$( /sbin/sysctl -n hw.acpi.acline )
 printf "ac_power         = $ac_power\n"
 
+display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
+
+# Make sure root can access the local display
+# NetBSD laptop, quagga
+for user in $display_users; do
+    su -l $user -c 'env DISPLAY=:0 xhost +local:root' > /dev/null || true
+done
+
 if [ $ac_power = 0 ]; then
     if [ $time -ge 0 ]; then
 	if [ $time -le $critical_time ]; then
@@ -56,7 +61,6 @@ if [ $ac_power = 0 ]; then
 	    fi
 	elif [ $time -le $warning_time ]; then
 	    printf "Battery down to $warning_time minutes $(date)\n"
-	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
 		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is very low.\nThe computer will be shut down\nsoon to prevent battery damage.' &" > /dev/null; then
 		    break
@@ -66,7 +70,6 @@ if [ $ac_power = 0 ]; then
 	elif [ $previous_time -gt $low_time ] && \
 	     [ $time -le $low_time ]; then
 	    printf "Battery down to $low_time minutes $(date)\n"
-	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
 		if su -l $user -c "zenity --display=:0 --warning --text='Battery run time is getting low.\nConsider plugging in.' &" > /dev/null; then
 		    break
@@ -79,7 +82,6 @@ if [ $ac_power = 0 ]; then
     if [ $previous_percent -gt $low_percent ] && \
        [ $percent -le $low_percent ]; then
 	    printf "Battery down to $low_percent% $(date)\n"
-	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
 		if su -l $user -c "zenity --display=:0 --warning --text='Battery has dropped to $low_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nNow would be a good time to plug in.' &" > /dev/null; then
 		    break
@@ -91,7 +93,6 @@ else
     if [ $previous_percent -lt $high_percent ] && \
        [ $percent -ge $high_percent ]; then
 	    printf "Battery up to $high_percent%% $(date)\n"
-	    display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | sort -u)
 	    for user in $display_users; do
 		if su -l $user -c "zenity --display=:0 --warning --text='Battery has reached $high_percent% charge.\nKeeping the charge of a Lithium battery between\n$low_percent% and $high_percent% will extend its life.\nUnplugging now may help your battery last longer.' &" > /dev/null; then
 		    break
