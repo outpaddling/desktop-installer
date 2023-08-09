@@ -2590,7 +2590,7 @@ fi
 
 # Enable firewall as early as possible for maximum security
 if [ $SETUP_LEVEL = 2 ]; then
-    freebsd_update_notify=$(auto-ask freebsd-update-notify "Enable desktop notification for base/package/ports updates? (y/n)" n)
+    freebsd_update_notify=$(auto-ask freebsd-update-notify "Enable desktop notification for base/package/ports updates? (y/n)" y)
 else
     freebsd_update_notify='y'
 fi
