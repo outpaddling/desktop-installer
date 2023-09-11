@@ -1347,11 +1347,11 @@ faac_lame_install()
     # Binary packages used to be restricted
     #if ! auto-package-installed audio/faac; then
     #    (cd $PORTSDIR/audio/faac && make -DBATCH deinstall clean reinstall)
-    #    auto-mark-install-from-source audio/faac license
+    #    auto-mark-install-from-source audio/faac license newer
     #fi
     #if ! auto-package-installed audio/lame; then
     #    (cd $PORTSDIR/audio/lame && make -DBATCH deinstall clean reinstall)
-    #    auto-mark-install-from-source audio/lame license
+    #    auto-mark-install-from-source audio/lame license newer
     #fi
 }
 
@@ -2163,7 +2163,7 @@ install_wifi_drivers()
 	if ! auto-package-installed net/$driver-firmware-kmod; then
 	    cd $driver-firmware-kmod
 	    if make -DBATCH clean reinstall; then
-		auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source
+		auto-mark-install-from-source net/$driver-firmware-kmod needs-kernel-source newer
 	    else
 		printf "Failed to install $driver-firmware-kmod.\n"
 	    fi
