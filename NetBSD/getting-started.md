@@ -53,12 +53,12 @@ Timezone
 
 Root shell
 
-Enable installation of binary packages
+If not using binary packages from smartos.org:
 
-Don't fetch and update binary pkgsrc if you plan to use packages from
-smartos.org
+    Enable installation of binary packages
+    Fetch and update binary pkgsrc
 
-ntpd and ntpdate on real hardware only, not on virtual machines
+Enable ntpd and ntpdate on real hardware only, not on virtual machines
 
 Other options are unimportant to desktop-installer
 
@@ -67,12 +67,8 @@ Other options are unimportant to desktop-installer
 Packages for the latest pkgsrc tree available at
 [https://pkgsrc.smartos.org/install-on-netbsd/](https://pkgsrc.smartos.org/install-on-netbsd/).
 
-To use these packages:
-
-1. pkgin upgrade    # Upgrade the original /usr/pkg to get latest certs
-2. pkgin install mozilla-rootcerts-openssl (needed by smartos install script)
-3. Download and run the install script from smartos.org.  This entirely
-   replaces /usr/pkg with a new pkgsrc installation.
+To use these packages, download and run the install script from smartos.org.
+This entirely replaces /usr/pkg with a new pkgsrc installation.
 
 ```
 ftp https://raw.githubusercontent.com/outpaddling/desktop-installer/master/NetBSD/smartos-install.sh
@@ -80,11 +76,12 @@ sh smartos-install.sh
 ```
 
 Note that this script is an augmented copy of the script from smartos.org
-and it may become outdated.  Report any issues on this Github site.
+and it may become outdated.  Please report any issues on this Github site.
 
-Then follow the post-installation instructions above as you would for
+Then follow the post-installation instructions below as you would for
 any other NetBSD installation.  The main difference is you'll be using
-the latest packages instead of quarterly snapshots.
+the latest "current" packages instead of "stable"
+(from quarterly pkgsrc snapshots).
 
 ## Post-installation
 
