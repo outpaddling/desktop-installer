@@ -10,6 +10,7 @@ BOOTSTRAP_SHA="86aed1031713e15e7f411d3622124673797cce0c"
 ftp https://pkgsrc.smartos.org/packages/NetBSD/bootstrap/${BOOTSTRAP_TAR}
 
 # Verify the SHA1 checksum.
+# Shebang above should be sh -e so that this terminates the script on failure
 echo "${BOOTSTRAP_SHA} ${BOOTSTRAP_TAR}" | sha1 -c
 
 # Verify PGP signature.  This step is optional, and requires gpg.
