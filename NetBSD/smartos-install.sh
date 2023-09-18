@@ -3,14 +3,13 @@
 #
 # Copy and paste the lines below to install the NetBSD/amd64 set.
 #
-BOOTSTRAP_TAR="bootstrap-netbsd-trunk-x86_64-20230710.tar.gz"
-BOOTSTRAP_SHA="86aed1031713e15e7f411d3622124673797cce0c"
+BOOTSTRAP_TAR="bootstrap-netbsd-trunk-x86_64-20230918.tar.gz"
+BOOTSTRAP_SHA="493161aa5dd4c91c99e77187fa9fc3498fd2560b"
 
 # Download the bootstrap kit to the current directory.
 ftp https://pkgsrc.smartos.org/packages/NetBSD/bootstrap/${BOOTSTRAP_TAR}
 
 # Verify the SHA1 checksum.
-# Shebang above should be sh -e so that this terminates the script on failure
 echo "${BOOTSTRAP_SHA} ${BOOTSTRAP_TAR}" | sha1 -c
 
 # Verify PGP signature.  This step is optional, and requires gpg.
@@ -30,12 +29,16 @@ tar -zxpf ${BOOTSTRAP_TAR} -C /
 
 cd /usr
 if [ -e pkgsrc ]; then
-    mv pkgsrc orig.pkgsrc
+    printf "/usr/pkgsrc already exits.  Replace? y/[n] "
+    read replace
+    if [ 0"$replace" = 0y ]; then
+	mv pkgsrc orig.pkgsrc
+	ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
+	tar -zxvf pkgsrc.tar.gz -C /usr
+    fi
 fi
-ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
-tar -zxvf pkgsrc.tar.gz -C /usr
 cd pkgsrc
-cvs -q up -dP
+cvs -q up -dP || true
 
 sed -i'' -e 's|VERIFIED_INSTALLATION=always|VERIFIED_INSTALLATION=trusted|' \
     /usr/pkg/etc/pkg_install.conf
