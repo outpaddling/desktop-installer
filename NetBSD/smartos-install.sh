@@ -30,12 +30,14 @@ tar -zxpf ${BOOTSTRAP_TAR} -C /
 cd /usr
 if [ -e pkgsrc ]; then
     printf "/usr/pkgsrc already exits.  Replace? y/[n] "
-    read replace
-    if [ 0"$replace" = 0y ]; then
-	mv pkgsrc orig.pkgsrc
-	ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
-	tar -zxvf pkgsrc.tar.gz -C /usr
-    fi
+    read install_pkgsrc
+else
+    install_pkgsrc=y
+fi
+if [ 0"$install_pkgsrc" = 0y ]; then
+    mv pkgsrc orig.pkgsrc
+    ftp ftp://ftp.NetBSD.org/pub/pkgsrc/current/pkgsrc.tar.gz
+    tar -zxvf pkgsrc.tar.gz -C /usr
 fi
 cd pkgsrc
 cvs -q up -dP || true
