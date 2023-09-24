@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<book xmlns="http://docbook.org/ns/docbook" version="5.0">
+    <title>Desktop-installer Guide</title>
+
+    <chapter>
+        <title>User your cleverness for creativity</title>
+
+        <para> How would you like to spend minimal time setting up
+        your workstation or laptop, and most of it doing creative
+        work?  This is the design goal of desktop-installer, and
+        FreeBSD helps make it possible.  </para>
+
+        <para> The core purpose of desktop-installer is to help you
+        quickly and easily create the most reliable and secure desktop
+        system available, so you can spend your time on productive
+        work rather than tedious systems management.  </para>
+
+        <para> FreeBSD provides the vast majority of the features
+        necessary to make a great desktop system for WEB browsing,
+        editing documents, playing music and videos, developing
+        software, and much more. It also offers solid support for most
+        popular PC hardware. However, fully configuring a stock
+        FreeBSD desktop system by hand is a bit like assembling a
+        1,000-piece jigsaw puzzle. Unless your goal is to learn how to
+        integrate the components of a Unix desktop environment, manual
+        configuration would not be a good use of your valuable time.
+        </para>
+
+        <para> There are some important issues that new FreeBSD users
+        are unlikely to know about, such as ensuring that your ports
+        tree and packages are in sync, how to correctly configure
+        devd, sound devices and graphics drivers, to name a few.
+        </para>
+
+        <para> Desktop-installer is a post-install script that
+        embodies the extensive knowledge needed to configure a clean,
+        reliable FreeBSD desktop system. It automates the process of
+        configuring a FreeBSD workstation or laptop computer, allowing
+        typical users to set up a fully functional desktop environment
+        in less than an hour.  </para>
+
+        <para> More than a dozen popular desktop environments and
+        window managers are explicitly supported and any other can be
+        configured with relative ease using the "Custom" option.
+        </para>
+
+        <para> Desktop-installer installs and configures
+        desktop-independent tools and features, such as QMediaManager
+        (shown in <xref linkend="qmediamanager"/>), a GUI application
+        that is automatically launched when removable media are
+        inserted.  </para>
+
+        <figure xml:id="qmediamanager">
+            <title>Qmediamanager</title> <mediaobject>
+                <imageobject> <imagedata fileref="qmediamanager.png"
+                width="80%"/> </imageobject>
+            </mediaobject>
+        </figure>
+
+        <para> The VirtualBox guest environment is automatically
+        detected and configured with the VirtualBox guest additions,
+        so you can easily try out desktop-installer even if you don't
+        have a spare PC.  Parallels and VMWare Fusion are also
+        automatically detected and configured with a basic graphics
+        setup. Hyper V can also run FreeBSD, but in our experience it
+        is slow and unreliable. Windows users are advised to install
+        VirtualBox instead. Note that Hyper V should be disabled via
+        Control Panel if you are running a different virtualization
+        system.  </para>
+    </chapter>
+
+    <chapter>
+        <title>Design principles</title>
+
+        <para>
+        Desktop-installer is strictly a configuration tool, i.e. a
+        convenient user interface for integrating standard FreeBSD
+        tools and ports. Unlike most desktop distributions built on
+        FreeBSD and Linux, desktop-installer does not duplicate
+        components of or add components to the FreeBSD base. Our goal
+        is to work with the underlying operating system, not around
+        it, integrating the many features already provided by FreeBSD
+        to create a fast, stable, and secure desktop experience.
+        </para>
+
+        <para>
+        Any general enhancements made to FreeBSD for the sake of
+        desktop-installer will be desktop-independent and available
+        via the ports collection for use with or without
+        desktop-installer.
+        </para>
+
+        <para>
+        One of the primary objectives of desktop-installer is
+        long-term sustainability. Since man-hours are costly, efforts
+        are focused on improving the functionality of the end-result,
+        not the appearance of the tool.
+        </para>
+
+        <para>
+        Desktop-installer does not try to compensate for FreeBSD's
+        shortcomings. We prefer to leave them exposed so that there is
+        motivation to fix them in the FreeBSD base or ports system.
+        </para>
+
+        <para>
+        Desktop-installer will not impose any arbitrary limitations.
+        While the GUI distributions tend to support only AMD64 systems
+        running the latest FreeBSD release, desktop-installer allows
+        you to use any supported version of FreeBSD on any supported
+        CPU architecture. ARM, PowerPC, RISC-V and Sparc are treated
+        no differently than x86. Desktop-installer is tested on an
+        iMac G5 and a Rock 64, in addition to numerous x86 PCs and
+        laptops. While we can't guarantee that all ports/packages will
+        work on all platforms, desktop-installer won't stand in your
+        way.
+        </para>
+    </chapter>
+    
+    <chapter>
+        <title>How it Works</title>
+
+        <para>
+        The desktop-installer script installs necessary
+        ports/packages, configures the graphical desktop of your
+        choice and performs basic setup for devices and services such
+        as devd, WiFi, sound, Bluetooth, printing and remote login.
+        </para>
+
+        <para>
+        Using desktop-installer, a typical desktop system can be fully
+        configured and ready to use in less than an hour on reasonably
+        modern hardware with a reasonably fast Internet connection.
+        </para>
+
+        <para>
+        Some user input is required, but desktop-installer should
+        provide sufficient guidance. You should not have to search the
+        web for complicated instructions on configuring software and
+        services.  Anything that does not work out-of-the-box is
+        considered a bug and should be reported. The end-user is only
+        expected to run desktop-installer and answer the questions.
+        </para>
+    </chapter>
+</book>
