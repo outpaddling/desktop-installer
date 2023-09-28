@@ -97,7 +97,7 @@ pkgin -y install digest fetch git cvs gmake xz feh tk consolekit
 if ! auto-package-installed security/mozilla-rootcerts-openssl; then
     printf "Install mozilla root certs? (Needed to access many sites) [y]/n "
     read mz
-    if [ 0$"mz" != 0n ]; then
+    if [ 0"$mz" != 0n ]; then
 	pkgin -y install mozilla-rootcerts-openssl
     fi
 fi
