@@ -21,20 +21,16 @@
     - More if building large packages like gcc, clang
     - More if running Gnome or KDE
 - 30 GB disk
-- VirtualBox
-    - USB tablet
+- If using VirtualBox
+    - Set pointing device to USB tablet
     - 2 cores
 
 ## NetBSD Current/Beta Installation
 
-Currently, only NetBSD10-BETA with binary packages from smartos.org
-is supported.  Desktop-installer and related
-tools are evolving fast, so we need a system with regularly updated
-packages from pkgsrc-current.  NetBSD releases do not currently meet
-this requirement.
+Only NetBSD systems with binary packages are supported.
 
-For non-release versions of NetBSD, base components cannot be added
-after installation,
+Note: For non-release versions of NetBSD (e.g. 10.0-BETA),
+base components cannot be added after installation,
 so all the base sets you need must be selected during OS
 installation.  You can choose "Full install" or choose "Custom installation"
 and select at least the following sets to ensure that desktop-installer will
@@ -64,7 +60,8 @@ Other options are unimportant to desktop-installer
 
 ## Installing smartos.org pkgsrc packages
 
-Packages for the latest pkgsrc tree available at
+Packages for the latest pkgsrc tree on select NetBSD versions
+are available at
 [https://pkgsrc.smartos.org/install-on-netbsd/](https://pkgsrc.smartos.org/install-on-netbsd/).
 
 To use these packages, download and run the install script from smartos.org.
