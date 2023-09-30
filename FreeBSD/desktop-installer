@@ -2315,21 +2315,15 @@ most filesystems can be checked in the background after booting is complete.
 EOM
     pause
 
-    cat << EOM
-
-===========================================================================
-You can disable write cache right now by answering 'y' below, with the change
-taking effect after the next reboot.
-
-To disable the journals, run:
-
-    $LOCALBASE/sbin/auto-su+j-toggle off all
-===========================================================================
-
-EOM
     disable_cache=$(auto-ask disable-write-cache "Disable write cache?" n)
     if [ $disable_cache = y ]; then
 	auto-write-cache-toggle off desktop-installer
+	pause
+    fi
+
+    disable_suj=$(auto-ask disable-suj "Disable soft updates journals?" n)
+    if [ $disable_suj = y ]; then
+	auto-su+j-toggle off all desktop-installer
 	pause
     fi
     return 0
