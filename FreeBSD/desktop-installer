@@ -2321,9 +2321,9 @@ EOM
 You can disable write cache right now by answering 'y' below, with the change
 taking effect after the next reboot.
 
-To disable the journal, you must manually boot to single-user mode and run:
+To disable the journals, run:
 
-    $LOCALBASE/sbin/auto-su+j-toggle off
+    $LOCALBASE/sbin/auto-su+j-toggle off all
 ===========================================================================
 
 EOM
