@@ -136,7 +136,8 @@ install_xorg()
 	x11/xdm \
 	x11/xsm \
 	x11-drivers/xf86-video-mga \
-	x11-drivers/xf86-video-vesa
+	x11-drivers/xf86-video-vesa \
+	x11-drivers/xf86-input-wacom
     auto-mark-package-critical xorg xdm
 
     # Install additional fonts before Xorg -configure
