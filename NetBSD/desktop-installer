@@ -219,7 +219,6 @@ esac
 ##########################################################################
 
 cp /usr/pkg/share/examples/rc.d/dbus /etc/rc.d
-# FIXME: Use auto-enable-service
 auto-enable-service dbus $0
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
@@ -235,10 +234,13 @@ you can return to the text console by typing Ctrl+Alt+F1 on most
 systems (or Meta-key + F1 under VirtualBox).
 
 EOM
-printf "Enable XDM graphical login? [y]/n "
-read xdm
-if [ 0"$xdm" != 0n ]; then
-    auto-enable-service xdm $0
+# Offer to enable xdm if not already running
+if ! pgrep bin/xdm; then
+    printf "Enable XDM graphical login? [y]/n "
+    read xdm
+    if [ 0"$xdm" != 0n ]; then
+	auto-enable-service xdm $0
+    fi
 fi
 
 # Enable devpubd-based external media mounting
