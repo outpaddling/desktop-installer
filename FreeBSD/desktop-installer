@@ -153,6 +153,9 @@ install_xorg()
     
     # Check for virtualbox guest
     if vbox_guest; then
+	# VirtualBox defaults to vmware video in some cases
+	install_packages x11-drivers/xf86-video-vmware
+	
 	if [ 0$install_guest_additions = 0y ] && \
 	   ! auto-package-installed emulators/virtualbox-ose-additions; then
 		install_packages emulators/virtualbox-ose-additions
@@ -180,9 +183,15 @@ EOM
 	rm -f $XORG_CONF_DIR/10-parallels-scfb.conf
     fi
     
-    if ! vmware_guest; then
-	# Installed by auto-gpu-setup
-	pkg remove -y xf86-video-vmware || true
+    if vmware_guest; then
+	install_packages \
+	    x11-drivers/xf86-video-vmware x11-drivers/xf86-input-vmmouse
+    else
+	# VirtualBox emulates the VMWare video as well
+	if ! vbox_guest; then
+	    pkg remove -y xf86-video-vmware || true
+	fi
+	pkg remove -y xf86-input-vmmouse || true
     fi
 
     dbus_config
@@ -2261,7 +2270,7 @@ dbus_config()
 #   2020-05-14  Jason Bacon Begin
 ##########################################################################
 
-disable_write_cache()
+disable_suj()
 {
     cat << EOM
 
@@ -2278,11 +2287,6 @@ Consequently, checks on journaled UFS2 at boot time can miss the problem and
 leave the filesystem in an inconsistent state.  This can, in very rare
 circumstances, cause kernel panics triggered by normal disk writes.
 
-Write cache is enabled by default in order to maximize performance.  This
-setting is aimed at servers backed by an uninterruptable power supply.  It is
-generally unsafe for systems that are vulnerable to power outages or other
-improper shutdowns, like typical home and office desktop systems.
-
 The manual fix is to boot to single user mode after any improper shutdown
 and run "fsck -fy" on all UFS+su+j filesystems.  This will restore consistency
 to the filesystem (though it will not recover data lost in the write cache).
@@ -2296,13 +2300,13 @@ EOM
 
 ===========================================================================
 Disabling the hardware write cache will prevent this issue, but may hurt
-performance, especially on slow disks. If maximum performance is more
-important to you than avoiding this issue, then leave write cache enabled.
+performance, especially on slow disks.
 
 An alternative to disabling the cache is to disable the soft updates journal.
 Disabling the journal will actually increase write performance and reduce
 disk wear.  More importanly, disabling the journal causes fsck (filesystem
-check and repair) to be run automatically following any improper shutdown.
+check and repair) to be run automatically following any improper shutdown,
+so that the filesystem will be fully repaired.
 
 The UFS2 filesystem on FreeBSD has a unique feature called "soft updates" (SU),
 which maintains filesystem consistency without the need for a journal.  Hence,
@@ -2315,12 +2319,6 @@ most filesystems can be checked in the background after booting is complete.
 
 EOM
     pause
-
-    disable_cache=$(auto-ask disable-write-cache "Disable write cache?" n)
-    if [ $disable_cache = y ]; then
-	auto-write-cache-toggle off desktop-installer
-	pause
-    fi
 
     disable_suj=$(auto-ask disable-suj "Disable soft updates journals?" n)
     if [ $disable_suj = y ]; then
@@ -2603,8 +2601,8 @@ auto-enable-passwdqc
 auto-add-fdesc-mount
 
 # Ensure disk is clean after a power outage
-if [ $SETUP_LEVEL = 2 ] && ! vm_guest; then
-    disable_write_cache
+if [ $SETUP_LEVEL = 2 ]; then
+    disable_suj
 fi
 
 clear
