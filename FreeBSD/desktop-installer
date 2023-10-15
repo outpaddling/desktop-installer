@@ -154,6 +154,7 @@ install_xorg()
     # Check for virtualbox guest
     if vbox_guest; then
 	# VirtualBox defaults to vmware video in some cases
+	# FIXME: Move to auto-gpu-setup
 	install_packages x11-drivers/xf86-video-vmware
 	
 	if [ 0$install_guest_additions = 0y ] && \
@@ -2280,18 +2281,23 @@ tell the operating system that data has been committed to the disk media when
 it really is only in a memory buffer.  This can cause filesystems to be marked
 clean after a write transaction when in fact the data have not yet been written
 to the media.  In the event of a sudden power loss, this can leave part of the
-journal unwritten.  If the write cache is not battery-backed, the unwritten
-journal transactions are simply lost.
+data unwritten.  If the write cache is not battery-backed, the unwritten
+data are simply lost.
 
-Consequently, checks on journaled UFS2 at boot time can miss the problem and
-leave the filesystem in an inconsistent state.  This can, in very rare
-circumstances, cause kernel panics triggered by normal disk writes.
+Journaled filesystems store written data in a temporary location on the
+disk (the journal) before moving them to the actual file.  It is possible
+that data in the write cache will not make it to the journal in the event
+of a power failure.
+
+Consequently, checks on journaled filesystems where write caches are used
+can miss the problem and leave the filesystem in an inconsistent state.
+This can, in very rare circumstances, cause kernel panics.
 
 The manual fix is to boot to single user mode after any improper shutdown
 and run "fsck -fy" on all UFS+su+j filesystems.  This will restore consistency
 to the filesystem (though it will not recover data lost in the write cache).
-If you don't mind doing this after each improper shutdown, then the default
-configuration is probably best and no action is necessary here.
+If you do not mind doing this after each improper shutdown, then the default
+configuration is fine and no action is necessary here.
 ===========================================================================
 
 EOM
@@ -2302,19 +2308,21 @@ EOM
 Disabling the hardware write cache will prevent this issue, but may hurt
 performance, especially on slow disks.
 
-An alternative to disabling the cache is to disable the soft updates journal.
+An alternative to disabling the cache is to disable the updates journal.
 Disabling the journal will actually increase write performance and reduce
-disk wear.  More importanly, disabling the journal causes fsck (filesystem
+disk wear.  More importantly, disabling the journal causes fsck (filesystem
 check and repair) to be run automatically following any improper shutdown,
-so that the filesystem will be fully repaired.
+so that the filesystem will be fully repaired.  Disabling the journal may
+result in more data loss in the event of a power failure.
 
 The UFS2 filesystem on FreeBSD has a unique feature called "soft updates" (SU),
 which maintains filesystem consistency without the need for a journal.  Hence,
 the added journal in UFS+su+j provides only minimal benefit, unlike most other
-filesystems.  Running fsck on a UFS filesystem generally does not take long
+filesystems.  Running fsck on a UFS2 filesystem generally does not take long
 anyway and only needs to be completed for the root filesystem during boot.
-Thanks to soft updates, it is actually safe to mount a dirty filesystem, so
-most filesystems can be checked in the background after booting is complete.
+Thanks to soft updates, it is actually safe to mount other filesystems
+before they are cleaned and run fsck in the background after booting
+is complete.
 ===========================================================================
 
 EOM
@@ -2570,14 +2578,16 @@ EOM
     
     printf "Update and reboot system before proceeding? (y/n) [$update_default] "
     read update_system
-    if [ 0$"update_system" != 0y ] && [ 0"$update_system" != 0n ]; then
+    if [ 0"$update_system" != 0y ] && [ 0"$update_system" != 0n ]; then
 	update_system=$update_default
     fi
     if [ $update_system = y ]; then
-	printf "System will restart following update.\n"
-	printf "Rerun desktop-installer again after reboot.\n"
-	pause
-	auto-update-system --yes
+	auto-update-system --defaults
+	printf "Run desktop-installer again after reboot.\n"
+	printf "Press return to reboot.\n"
+	read junk
+	shutdown -r now
+	exit
     fi
 fi
 
