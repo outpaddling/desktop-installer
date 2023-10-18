@@ -41,24 +41,35 @@ create_xsession()
 	mv $XSESSION $XSESSION.ctwm
     fi
     
-    # Need ck-launch for consolekit to function
-    cat << EOM > $XSESSION
+    # ck-launch-session may only be necessary for LXDE to enable reboot,
+    # shutdown, etc when exiting the session
+    if [ $de = lxde ]; then
+	cat << EOM > $XSESSION
 #!/bin/sh
 
-# ck-launch-session may only be necessary for LXDE to enable reboot,
-# shutdown, etc when exiting the session
-#exec ck-launch-session dbus-launch --exit-with-session $session_cmd
-#exec ck-launch-session $session_cmd
+exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+exec ck-launch-session $session_cmd
+EOM
+    
+    cat << EOM > $HOME/.xinitrc
+#!/bin/sh -e
+
+exec ck-launch-session dbus-launch --exit-with-session $session_cmd
+exec ck-launch-session $session_cmd
+EOM
+    else
+	cat << EOM > $XSESSION
+#!/bin/sh
+
 exec $session_cmd
 EOM
     
     cat << EOM > $HOME/.xinitrc
 #!/bin/sh -e
 
-#exec ck-launch-session dbus-launch --exit-with-session $session_cmd
-#exec ck-launch-session $session_cmd
 exec $session_cmd
 EOM
+    fi
 
     auto-append-line 'DisplayManager*authName' \
 	'DisplayManager*authName: MIT-MAGIC-COOKIE-1' $XDM_CONF nocomment
@@ -152,12 +163,13 @@ cat << EOM
 
 EOM
 printf "Selection? "
-read de
+read de_num
 
 XDM_CONF=/etc/X11/xdm/xdm-config
 XSESSION=/etc/X11/xdm/Xsession
 
-case $de in
+de='unknown'
+case $de_num in
 1)
     if [ -e $XSESSION.ctwm ]; then
 	mv -f $XSESSION.ctwm $XSESSION
@@ -179,11 +191,13 @@ case $de in
 4)
     # xscreensaver is used if present, but not a dep
     pkgin -y install lxde evince xscreensaver
+    de=lxde
     create_xsession startlxde
     ;;
 
 5)
     pkgin -y install lxqt evince
+    de=lxqt
     create_xsession startlxqt
     ;;
 
@@ -219,7 +233,12 @@ esac
 ##########################################################################
 
 cp /usr/pkg/share/examples/rc.d/dbus /etc/rc.d
-auto-enable-service dbus $0
+# FIXME: See if dbus service is necessary for other DEs.
+# A dbus child process is started by LXQT and it conflicts with
+# the service on NetBSD 10.
+if [ $de != lxqt ]; then
+    auto-enable-service dbus $0
+fi
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/pkg/share/desktop-installer/XDM/Xsetup_0 /etc/X11/xdm/Xsetup_0
