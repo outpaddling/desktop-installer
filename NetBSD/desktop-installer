@@ -48,14 +48,14 @@ create_xsession()
 #!/bin/sh
 
 exec ck-launch-session dbus-launch --exit-with-session $session_cmd
-exec ck-launch-session $session_cmd
+# exec ck-launch-session $session_cmd
 EOM
     
     cat << EOM > $HOME/.xinitrc
 #!/bin/sh -e
 
 exec ck-launch-session dbus-launch --exit-with-session $session_cmd
-exec ck-launch-session $session_cmd
+# exec ck-launch-session $session_cmd
 EOM
     else
 	cat << EOM > $XSESSION
