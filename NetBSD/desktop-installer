@@ -233,12 +233,10 @@ esac
 ##########################################################################
 
 cp /usr/pkg/share/examples/rc.d/dbus /etc/rc.d
-# FIXME: See if dbus service is necessary for other DEs.
-# A dbus child process is started by LXQT and it conflicts with
-# the service on NetBSD 10.
-if [ $de != lxqt ]; then
-    auto-enable-service dbus $0
-fi
+# A dbus child process is started by LXQT, but it is not sufficient
+# to enable shutdown/reboot buttons on exit.  We apparently need a dbus
+# service running as root.
+auto-enable-service dbus $0
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/pkg/share/desktop-installer/XDM/Xsetup_0 /etc/X11/xdm/Xsetup_0
