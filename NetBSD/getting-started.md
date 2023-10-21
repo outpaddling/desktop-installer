@@ -21,9 +21,14 @@
     - More if building large packages like gcc, clang
     - More if running Gnome or KDE
 - 30 GB disk
-- If using VirtualBox
+- If running under VirtualBox
+    - Download the NetBSD installer ISO image
     - Set pointing device to USB tablet
-    - 2 cores
+    - 2 or more cores
+    - Boot order: Hard Disk first, then Optical (This will cause the
+	VM to boot from the
+	ISO image before install and the hard disk after)
+    - Load the ISO image into the virtual optical drive under Storage
 
 ## NetBSD Current/Beta Installation
 
