@@ -2934,7 +2934,7 @@ users, or installing software by running
 
 NOTE:
 
-Some software may ave been installed by building from source to avert
+Some software may have been installed by building from source to avert
 potential compatibility issues or to respect software license restrictions.
 
 You MUST use auto-admin or auto-update-system to ensure that packages
