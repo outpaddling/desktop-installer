@@ -158,10 +158,24 @@ install_xorg()
 	install_packages x11-drivers/xf86-video-vmware
 	
 	if [ 0$install_guest_additions = 0y ] && \
-	   ! auto-package-installed emulators/virtualbox-ose-additions; then
-		install_packages emulators/virtualbox-ose-additions
-		auto-enable-service vboxguest desktop-installer
-		auto-enable-service vboxservice desktop-installer
+		! auto-package-installed emulators/virtualbox-ose-additions; then
+	    install_packages emulators/virtualbox-ose-additions
+	    auto-enable-service vboxguest desktop-installer
+	    auto-enable-service vboxservice desktop-installer
+	    cat << EOM
+
+VirtualBox guest additions work best with the VBOXSVGA graphics controller,
+while VirtualBox may default to VMSVGA.  Check the display settings for
+this VM and make sure the Graphics Controller is set to VBOXSVGA.  You can
+change this setting in the VirtualBox settings GUI, or by running
+
+    VBoxManage modifyvm --graphicscontroller vboxsvga
+
+under the host operating system.  This setting cannot be changed while
+the guest is running.
+
+EOM
+	    pause
 	fi
     else
 	pkg remove -y virtualbox-ose-additions || true
@@ -2934,7 +2948,7 @@ users, or installing software by running
 
 NOTE:
 
-Some software may have been installed by building from source to avert
+Some software may ave been installed by building from source to avert
 potential compatibility issues or to respect software license restrictions.
 
 You MUST use auto-admin or auto-update-system to ensure that packages
