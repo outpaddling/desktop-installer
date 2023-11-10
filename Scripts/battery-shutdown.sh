@@ -46,7 +46,10 @@ display_users=$(ps -aexwwj | grep "DISPLAY=$DISPLAY_ID" | awk '{ print $1 }' | s
 # Make sure root can access the local display
 # NetBSD laptop, quagga
 for user in $display_users; do
-    su -l $user -c 'env DISPLAY=:0 xhost +local:root' > /dev/null || true
+    # Don't try to su to users with nologin as shell
+    if awk -F : -v user=$user '$1 == user { print $7 }' /etc/passwd | fgrep nologin; then
+	su -l $user -c 'env DISPLAY=:0 xhost +local:root' > /dev/null || true
+    fi
 done
 
 if [ $ac_power = 0 ]; then
