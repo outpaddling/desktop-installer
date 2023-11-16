@@ -2688,7 +2688,7 @@ while [ $valid_selection = 0 ]; do
     printf "\n"
     line
     printf "1.. No desktop software (I'll install my own later)\n"
-    printf "2.. CDE (For nostalgia only, not fully functional or secure)\n"
+    printf "2.. CDE (Retro 1990's)\n"
     printf "3.. Cinnamon Desktop (Gnome 3 derivative)\n"
     printf "4.. Fluxbox Lightweight Window Manager\n"
     printf "5.. Gnome Desktop (Feature-rich and resource-intensive)\n"
