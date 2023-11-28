@@ -171,43 +171,60 @@ XSESSION=/etc/X11/xdm/Xsession
 de='unknown'
 case $de_num in
 1)
+    # Install separately so user sees error messages
     if [ -e $XSESSION.ctwm ]; then
 	mv -f $XSESSION.ctwm $XSESSION
     fi
-    pkgin -y install evince xscreensaver
+    for pkg in evince xscreensaver; do
+	pkgin -y install $pkg
+    done
     rm $HOME/.xinitrc
     ;;
 
 2)
-    pkgin -y install gnome evince
+    # Install separately so user sees error messages
+    for pkg in evince gnome; do
+	pkgin -y install $pkg
+    done
     create_xsession gnome-session
     ;;
 
 3)
+    # Install separately so user sees error messages
     pkgin -y install kde
     create_xsession startkde
     ;;
 
 4)
+    # Install separately so user sees error messages
     # xscreensaver is used if present, but not a dep
-    pkgin -y install lxde evince xscreensaver
-    de=lxde
+    for pkg in evince xscreensaver lxde; do
+	pkgin -y install $pkg
+    done
     create_xsession startlxde
     ;;
 
 5)
-    pkgin -y install lxqt evince
-    de=lxqt
+    # Install separately so user sees error messages
+    for pkg in evince lxqt; do
+	pkgin -y install $pkg
+    done
     create_xsession startlxqt
     ;;
 
 6)
-    pkgin -y install mate evince
+    # Install separately so user sees error messages
+    for pkg in evince mate; do
+	pkgin -y install $pkg
+    done
     create_xsession mate-session
     ;;
 
 7)
-    pkgin -y install xfce4 evince
+    # Install separately so user sees error messages
+    for pkg in evince xfce4; do
+	pkgin -y install $pkg
+    done
     create_xsession xfce4-session
     ;;
 
@@ -217,7 +234,9 @@ case $de_num in
     printf "Session command? (See category/$package/PLIST) "
     read session_cmd
     
-    pkgin -y install $package xscreensaver
+    for pkg in xscreensaver $package; do
+	pkgin -y install $pkg
+    done
     create_xsession $session_cmd
     ;;
     
