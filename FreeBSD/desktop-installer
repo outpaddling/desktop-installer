@@ -2937,12 +2937,16 @@ EOM
     fi
 fi
 
+pkg_count=$(pkg search '.*' | wc -l)
+pkg_count=$(printf "%d" $pkg_count) # Trim leading space
+
 cat << EOM
 
 ===========================================================================
-You can spend years exploring all the amazing features of FreeBSD, but for now
+You can spend years exploring the amazing features of FreeBSD, but for now
 you can perform basic systems management like updating your system, adding
-users, or installing software by running
+users, or installing from among the $pkg_count free software packages by
+running
 
     su -m root -c auto-admin
 
