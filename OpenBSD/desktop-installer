@@ -2,11 +2,11 @@
 
 ##########################################################################
 #   Description:
-#       NetBSD desktop-installer
+#       OpenBSD desktop-installer
 #
 #   History:
 #   Date        Name        Modification
-#   2023-06-10  Charlie &,,,Begin
+#   2024-06-25  izder456    Begin Work on OpenBSD Support
 ##########################################################################
 
 usage()
@@ -25,7 +25,7 @@ usage()
 #       
 #   History:
 #   Date        Name        Modification
-#   2023-06-13  Charlie &,,,Begin
+#   2024-06-25  izder456    Remove COOKIE stuff from NetBSD
 ##########################################################################
 
 create_xsession()
@@ -156,11 +156,19 @@ esac
 #   From Guide
 ##########################################################################
 
+###
+# TODO
+###
+
+# Use auto-admin
+
 # Enable Message Bus/dbus rc service
 rcctl enable messagebus
+# ^ What we want auto-admin to do here.
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 cp -R /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
+# ^ What we want auto-admin to do here.
 
 cat << EOM
 
@@ -177,6 +185,7 @@ if ! pgrep bin/xenodm; then
     read xdm
     if [ 0"$xdm" != 0n ]; then
 	rcctl enable xenodm
+	# ^ What we want auto-admin to do here.
     fi
 fi
 
