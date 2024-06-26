@@ -6,7 +6,7 @@
 #
 #   History:
 #   Date        Name        Modification
-#   2023-06-10  Charlie &,,,Begin
+#   2023-06-10  J Bacon     Begin
 ##########################################################################
 
 usage()
@@ -25,7 +25,7 @@ usage()
 #       
 #   History:
 #   Date        Name        Modification
-#   2023-06-13  Charlie &,,,Begin
+#   2023-06-13  J Bacon     Begin
 ##########################################################################
 
 create_xsession()

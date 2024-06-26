@@ -651,7 +651,7 @@ EOM
 #       
 #   History:
 #   Date        Name        Modification
-#   2022-06-02  Charlie &   Begin
+#   2022-06-02  J Bacon     Begin
 ##########################################################################
 
 moused_config()
