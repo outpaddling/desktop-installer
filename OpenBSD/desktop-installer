@@ -1,0 +1,203 @@
+#!/bin/sh -e
+
+##########################################################################
+#   Description:
+#       OpenBSD desktop-installer
+#
+#   History:
+#   Date        Name        Modification
+#   2024-06-25  izder456    Begin Work on OpenBSD Support
+##########################################################################
+
+usage()
+{
+    printf "Usage: $0\n"
+    exit 1
+}
+
+
+##########################################################################
+#   Function description:
+#       Create a global Xsession file
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name        Modification
+#   2024-06-25  izder456    Remove COOKIE stuff from NetBSD
+##########################################################################
+
+create_xsession()
+{
+    if [ $# != 1 ]; then
+	printf "Usage: create_xsession session-command\n"
+	exit 1
+    fi
+    session_cmd=$1
+
+    cat << EOM > $XSESSION
+#!/bin/sh
+
+exec $session_cmd
+EOM
+}
+
+
+##########################################################################
+#   Main
+##########################################################################
+
+if [ $# != 0 ]; then
+    usage
+fi
+
+cat << EOM
+
+It is best to have all installed packages up-to-date before installing
+more packages, in case not every dependency version is checked
+correctly.
+
+If you have updated recently using pkg_add -u, then you can skip
+this step now.
+
+EOM
+printf "Update installed packages? [y]/n "
+read update
+if [ 0"$update" != 0n ]; then
+    auto-update-pkgsrc --defaults
+fi
+
+# Should have been installed as a dep, but just in case
+pkg_add dbus git gmake xz feh tk-8.6.13 consolekit2
+
+cat << EOM
+
+1.. FVWM (OpenBSD default)
+2.. Gnome
+3.. KDE
+4.. LXQT
+5.. MATE
+6.. XFCE
+7.. Custom
+
+EOM
+printf "Selection? "
+read de_num
+
+XDM_CONF=/etc/X11/xdm/xdm-config
+XSESSION=/etc/X11/xdm/Xsession
+
+de='unknown'
+case $de_num in
+1)
+    for pkg in evince xscreensaver; do
+	pkg_add $pkg
+    done
+    rm $HOME/.xsession
+    ;;
+
+2)
+    # Install separately so user sees error messages
+    for pkg in evince gnome; do
+	pkg_add $pkg
+    done
+    create_xsession gnome-session
+    ;;
+
+3)
+    # Install separately so user sees error messages
+    pkg_add kde-plasma
+    create_xsession startplasma-x11
+    ;;
+4)
+    # Install separately so user sees error messages
+    for pkg in evince lxqt; do
+	pkg_add $pkg
+    done
+    create_xsession startlxqt
+    ;;
+
+5)
+    # Install separately so user sees error messages
+    for pkg in evince mate; do
+	pkg_add $pkg
+    done
+    create_xsession mate-session
+    ;;
+
+6)
+    # Install separately so user sees error messages
+    for pkg in evince xfce4; do
+	pkg_add $pkg
+    done
+    create_xsession xfce4-session
+    ;;
+
+7)
+    printf "Package name? (Use pkg_add -Q to verify) "
+    read package
+    printf "Session command? (Use pkg_info -L to verify) "
+    read session_cmd
+    
+    for pkg in xscreensaver $package; do
+	pkg_add $pkg
+    done
+    create_xsession $session_cmd
+    ;;  
+*)
+    printf "Invalid selection.\n"
+    exit 1
+    ;;
+
+esac
+
+##########################################################################
+#   From Guide
+##########################################################################
+
+###
+# TODO
+###
+
+# Use auto-admin
+
+# Enable Message Bus/dbus rc service
+rcctl enable messagebus
+# ^ What we want auto-admin to do here.
+
+# Enhanced XDM with background and restart/shutdown/restart-x11 buttons
+cp -R /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
+# ^ What we want auto-admin to do here.
+
+cat << EOM
+
+Enabling XenoDM will cause the screen to switch to graphics mode.
+
+If you are running desktop-installer on the primary text console,
+you can return to the text console by typing Ctrl+Alt+F1 on most
+systems (or Meta-key + F1 under VirtualBox).
+
+EOM
+# Offer to enable xdm if not already running
+if ! pgrep bin/xenodm; then
+    printf "Enable XenoDM graphical login? [y]/n "
+    read xdm
+    if [ 0"$xdm" != 0n ]; then
+	rcctl enable xenodm
+	# ^ What we want auto-admin to do here.
+    fi
+fi
+
+for app in firefox thunderbird keepassxc; do
+    if ! auto-package-installed $app; then
+	printf "Install $app? y/[n] "
+	read install
+	if [ 0"$install" = 0y ]; then
+	    apps="$apps ${app}"
+	fi
+    fi
+done
+if [ ! -z "$apps" ]; then
+    pkg_add $apps
+fi
