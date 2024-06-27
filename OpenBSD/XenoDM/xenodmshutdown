@@ -1,0 +1,22 @@
+#!/usr/local/bin/wish8.6
+# NT 20 October 2002 - adapted/copied from various similar
+# scripts dragged kicking and screaming from the bowels of the web:)
+# NT 27 January 2003 - added a reboot button
+#
+
+proc shutdownf {} { exec /sbin/shutdown -p now 2>/dev/console >/dev/console }
+
+proc rebootf {} { exec /sbin/shutdown -r now 2>/dev/console >/dev/console }
+
+proc restartx {} { exec /usr/sbin/service xdm restart 2>/dev/console >/dev/console }
+
+button .shutdown -text "Shutdown" -background gray -activebackground #664444 -width 15 -command shutdownf
+
+button .reboot -text "Reboot" -background gray -activebackground #446644 -width 15 -command rebootf
+
+button .restartx -text "Restart X11" -background gray -activebackground #444466 -width 15 -command restartx
+
+pack .reboot -side top
+pack .shutdown -side top
+pack .restartx -side top
+
