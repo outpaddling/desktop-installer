@@ -142,8 +142,14 @@ install_xorg()
 
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for terminals
+    # noto-* required by chromium and chosen over others by some apps,
+    # so pre-install them to avoid mysterious changes in look and feel
+    # when chromium is [de]installed
     install_packages x11-fonts/bitstream-vera x11-fonts/liberation-fonts-ttf \
-	x11-fonts/fira x11-fonts/droid-fonts-ttf
+	x11-fonts/fira x11-fonts/droid-fonts-ttf \
+	x11-fonts/noto-basic x11-fonts/noto-sans \
+	x11-fonts/noto-sans-mono x11-fonts/noto-sans-symbols \
+	x11-fonts/noto-sans-symbols2 x11-fonts/noto-serif
 
     # Port fails as depend on 9.0-BETA3
     install_packages archivers/cabextract
