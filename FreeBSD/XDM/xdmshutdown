@@ -14,7 +14,7 @@ button .shutdown -text "Shutdown" -background gray -activebackground #664444 -wi
 
 button .reboot -text "Reboot" -background gray -activebackground #446644 -width 15 -command rebootf
 
-button .restartx -text "Restart X11" -background gray -activebackground #444466 -width 15 -command restartx
+button .restartx -text "Restart X Server" -background gray -activebackground #444466 -width 15 -command restartx
 
 pack .reboot -side top
 pack .shutdown -side top
