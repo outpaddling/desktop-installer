@@ -66,7 +66,7 @@ EOM
 printf "Update installed packages? [y]/n "
 read update
 if [ 0"$update" != 0n ]; then
-    auto-update-pkgsrc --defaults
+    pkg_add -u 
 fi
 
 # Should have been installed as a dep, but just in case
@@ -75,8 +75,8 @@ pkg_add dbus git gmake xz feh tk-8.6.13 consolekit2
 cat << EOM
 
 1.. FVWM (OpenBSD default)
-2.. Gnome
-3.. KDE
+2.. CWM (OpenBSD alternate)
+3.. Lumina
 4.. LXQT
 5.. MATE
 6.. XFCE
@@ -91,45 +91,43 @@ XSESSION=/etc/X11/xenodm/Xsession
 de='unknown'
 case $de_num in
 1)
-    for pkg in evince xscreensaver; do
-	pkg_add $pkg
-    done
-    rm $HOME/.xsession
+    pkg_add xscreensaver
+    create_xsession fvwm
     ;;
 
 2)
-    # Install separately so user sees error messages
-    for pkg in evince gnome; do
-	pkg_add $pkg
-    done
-    create_xsession gnome-session
+    pkg_add xscreensaver
+    create_xsession cwm
     ;;
 
 3)
     # Install separately so user sees error messages
-    pkg_add kde-plasma
-    create_xsession startplasma-x11
+    for pkg in evince--light lumina; do
+        pkg_add $pkg
+    done
+    create_xsession start-lumina-desktop
     ;;
+
 4)
     # Install separately so user sees error messages
-    for pkg in evince lxqt; do
-	pkg_add $pkg
+    for pkg in evince--light lxqt lxqt-extras; do
+        pkg_add $pkg
     done
     create_xsession startlxqt
     ;;
 
 5)
     # Install separately so user sees error messages
-    for pkg in evince mate; do
-	pkg_add $pkg
+    for pkg in evince--light mate mate-extras; do
+        pkg_add $pkg
     done
     create_xsession mate-session
     ;;
 
 6)
     # Install separately so user sees error messages
-    for pkg in evince xfce4; do
-	pkg_add $pkg
+    for pkg in evince--light xfce xfce-extras; do
+        pkg_add $pkg
     done
     create_xsession xfce4-session
     ;;
@@ -139,12 +137,13 @@ case $de_num in
     read package
     printf "Session command? (Use pkg_info -L to verify) "
     read session_cmd
-    
+
     for pkg in xscreensaver $package; do
 	pkg_add $pkg
     done
     create_xsession $session_cmd
-    ;;  
+    ;;
+
 *)
     printf "Invalid selection.\n"
     exit 1
@@ -161,7 +160,7 @@ auto-enable-service messagebus $0
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
-# ^ What we want auto-admin to do here.
+auto-replace-file /usr/local/share/desktop-installer/XenoDM/GiveConsole /etc/X11/xenodm/GiveConsole
 
 cat << EOM
 
@@ -177,7 +176,7 @@ if ! pgrep bin/xenodm; then
     printf "Enable XenoDM graphical login? [y]/n "
     read xenodm
     if [ 0"$xenodm" != 0n ]; then
-        auto-enable-service xenodm
+        auto-enable-service xenodm $0
     fi
 fi
 
