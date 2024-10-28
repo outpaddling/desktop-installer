@@ -1,0 +1,22 @@
+#!/bin/ksh
+
+# Set Prefix for commands used
+prefix="/usr/X11R6"
+exec_prefix="${prefix}"
+prefix="/usr/X11R6"
+exec_prefix="${prefix}"
+
+pkill wish8.6
+
+GROUP=`id -g $USER`
+
+# Pass Ownership to the user
+chown $USER:$GROUP /dev/console
+if [ -c /dev/dri/card0 ]; then
+    chown $USER:$GROUP /dev/dri/card0
+fi
+if [ -c /dev/dri/renderD128 ]; then
+    chown $USER:$GROUP /dev/dri/renderD128
+fi
+# Register Session to the user
+${exec_prefix}/bin/sessreg -a -l $DISPLAY -u none $USER

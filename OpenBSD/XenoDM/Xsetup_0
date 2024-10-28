@@ -32,5 +32,5 @@ left_edge=`xrandr --screen 0 | grep primary | awk '{ print $4 }' \
 
 x=$(( $left_edge + ($width - 150) / 2 ))
 y=$(( ($height - 10) / 2 + 120 ))
-/usr/local/sbin/xdmshutdown -geometry +$x+$y &
-echo $! > /var/run/xdmshutdown.pid
+/usr/local/sbin/xenodmshutdown -geometry +$x+$y &
+echo $! > /var/run/xenodmshutdown.pid
