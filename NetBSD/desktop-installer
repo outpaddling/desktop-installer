@@ -42,7 +42,7 @@ create_xsession()
     fi
     
     # ck-launch-session may only be necessary for LXDE to enable reboot,
-    # shutdown, etc when exiting the session
+    # shutdown, etc when exiting the session.  It causes problems with LXQT.
     if [ $de = lxde ]; then
 	cat << EOM > $XSESSION
 #!/bin/sh
