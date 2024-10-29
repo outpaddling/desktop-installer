@@ -113,7 +113,7 @@ case $de_num in
     for pkg in evince--light lxqt lxqt-extras; do
         pkg_add $pkg
     done
-    create_xsession startlxqt
+    create_xsession "ck-launch-session startlxqt"
     ;;
 
 5)
@@ -121,7 +121,7 @@ case $de_num in
     for pkg in evince--light mate mate-extras; do
         pkg_add $pkg
     done
-    create_xsession mate-session
+    create_xsession "ck-launch-session mate-session"
     ;;
 
 6)
@@ -133,9 +133,9 @@ case $de_num in
     ;;
 
 7)
-    printf "Package name? (Use pkg_add -Q to verify) "
+    printf "Package name? (Use pkg_info -Q to verify) "
     read package
-    printf "Session command? (Use pkg_info -L to verify) "
+    printf "Session command? (Use pkg_info -M & the pkg-readme at /usr/local/share/doc/pkg-readmes to verify) "
     read session_cmd
 
     for pkg in xscreensaver $package; do
