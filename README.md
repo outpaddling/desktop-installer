@@ -2,7 +2,7 @@ desktop-installer
 =================
 
 Desktop-installer is a post-install script for configuring a desktop
-environment on a stock FreeBSD or NetBSD system.
+environment on a stock FreeBSD, NetBSD, or OpenBSD system.
 
 It facilitates the setup of a complete desktop system much more quickly,
 reliably, and securely than manual software installations and configurations.
@@ -15,12 +15,15 @@ supported by the operating system.
 
 To use desktop-installer:
 
-1. Perform a minimal FreeBSD or NetBSD installation using the standard installer
+1. Perform a minimal FreeBSD, NetBSD, or OpenBSD installation using the
+   standard installer
 2. Install the desktop-installer package:
 
     FreeBSD: pkg install desktop-installer
     
     NetBSD: pkgin install desktop-installer
+    
+    OpenBSD: Package currently under development
 
 3.  Run "desktop-installer"
 4.  Carefully follow the instructions on the screen
