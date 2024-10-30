@@ -76,11 +76,10 @@ cat << EOM
 
 1.. FVWM (OpenBSD default)
 2.. CWM (OpenBSD alternate)
-3.. Lumina
-4.. LXQT
-5.. MATE
-6.. XFCE
-7.. Custom
+3.. LXQT
+4.. MATE
+5.. XFCE
+6.. Custom
 
 EOM
 printf "Selection? "
@@ -102,21 +101,13 @@ case $de_num in
 
 3)
     # Install separately so user sees error messages
-    for pkg in evince--light lumina; do
-        pkg_add $pkg
-    done
-    create_xsession start-lumina-desktop
-    ;;
-
-4)
-    # Install separately so user sees error messages
     for pkg in evince--light lxqt lxqt-extras; do
         pkg_add $pkg
     done
     create_xsession "ck-launch-session startlxqt"
     ;;
 
-5)
+4)
     # Install separately so user sees error messages
     for pkg in evince--light mate mate-extras; do
         pkg_add $pkg
@@ -124,7 +115,7 @@ case $de_num in
     create_xsession "ck-launch-session mate-session"
     ;;
 
-6)
+5)
     # Install separately so user sees error messages
     for pkg in evince--light xfce xfce-extras; do
         pkg_add $pkg
@@ -132,7 +123,7 @@ case $de_num in
     create_xsession xfce4-session
     ;;
 
-7)
+6)
     printf "Package name? (Use pkg_info -Q to verify) "
     read package
     printf "Session command? (Use pkg_info -M & the pkg-readme at /usr/local/share/doc/pkg-readmes to verify) "
@@ -157,6 +148,12 @@ esac
 
 # Enable Message Bus/dbus rc service
 auto-enable-service messagebus $0
+
+printf "Enable apm power manager daemon? (useful on laptops) [y]/n "
+read apm
+if [ 0"apm" != 0n ]; then
+    auto-enable-service apmd $0
+fi
 
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0

@@ -1,14 +1,11 @@
-
 # Getting started on OpenBSD
-
-**IGNORE FOR NOW, NO PORT HAS BEEN MADE YET**
 
 ## To-dos for improving the OpenBSD desktop experience
 
 -   Improvements to desktop-environment packages (LXQT, Mate, etc.)
 -   Inclusion of auto-media-format from the other BSDs (sysutils/auto-admin)
 -   Add more configuration options to desktop-installer
--   Binary updates for the OpenBSD base system
+-   Binary updates / security patches for the OpenBSD base system
 -   Optimization to `sysctl.conf` & other tweaks (maybe?)
 
 ## System requirements
@@ -41,4 +38,3 @@ desktop-installer
 # If you do not understand a particular question asked by desktop-installer,
 # accepting the default response should be fine in most cases.
 ```
-
