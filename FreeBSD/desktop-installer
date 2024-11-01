@@ -71,7 +71,7 @@ EOM
 	    install=yes
 	fi
 	if [ $install = yes ]; then
-	    if ! auto-install-packages -l $pkg 2>&1 \
+	    if ! auto-install-packages -l $pkg -U 2>&1 \
 		| tee $LOG_DIR/auto-install-packages.log; then
 		printf "Install failed.\n"
 		exit $?
