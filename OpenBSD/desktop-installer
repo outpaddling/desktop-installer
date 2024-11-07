@@ -158,6 +158,7 @@ fi
 # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
 auto-replace-file /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
 auto-replace-file /usr/local/share/desktop-installer/XenoDM/GiveConsole /etc/X11/xenodm/GiveConsole
+auto-replace-file /usr/local/share/desktop-installer/XenoDM/openbsd-background.jpg /etc/X11/xenodm/openbsd-background.jpg
 
 cat << EOM
 
