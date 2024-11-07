@@ -71,7 +71,7 @@ EOM
 	    install=yes
 	fi
 	if [ $install = yes ]; then
-	    if ! auto-install-packages -l $pkg 2>&1 \
+	    if ! auto-install-packages -l -U $pkg 2>&1 \
 		| tee $LOG_DIR/auto-install-packages.log; then
 		printf "Install failed.\n"
 		exit $?
@@ -1330,6 +1330,7 @@ dictionaries for your language, e.g. en-hunspell for English.
 EOM
 	    pause
 	fi
+	# FIXME: Should this be in install_packages()?
 	rdescr=$(pkg rquery %e $port 2> /dev/null || true)
 	if [ -z "${rdescr}" ]; then
 	    printf "Binary package for $port is not available.\n"
@@ -2555,6 +2556,10 @@ if [ $(auto-pkg-branch) != latest ]; then
 else
     latest_packages=n
 fi
+
+# Run pkg update once and use pkg install -U to avoid repeated repo updates
+pkg update
+
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
     auto-pkg-latest --no-reboot
