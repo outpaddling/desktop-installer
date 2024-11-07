@@ -104,7 +104,7 @@ case $de_num in
     for pkg in evince--light lxqt lxqt-extras; do
         pkg_add $pkg
     done
-    create_xsession "ck-launch-session startlxqt"
+    create_xsession startlxqt
     ;;
 
 4)
