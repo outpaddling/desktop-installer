@@ -152,6 +152,9 @@ rcctl enable multicast
 auto-enable-service messagebus $0
 # Enable avahi (needed for network mounts, trash://, and computer://)
 auto-enable-service avahi_daemon $0
+# Order them in the right order as avahi_daemon needs dbus running to work
+rcctl order messagebus avahi_daemon
+
 
 printf "Enable apm power manager daemon? (useful on laptops) [y]/n "
 read apm
