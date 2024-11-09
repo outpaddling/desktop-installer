@@ -70,7 +70,7 @@ if [ 0"$update" != 0n ]; then
 fi
 
 # Should have been installed as a dep, but just in case
-pkg_add dbus git gmake xz feh tk-8.6.13 consolekit2
+pkg_add dbus avahi git gmake xz feh tk-8.6.13 consolekit2
 
 cat << EOM
 
@@ -104,7 +104,7 @@ case $de_num in
     for pkg in evince--light lxqt lxqt-extras; do
         pkg_add $pkg
     done
-    create_xsession "ck-launch-session startlxqt"
+    create_xsession startlxqt
     ;;
 
 4)
@@ -146,8 +146,15 @@ esac
 #   From Guide
 ##########################################################################
 
-# Enable Message Bus/dbus rc service
+# Enable multicast (cannot be done with auto-enable-service as this is an option, not a service)
+rcctl enable multicast
+# Enable dbus rc service
 auto-enable-service messagebus $0
+# Enable avahi (needed for network mounts, trash://, and computer://)
+auto-enable-service avahi_daemon $0
+# Order them in the right order as avahi_daemon needs dbus running to work
+rcctl order messagebus avahi_daemon
+
 
 printf "Enable apm power manager daemon? (useful on laptops) [y]/n "
 read apm
