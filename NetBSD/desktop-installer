@@ -102,8 +102,10 @@ if [ 0"$update" != 0n ]; then
     auto-update-pkgsrc --defaults
 fi
 
-# Should have been installed as a dep, but just in case
-pkgin -y install digest fetch git cvs gmake xz feh tk consolekit
+# Digest should have been installed as a dep, but just in case
+# Likewise for fetch if FETCH_USING=fetch is set in mk.conf
+pkgin -y install digest fetch
+pkgin -y install git cvs gmake xz feh tk consolekit
 
 if ! auto-package-installed security/mozilla-rootcerts-openssl; then
     printf "Install mozilla root certs? (Needed to access many sites) [y]/n "
