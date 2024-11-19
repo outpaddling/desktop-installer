@@ -26,7 +26,8 @@ fi
 
 # FIXME: Should this be necessary, or is it a WM responsibility?
 if sysctl dev.acpi.0.%desc | fgrep -q VBOX; then
-    VBoxClient --display
+    # VBoxClient is part of guest additions, which may not be installed
+    VBoxClient --display || true
 fi
 
 aa_dir=/usr/local/etc/auto-admin

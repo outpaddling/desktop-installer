@@ -730,14 +730,21 @@ startup_scripts()
 	;;
     FLUXBOX)
 	session_cmd="$LOCALBASE/bin/startfluxbox"
+	# VBoxClient is part of guest additions, which may not be installed
+	# FIXME: Is the ; at the end really needed??
+	set +e
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	set -e
 	;;
     GNOME)
 	session_cmd="$LOCALBASE/bin/gnome-session"
 	;;
     ICEWM)
 	session_cmd="$LOCALBASE/bin/icewm-session"
+	# VBoxClient is part of guest additions, which may not be installed
+	set +e
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	set -e
 	;;
     KDE5)
 	session_cmd='startplasma-x11'
@@ -749,7 +756,10 @@ startup_scripts()
 	session_cmd="$LOCALBASE/bin/start-lumina-desktop"
 	# FIXME: Should not be necessary
 	# Doesn't completely solve resize issues, but seems to help
+	# VBoxClient is part of guest additions, which may not be installed
+	set +e
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	set -e
 	;;
     LXDE)
 	session_cmd="$LOCALBASE/bin/startlxde"
@@ -762,7 +772,10 @@ startup_scripts()
 	;;
     WMAKER)
 	session_cmd="$LOCALBASE/bin/wmaker"
+	# VBoxClient is part of guest additions, which may not be installed
+	set +e
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	set -e
 	;;
     XFCE4)
 	session_cmd="$LOCALBASE/bin/startxfce4"
@@ -788,7 +801,10 @@ EOM
 	grep 'bin/' $PORTSDIR/$de_port/pkg-plist | more
 	printf "Enter the command for starting the session: "
 	read session_cmd
+	# VBoxClient is part of guest additions, which may not be installed
+	set +e
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
+	set -e
 	;;
     *)
 	printf "Error: Invalid desktop $1 passed to startup_scripts().\n"
