@@ -184,6 +184,36 @@ if ! pgrep bin/xenodm; then
     fi
 fi
 
+printf "Add your user to \"staff\" login class? This will improve performance in some scenarios. [y]/n "
+read staff
+
+if [ 0"$staff" != 0n ]; then
+    while true; do
+        printf "What user to add to \"staff\" login class? "
+        read user
+
+        echo "Username is set to '$user'";
+
+        while true; do
+            printf "Is this OK? [y]/n "
+            read usercorrect
+
+            case "$usercorrect" in
+                y|Y) 
+                    echo "User '$user' will be added to the 'staff' login class."
+                    auto-change-login-class "${user}" staff
+                    break 2;;
+                n|N) 
+                    echo "Please enter the username again."
+                    break;;
+                *) 
+                    echo "Invalid input. Please enter 'y' or 'n'."
+                    ;;
+            esac
+        done
+    done
+fi
+ 
 for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
 	printf "Install $app? y/[n] "
