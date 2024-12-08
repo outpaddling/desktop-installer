@@ -1,4 +1,6 @@
 
+Use asmc and ataidle to park heads when laptop is moved
+
 Portable, desktop-independent battery monitor
     Run minimized, show % and time remaining
     Popup warnings for low battery
