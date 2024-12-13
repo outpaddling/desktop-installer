@@ -17,7 +17,7 @@
 - If running under VirtualBox
     - Download the OpenBSD installer ISO image
     - Set pointing device to USB tablet
-    - *Don't* use dynamically allocated disk space
+    - *Don't* use dynamically allocated disk space (why not?)
     - Disable I/O APIC under System Settings
     - 2 or more cores
     - Boot order: Hard Disk first, then Optical (This will cause the
@@ -29,7 +29,8 @@
 
 When adding new users via adduser(8) or auto-adduser(8), note that
 placing them in the "staff" login class provides higher resource limits.
-See login.conf(5) for details.
+See login.conf(5) for details.  Note also that auto-adduser(8) provides
+more guidance on user account parameters than the native adduser(8) command.
 
 Do the following as the root user:
 
