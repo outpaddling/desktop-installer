@@ -27,6 +27,10 @@
 
 ## Post-installation
 
+When adding new users via adduser(8) or auto-adduser(8), note that
+placing them in the "staff" login class provides higher resource limits.
+See login.conf(5) for details.
+
 Do the following as the root user:
 
 ```
