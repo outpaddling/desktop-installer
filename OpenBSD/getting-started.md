@@ -4,6 +4,8 @@
 
 -   Improvements to desktop-environment packages (LXQT, Mate, etc.)
 -   Inclusion of auto-media-format from the other BSDs (sysutils/auto-admin)
+-   Qmediamanager
+-   Openbsd-update-notify (port freebsd-update-notify)
 -   Add more configuration options to desktop-installer
 -   Binary updates / security patches for the OpenBSD base system
 -   Optimization to `sysctl.conf` & other tweaks (maybe?)
@@ -17,7 +19,8 @@
 - If running under VirtualBox
     - Download the OpenBSD installer ISO image
     - Set pointing device to USB tablet
-    - *Don't* use dynamically allocated disk space (why not?)
+    - Caution: Some OpenBSD users have reported problems when using
+      dynamically allocated disk images.
     - Disable I/O APIC under System Settings
     - 2 or more cores
     - Boot order: Hard Disk first, then Optical (This will cause the
@@ -30,7 +33,8 @@
 When adding new users via adduser(8) or auto-adduser(8), note that
 placing them in the "staff" login class provides higher resource limits.
 See login.conf(5) for details.  Note also that auto-adduser(8) provides
-more guidance on user account parameters than the native adduser(8) command.
+more guidance on user account parameters than the native adduser(8) command,
+though both provide the opportunity to assign a login class.
 
 Do the following as the root user:
 
