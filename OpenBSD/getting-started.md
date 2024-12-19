@@ -15,18 +15,21 @@
 - 1 GiB RAM minimum
     - More if building large packages like gcc, clang
     - More if running Gnome or KDE
-- 30 GB disk space in /usr/local
-- If running under VirtualBox
-    - Download the OpenBSD installer ISO image
-    - Set pointing device to USB tablet
+- Minimum 30 GB disk space in /usr/local
+- If running under VirtualBox:
+    - Download the OpenBSD installer ISO image from
+      [https://openbsd.org](https://openbsd.org).
+    - Set pointing device to USB tablet.
     - Caution: Some OpenBSD users have reported problems when using
       dynamically allocated disk images.
-    - Disable I/O APIC under System Settings
-    - 2 or more cores
+    - Caution: Some users have reported trouble with I/O APIC.
+      If you encounter problems, try disabling it under System Settings.
+    - 2 or more cores will improve performance, but this has been known
+      to cause system freezes in some cases.
+    - The paravirtualized network driver may offer the best performance.
     - Boot order: Hard Disk first, then Optical (This will cause the
-	VM to boot from the
-	ISO image before install and the hard disk after)
-    - Load the ISO image into the virtual optical drive under Storage
+      VM to boot from the ISO image before install and the hard disk after.)
+    - Load the ISO image into the virtual optical drive under Storage.
 
 ## Post-installation
 
