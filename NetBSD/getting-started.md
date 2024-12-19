@@ -20,15 +20,17 @@
 - 1 GiB RAM minimum
     - More if building large packages like gcc, clang
     - More if running Gnome or KDE
-- 30 GB disk
-- If running under VirtualBox
-    - Download the NetBSD installer ISO image
-    - Set pointing device to USB tablet
-    - 2 or more cores
+- Minimum 30 GB disk
+- If running under VirtualBox:
+    - Download the NetBSD installer ISO image from
+      [https://netbsd.org](https://netbsd.org).
+    - Set pointing device to USB tablet.
+    - 2 or more cores.
+    - The paravirtualized network device may offer the best performance.
     - Boot order: Hard Disk first, then Optical (This will cause the
 	VM to boot from the
-	ISO image before install and the hard disk after)
-    - Load the ISO image into the virtual optical drive under Storage
+	ISO image before install and the hard disk after.)
+    - Load the ISO image into the virtual optical drive under Storage.
 
 ## NetBSD Current/Beta Installation
 
