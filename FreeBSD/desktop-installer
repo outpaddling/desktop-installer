@@ -2087,7 +2087,7 @@ power_config()
 	auto-enable-service powerd desktop-installer
     fi
 
-    if sysctl -a | fgrep -q dev.acpi_lid.0; then
+    if sysctl dev.acpi_lid.0; then
 	cat << EOM
 
 ============================================================================
@@ -2143,7 +2143,7 @@ EOM
     
     # FIXME: Factor out battery-shutdown.sh to a separate port with rc script?
     # Install auto-shutdown script for low battery
-    if sysctl -a | fgrep -q hw.acpi.battery; then
+    if sysctl hw.acpi.battery; then
 	install_packages x11/zenity
 	# Make sure zenity is not tagged as a dependency so it won't
 	# be autoremoved
@@ -2186,7 +2186,7 @@ exit 0|g" $RC_RESUME
     fi
 
     if ! vm_guest; then
-	if sysctl -a | fgrep -q dev.acpi_lid.0; then
+	if sysctl dev.acpi_lid.0; then  # laptop
 	    default_wireless='y'
 	else
 	    default_wireless='n'
