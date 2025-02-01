@@ -1948,7 +1948,7 @@ lumina_packages()
     install_packages \
 	print/qpdfview \
 	graphics/qt5-imageformats \
-	graphics/phototonic \
+	graphics/nomacs \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	math/galculator x11/coreterminal
 
