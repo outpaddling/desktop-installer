@@ -955,9 +955,16 @@ xdm_config()
 	sddm_disable
 
 	# Install xdmshutdown
-	install_packages x11-toolkits/tk87
-	auto-mark-package-critical tk87
-    
+	# Install oldest tk available in ports
+	cd /usr/ports
+	for tk in x11-toolkits/tk[0-9]*; do
+	    if install_packages $tk; then
+		auto-mark-package-critical $(auto-print-make-variable $tk PKGBASE)
+		break
+	    fi
+	done
+	cd -
+
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
