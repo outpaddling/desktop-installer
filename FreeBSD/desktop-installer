@@ -967,6 +967,8 @@ xdm_config()
 
 	xdm_base=$LOCALBASE/etc/X11/xdm
 	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
+	sed -i '' -e "s|wish8.7|wish$(auto-print-make-variable $tk PKGVERSION:R)|g" \
+	    $LOCALBASE/sbin/xdmshutdown
 	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
 	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
 	
