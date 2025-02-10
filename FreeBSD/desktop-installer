@@ -397,23 +397,13 @@ EOM
 	fi
     fi
     
-    cat << EOM
-    
-===========================================================================
-Using moused may be useful for text virtual terminals, but is not necessary
-for X11.  However, on some systems, enabling moused may work around issues
-with Xorg mouse drivers.
-===========================================================================
-
-EOM
-    
     # Create and install an xorg.conf file.  This isn't necessary, but it's
     # useful since many monitors are not autodetected properly, and setting
     # up xorg.conf will make optimal use of the monitor, assuming the
     # sync rates are specified correctly.
 
-    line
-    cat << EOM
+    if [ $SETUP_LEVEL = 2 ]; then
+	cat << EOM
 
 ===========================================================================
 Xorg is now meant to be configuration-free.  Generating an xorg.conf file
@@ -428,8 +418,6 @@ You can restart by typing Ctrl+Alt+F1 followed by Ctrl+Alt+Del.
 ===========================================================================
 
 EOM
-
-    if [ $SETUP_LEVEL = 2 ]; then
 	generate_xorg=`auto-ask generate-xorg 'Generate new xorg.conf? (y/n)' n`
     else
 	generate_xorg=n
@@ -445,7 +433,9 @@ EOM
 	fi
 	mv $HOME/xorg.conf.new $XORG_CONF
 	line
-    else
+    fi
+    
+    if [ $SETUP_LEVEL = 2 ]; then
 	cat << EOM
 
 ===========================================================================
@@ -456,9 +446,6 @@ cursor support.
 ===========================================================================
 
 EOM
-    fi
-    
-    if [ $SETUP_LEVEL = 2 ]; then
 	swcursor=`auto-ask swcursor "Enable software cursor? (y/n)" y`
     else
 	swcursor=y
@@ -662,7 +649,17 @@ EOM
 
 moused_config()
 {
+
     if [ $SETUP_LEVEL = 2 ]; then
+	cat << EOM
+    
+===========================================================================
+Using moused may be useful for text virtual terminals, but is not necessary
+for X11.  However, on some systems, enabling moused may work around issues
+with Xorg mouse drivers.
+===========================================================================
+
+EOM
 	USE_MOUSED=`auto-ask use-moused "Use moused? (y/n)" y`
     else
 	USE_MOUSED=y
@@ -2666,7 +2663,9 @@ if [ $SETUP_LEVEL = 2 ]; then
 fi
 
 clear
-cat << EOM
+
+if [ $SETUP_LEVEL = 2 ]; then
+    cat << EOM
 
 ===========================================================================
 Building from source is not necessary on architectures for which binary
@@ -2678,8 +2677,6 @@ are kept up-to-date with "pkg update" and "portsnap".
 ===========================================================================
 
 EOM
-
-if [ $SETUP_LEVEL = 2 ]; then
     resp=`auto-ask build-from-source 'Build from source? (y/n)' n`
     if [ "$resp" = y ]; then
 	AUTO_BUILD_FROM_SOURCE=yes
