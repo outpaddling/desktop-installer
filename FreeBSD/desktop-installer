@@ -713,7 +713,7 @@ EOM
 startup_scripts()
 {
     if [ $# -lt 1 ]; then
-	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME|ICEWM|KDE5|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4|OTHER\n"
+	printf "Usage: startup_scripts CDE|CINNAMON|FLUXBOX|GNOME|ICEWM|KDE|LUMINA|LXDE|LXQT|MATE|WMAKER|XFCE4|OTHER\n"
 	exit 1
     fi
     local de=$1
@@ -743,7 +743,7 @@ startup_scripts()
 	vbox_client='sysctl dev.acpi.0.%desc 2> /dev/null | fgrep -q VBOX && VBoxClient --vmsvga;'
 	set -e
 	;;
-    KDE5)
+    KDE)
 	session_cmd='startplasma-x11'
 	;;
     #KODI)
@@ -1208,7 +1208,7 @@ slim_disable()
 
 ##########################################################################
 #   Function description:
-#       Disable sddm (kde5), if running.
+#       Disable sddm (kde), if running.
 #       Needs more testing.
 #
 #   History:
@@ -1411,22 +1411,22 @@ faac_lame_install()
 
 
 ##########################################################################
-#   Install packages useful to KDE5 users.  These packages will have
+#   Install packages useful to KDE users.  These packages will have
 #   alternatives under KDE and Gnome.
 ##########################################################################
 
-kde5_packages()
+kde_packages()
 {
     # k3b missing deps: cdrdao, dvd+rw-tools, libburn
     install_packages \
 	sysutils/k3b \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
-	x11-themes/plasma5-kde-gtk-config
+	x11-themes/plasma6-kde-gtk-config
     
     # cdrecord_perms
     
     # Prevent nepomuk startup errors
-    # Should this be a dependency for something in the KDE5 collection?
+    # Should this be a dependency for something in the KDE collection?
     # Does not run on i386
     # install_packages databases/virtuoso
 }
@@ -1845,19 +1845,20 @@ lxqt_config()
 
 
 ##########################################################################
-#   Configure the system to run the KDE5 desktop.
+#   Configure the system to run the KDE desktop.
 ##########################################################################
 
-kde5_config()
+kde_config()
 {
-    PATH=${PATH}:${LOCALBASE}/kde5/bin
-    export PATH
+    # FIXME: All in PREFIX/bin now?
+    # PATH=${PATH}:${LOCALBASE}/kde/bin
+    # export PATH
     
-    install_packages x11/kde5 x11/sddm
-    auto-mark-package-critical kde5 sddm
-    startup_scripts KDE5
+    install_packages x11/kde x11/sddm
+    auto-mark-package-critical kde sddm
+    startup_scripts KDE
     xorg_config sddm
-    kde5_packages
+    kde_packages
 }
 
 
@@ -1867,8 +1868,9 @@ kde5_config()
 
 kodi_config()
 {
-    PATH=${PATH}:${LOCALBASE}/kde5/bin
-    export PATH
+    # FIXME: All in PREFIX/bin now?
+    # PATH=${PATH}:${LOCALBASE}/kde/bin
+    # export PATH
     
     # FIXME: dbus should be a kodi dep
     install_packages multimedia/kodi x11/sddm devel/dbus
@@ -1954,7 +1956,7 @@ lumina_packages()
     install_packages \
 	print/qpdfview \
 	graphics/qt5-imageformats \
-	graphics/nomacs \
+	graphics/phototonic \
 	sysutils/cdrdao devel/libburn sysutils/dvd+rw-tools \
 	math/galculator x11/coreterminal
 
@@ -2727,7 +2729,7 @@ while [ $valid_selection = 0 ]; do
     printf "5.. Gnome Desktop (Feature-rich and resource-intensive)\n"
     printf "6.. Gnome Lite Desktop\n"
     printf "7.. IceWM Lightweight Window Manager\n"
-    printf "8.. KDE 5 Desktop (Feature-rich and resource-intensive)\n"
+    printf "8.. KDE Desktop (Feature-rich and resource-intensive)\n"
     printf "9.. Lumina Lightweight Desktop\n"
     printf "10. LXDE Lightweight Desktop (Replaced by LXQT, but still maintained)\n"
     printf "11. LXQT Lightweight Desktop\n"
@@ -2873,8 +2875,8 @@ case $desktop_selection in
     icewm_config
     ;;
 8)
-    DESKTOP=kde5
-    kde5_config
+    DESKTOP=kde
+    kde_config
     ;;
 #9)
 #    DESKTOP=kodi
