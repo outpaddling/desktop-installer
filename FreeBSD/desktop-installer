@@ -107,7 +107,7 @@ hyper_v_guest()
 qemu_guest()
 
 {
-    sysctl dev.ukbd.0 | fgrep -iq qemu
+    sysctl dev.ukbd.0 2> /dev/null | fgrep -iq qemu
     return $?
 }
 
@@ -939,58 +939,48 @@ EOM
 
 xdm_config()
 {
+    # Install xdmshutdown script
+    install_packages x11-toolkits/tk-wrapper
+    auto-mark-package-critical $(auto-print-make-variable x11-toolkits/tk-wrapper PKGBASE)
+
+    xdm_base=$LOCALBASE/etc/X11/xdm
+    install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
+    auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
+    auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
+    
+    # Pretty up the login
+    install_packages graphics/feh   # Display stretched background image
+    cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
+    cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
+    # Put FreeBSD logo on login window
+    sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
+    sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
+    # Login window is too big on SVGA screens
+    sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
+    
+    # Fix login problem on 9.2-RELEASE with XFCE4
+    # Error: XDM authorization key matches an existing client
+    # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
+    auto-append-line \
+	'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
+	$LOCALBASE/lib/X11/xdm/xdm-config desktop-installer
+
     if ps axw | fgrep 'bin/xdm' | fgrep -qv grep; then
 	printf "xdm is already enabled.\n"
 	return
-    fi
-
-    resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
-    if [ 0"$resp" = 0'y' ]; then
-	# Disable other login managers
-	gdm_disable
-	slim_disable
-	sddm_disable
-
-	# Install xdmshutdown
-	# Install oldest tk available in ports
-	cd /usr/ports
-	for tk in x11-toolkits/tk[0-9]*; do
-	    if install_packages $tk; then
-		auto-mark-package-critical $(auto-print-make-variable $tk PKGBASE)
-		break
-	    fi
-	done
-	cd -
-
-	xdm_base=$LOCALBASE/etc/X11/xdm
-	install -m 0755 ${DATADIR}/XDM/xdmshutdown $LOCALBASE/sbin
-	sed -i '' -e "s|wish8.7|wish$(auto-print-make-variable $tk PKGVERSION:R)|g" \
-	    $LOCALBASE/sbin/xdmshutdown
-	auto-replace-file ${DATADIR}/XDM/Xsetup_0 $xdm_base/Xsetup_0
-	auto-replace-file ${DATADIR}/XDM/GiveConsole $xdm_base/GiveConsole
-	
-	# Pretty up the login
-	install_packages graphics/feh   # Display stretched background image
-	cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
-	cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
-	# Put FreeBSD logo on login window
-	sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
-	sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
-	# Login window is too big on SVGA screens
-	sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
-	
-	# Fix login problem on 9.2-RELEASE with XFCE4
-	# Error: XDM authorization key matches an existing client
-	# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=486606
-	auto-append-line \
-	    'DisplayManager*authName:        MIT-MAGIC-COOKIE-1' \
-	    $LOCALBASE/lib/X11/xdm/xdm-config desktop-installer
-	
-	# Enable xdm
-	dm_msg
-	auto-xdm-toggle on
-	kill -HUP 1
-	# exit 0
+    else
+	resp=`auto-ask enable-xdm "Enable XDM graphical login? (y/n)" y`
+	if [ 0"$resp" = 0'y' ]; then
+	    # Disable other login managers
+	    gdm_disable
+	    slim_disable
+	    sddm_disable
+	    
+	    # Enable xdm
+	    dm_msg
+	    auto-xdm-toggle on
+	    kill -HUP 1
+	fi
     fi
 }
 
