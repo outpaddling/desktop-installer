@@ -53,7 +53,6 @@ for user in $display_users; do
 	su -l $user -c 'env DISPLAY=:0 xhost +local:root' > /dev/null || true
     fi
 done
-exit
 
 if [ $ac_power = 0 ]; then
     if [ $time -ge 0 ]; then
