@@ -70,7 +70,7 @@ if [ 0"$update" != 0n ]; then
 fi
 
 # Should have been installed as a dep, but just in case
-pkg_add dbus avahi git gmake xz feh tk-8.6.13 consolekit2
+pkg_add dbus avahi git gmake xz feh tk--%8.6 consolekit2
 
 cat << EOM
 
