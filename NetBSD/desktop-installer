@@ -92,14 +92,14 @@ correctly.  The pkgsrc tree should also be updated in case you
 must install something from source, such as software than cannot
 be redistributed in binary form, and hence has no binary package.
 
-If you have updated recently using auto-update-pkgsrc, auto-update-system,
+If you have updated recently using auto-pkgsrc-update, auto-update-system,
 or pkgin upgrade and cvs update, then you can skip this step now.
 
 EOM
 printf "Update installed packages and pkgsrc tree? [y]/n "
 read update
 if [ 0"$update" != 0n ]; then
-    auto-update-pkgsrc --defaults
+    auto-pkgsrc-update --defaults
 fi
 
 # Digest should have been installed as a dep, but just in case
