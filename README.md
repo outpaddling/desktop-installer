@@ -10,7 +10,8 @@ reliably, and securely than manual software installations and configurations.
 The end result is a fully functional
 graphical environment comparable to GUI-based systems such as
 GhostBSD or Ubuntu Linux. However, unlike those systems, desktop-installer
-supports *any* desktop environment or window manager and *any* hardware
+supports *any* desktop environment or window manager provided by the
+native package manager and *any* hardware
 supported by the operating system.
 
 To use desktop-installer:
