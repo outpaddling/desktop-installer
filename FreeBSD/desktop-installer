@@ -1525,6 +1525,8 @@ procfs_config()
     # procfs
     # proc                    /proc           procfs  rw              0       0
     auto-append-line procfs "proc\t\t\t/proc\t\tprocfs\trw\t\t0\t0" $FSTAB desktop-installer
+    # FIXME: Is it a FreeBSD 15 bug to have /proc missing?
+    mkdir -p /proc
     
     # Mount if not already mounted
     if ! df | fgrep -qw /proc; then
@@ -2760,7 +2762,7 @@ done
 # Do this early: dmidecode used by config functions for hardware detection
 # gmake used for wifi driver builds
 install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
-    devel/gmake ports-mgmt/dialog4ports
+    devel/gmake ports-mgmt/portconfig
 
 power_config
 if vbox_guest; then
