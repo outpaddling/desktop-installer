@@ -849,7 +849,9 @@ EOM
 #!/bin/sh -e
 
 # FIXME: Move this to a separate script in etc/auto-admin/xsession.vbox
-$vbox_client
+if which VBoxClient; then
+    $vbox_client
+fi
 
 aa_dir=$LOCALBASE/etc/auto-admin
 for local_xsession in \$aa_dir/xsession.*; do
