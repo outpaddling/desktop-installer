@@ -2764,7 +2764,7 @@ done
 # Do this early: dmidecode used by config functions for hardware detection
 # gmake used for wifi driver builds
 install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
-    devel/gmake ports-mgmt/portconfig
+    devel/gmake ports-mgmt/portconfig sysutils/runas
 
 power_config
 if vbox_guest; then
