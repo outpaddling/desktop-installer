@@ -164,8 +164,25 @@ install_xorg()
 	install_packages x11-drivers/xf86-video-vmware
 	
 	if [ 0$install_guest_additions = 0y ] && \
-		! auto-package-installed emulators/virtualbox-ose-additions; then
-	    install_packages emulators/virtualbox-ose-additions
+		! pkg info | fgrep -q virtualbox-ose-additions; then
+	    cat << EOM
+
+It is best to match the guest additions to the version of VirtualBox
+under which the VM is running.  Below is a list of guest additions
+ports.  Check the version of your VirtualBox host and choose the
+best matching guest additions.  If you cannot match them exactly,
+an older guest additions should generally work under a newer VirtualBox.
+
+EOM
+	    pkg search virtualbox-ose-additions \
+		| awk '$0 !~ "nox11" { print $1 }'
+	    printf "\nYou can leave off the version (everything after the last '-').\n"
+	    printf "Guest additions port to install? [virtualbox-ose-additions] "
+	    read ga_port
+	    if [ -z "$ga_port" ]; then
+		ga_port=virtualbox-ose-additions
+	    fi
+	    install_packages emulators/$ga_port
 	    auto-enable-service vboxguest desktop-installer
 	    auto-enable-service vboxservice desktop-installer
 	    cat << EOM
@@ -184,7 +201,7 @@ EOM
 	    pause
 	fi
     else
-	pkg remove -y virtualbox-ose-additions || true
+	pkg remove -y virtualbox-ose-additions\* || true
     fi
     
     # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
@@ -2810,7 +2827,7 @@ fi
 external_drive_config
 
 # Ask the questions before beginning so the installation can run unattended
-if vbox_guest && ! auto-package-installed emulators/virtualbox-ose-additions; then
+if vbox_guest && ! pkg info | fgrep -q virtualbox-ose-additions; then
     install_guest_additions=`auto-ask guest-additions \
     'Install VirtualBox guest additions? (y/n)' y`
 fi
