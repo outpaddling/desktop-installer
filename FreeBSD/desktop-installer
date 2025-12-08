@@ -1394,6 +1394,16 @@ EOM
 	fi
     done
 
+    shells="shells/bash shells/zsh shells/fish shells/dash shells/pdksh shells/xonsh"
+    pkgs=$(printf "$shells" | sed -e 's|shells/||g')
+    install_shells=`auto-ask install-shells "Install popular shells ($pkgs) (y/n)" y`
+    if [ $install_shells = 'y' ]; then
+	for shell in shells/bash shells/zsh shells/fish shells/dash \
+	    shells/pdksh shells/xonsh; do
+	    install_packages $shell
+	done
+    fi
+
     # In case someone installs chromium later
     auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
 }
