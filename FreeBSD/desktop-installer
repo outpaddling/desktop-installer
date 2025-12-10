@@ -1398,8 +1398,7 @@ EOM
     pkgs=$(printf "$shells" | sed -e 's|shells/||g')
     install_shells=`auto-ask install-shells "Install popular shells ($pkgs) (y/n)" y`
     if [ $install_shells = 'y' ]; then
-	for shell in shells/bash shells/zsh shells/fish shells/dash \
-	    shells/pdksh shells/xonsh; do
+	for shell in $shells; do
 	    install_packages $shell
 	done
     fi
