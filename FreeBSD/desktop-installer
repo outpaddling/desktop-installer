@@ -2439,8 +2439,6 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
-dm_msg
-
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
 
