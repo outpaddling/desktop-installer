@@ -906,7 +906,12 @@ EOM
 
 dm_msg()
 {
-    tty=$(tty)
+    # Auto-sense text console only if running on one
+    if tty | fgrep -l /dev/ttyv; then
+	tty=$(tty)
+    else
+	tty=/dev/ttyv0
+    fi
     function_key=$((${tty#/dev/ttyv} + 1))
     cat << EOM
 
@@ -1476,7 +1481,7 @@ xfce4_packages()
     install_packages math/galculator sysutils/xfburn \
 	x11/xlockmore x11/xfce4-screensaver graphics/ristretto \
 	sysutils/xfce4-power-manager sysutils/xfce4-wavelan-plugin \
-	misc/xfce4-wm-themes print/xreader
+	misc/xfce4-wm-themes graphics/xreader
 
     # Does not work with XFCE 4.8 
     # Port thunar-volman-plugin registers as thunar-volman
