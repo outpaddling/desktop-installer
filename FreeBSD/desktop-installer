@@ -906,12 +906,14 @@ EOM
 
 dm_msg()
 {
+    tty=$(tty)
+    function_key=$((${tty#/dev/ttyv} + 1))
     cat << EOM
 
 ===========================================================================
-Starting display manager.  After the login screen appears, press Ctrl+Alt+F1
-(or Host-key+F1 in VirtualBox) to return to this screen and complete the
-desktop-installer setup.
+Starting display manager.  After the login screen appears, press
+Ctrl+Alt+F$function_key (or Host-key+F$function_key in VirtualBox)
+to return to this screen and complete the desktop-installer setup.
 
 If for any reason you cannot switch back to this text console, run
 
@@ -2437,6 +2439,8 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
+dm_msg
+
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
 
@@ -2521,9 +2525,17 @@ pause
 cat << EOM
 
 ===========================================================================
-Desktop-installer should generally be run from a text console using a direct
-root login, rather than through su or sudo.  This will ensure a proper
-environment for X11 testing.
+Desktop-installer should generally be run from a text console using a
+direct root login, rather than through su or sudo.  This will ensure a
+proper environment for X11 testing.
+
+By default, there are 8 text consoles, ttyv0 to ttyv7.  X11 uses ttyv9.
+
+The syslog facility sends log messages to ttyv0 by default.
+This is the default text console when FreeBSD is first booted.
+To avoid noise from syslog messages, you may want to use a console other
+than ttyv0.  E.g., press Ctrl+Alt+F2 (or Hostkey+F2 under VirtualBox) to
+use ttyv1.  To return to ttyv0, press Ctrl+Alt+F1 or Hostkey+Alt+F1.
 ===========================================================================
 
 EOM
