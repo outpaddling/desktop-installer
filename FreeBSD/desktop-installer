@@ -130,7 +130,25 @@ vm_guest()
 
 sway_config()
 {
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y sway swayidle swaylock-effects alacritty \
+		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
+    wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Configure the hikari compositor
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+hikari_config()
+{
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
+    pkg install -y hikari alacritty \
 		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
     wayland_config
 }
@@ -146,6 +164,7 @@ sway_config()
 
 wayfire_config()
 {
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y wayfire wf-shell alacritty swaylock-effects \
 		   swayidle wlogout kanshi mako wlsunset
     wayland_config
@@ -162,6 +181,7 @@ wayfire_config()
 
 kde_wayland_config()
 {
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install plasma6-plasma konsole
     wayland_config
 }
@@ -398,7 +418,9 @@ EOM
 	    touch $CONFIG_DIR/gpu-done
 	fi
     fi
-    return 0
+    
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
+    pkg install -y pavucontrol waybar
 }
 
 ##########################################################################
@@ -2565,6 +2587,14 @@ fi
 
 if [ 0$1 = 0--wayland ]; then
     Use_wayland=yes
+    cat << EOM
+
+Warning: Wayland support is experimental.  Do not expect the Wayland desktop
+to work out-of-the box.  You will likely need to do some manual configuration
+in order to achieve results usable for daily use.
+
+EOM
+    pause
     if vm_guest; then
 	cat << EOM
 
@@ -2907,12 +2937,13 @@ while [ $valid_selection = 0 ]; do
     if [ $Use_wayland = yes ]; then
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. KDE Desktop (Feature-rich and resource-intensive)
-3.. Sway
-4.. Wayfire
-5.. Custom (enter your own category/port and session command)
+2.. Hikari
+3.. KDE Desktop (Feature-rich and resource-intensive)
+4.. Sway
+5.. Wayfire
+6.. Custom (enter your own category/port and session command)
 EOM
-	custom=5
+	custom=6
     else
 	printf "\n"
 	line
@@ -3046,18 +3077,22 @@ if [ $Use_wayland = yes ]; then
 	DESKTOP=none
 	;;
     2)
+	DESKTOP=hikari
+	hikari_config
+	;;
+    3)
 	DESKTOP=kde_wayland
 	kde_wayland_config
 	;;
-    3)
+    4)
 	DESKTOP=sway
 	sway_config
 	;;
-    4)
+    5)
 	DESKTOP=wayfire
 	wayfire_config
 	;;
-    5)
+    6)
 	DESKTOP=other
 	other_config
 	;;
