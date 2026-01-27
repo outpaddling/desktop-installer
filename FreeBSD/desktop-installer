@@ -119,6 +119,72 @@ vm_guest()
     return $?
 }
 
+##########################################################################
+#   Function description:
+#       Configure the sway compositor
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+sway_config()
+{
+    pkg install -y sway swayidle swaylock-effects alacritty \
+		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
+    wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Configure the wayfire compositor
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+wayfire_config()
+{
+    pkg install -y wayfire wf-shell alacritty swaylock-effects \
+		   swayidle wlogout kanshi mako wlsunset
+    wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Configure KDE for Wayland
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+kde_wayland_config()
+{
+    pkg install plasma6-plasma konsole
+    wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Install common Wayland components
+#
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+install_wayland()
+{
+    install_packages sysutils/seatd
+    auto-enable-service seatd $0
+
+    # Without webfonts, print to PDF will look awful
+    install_packages x11-fonts/webfonts
+
+    dbus_config
+}
 
 ##########################################################################
 #   Install Xorg.  This should be done separately, since not all
@@ -280,6 +346,59 @@ Driver "libinput"
   Option "DisableWhileTyping" "on"
 EndSection
 EOM
+}
+
+##########################################################################
+#   Function description:
+#       Configure Wayland
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  Charlie &   Begin
+##########################################################################
+
+wayland_config()
+{
+    # Don't mess with drivers if Wayland already running
+    if ps axw | fgrep 'seatd' | fgrep -qv grep; then
+	cat << EOM
+
+===========================================================================
+Wayland already running, so we won't mess with the graphics drivers.  If
+you want desktop-installer to help you change them, shut down seatd and
+run desktop-installer from a text console.
+===========================================================================
+
+EOM
+	pause
+    else
+	cat << EOM
+
+===========================================================================
+Graphics drivers must be configured once, followed by a reboot to properly
+test them before attempting to start Wayland.  If you guess wrong which
+graphics driver/DRM combination to use, you may need to repeat this
+process and try again.
+
+Answer 'y' if you want to to use the guided driver configurator or 'n' if
+you want to fall back on the generic SCFB or VESA drivers or configure
+your graphics manually later.
+===========================================================================
+
+EOM
+	
+	if [ -e $CONFIG_DIR/gpu-done ]; then
+	    default_response=n
+	else
+	    default_response=y
+	fi
+	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" $default_response`
+	if [ 0$configure_graphics != 0n ]; then
+	    auto-gpu-setup
+	    touch $CONFIG_DIR/gpu-done
+	fi
+    fi
+    return 0
 }
 
 ##########################################################################
@@ -2444,6 +2563,27 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
+if [ 0$1 = 0--wayland ]; then
+    Use_wayland=yes
+    if vm_guest; then
+	cat << EOM
+
+Warning: You appear to be running a Virtual Machine, and Wayland requires a
+DRM (direct rendering module) to function.  If you have a way to enable DRM
+in your guest installation, do it manually before running desktop-installer.
+Otherwise, restart desktop-installer and do not select Wayland.
+
+EOM
+	printf "Continue? y/[n] "
+	read continue
+	if [ 0$continue != 0y ]; then
+	    exit
+	fi
+    fi
+else
+    Use_wayland=no
+fi
+
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
 
@@ -2628,7 +2768,7 @@ if [ $latest_packages = y ]; then
     # If user has not rebooted, restart with possibly newer desktop-installer
     printf "Restarting desktop-installer...\n"
     pause
-    exec desktop-installer
+    exec desktop-installer "$@"
 else
     # Just update if necessary, don't report
     auto-check-ports-branch
@@ -2747,49 +2887,66 @@ KDE is the most feature-rich and is well-supported on FreeBSD, but it also
 requires a lot of hardware resources.  Not suitable for low-end hardware
 like netbooks or VM guests with limited RAM and disk.
 
-Lumina desktop is very small, fast, intuitive, and attractive and was
-developed on FreeBSD.
+Lumina desktop (X11 only) is very small, fast, intuitive, and attractive
+and was developed on FreeBSD.
 ===========================================================================
 
 EOM
 line
 pause
 
+# FIXME
+# Check dmesg.boot for cpu speed and memory size, and check df
+# for disk space to make a recommendation.
+
 desktop_selection='0'
 valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
-    printf "1.. No desktop software (I'll install my own later)\n"
-    printf "2.. CDE (Retro 1990's)\n"
-    printf "3.. Cinnamon Desktop (Gnome 3 derivative)\n"
-    printf "4.. Fluxbox Lightweight Window Manager\n"
-    printf "5.. Gnome Desktop (Feature-rich and resource-intensive)\n"
-    printf "6.. Gnome Lite Desktop\n"
-    printf "7.. IceWM Lightweight Window Manager\n"
-    printf "8.. KDE Desktop (Feature-rich and resource-intensive)\n"
-    printf "9.. Lumina Lightweight Desktop\n"
-    printf "10. LXDE Lightweight Desktop (Replaced by LXQT, but still maintained)\n"
-    printf "11. LXQT Lightweight Desktop\n"
-    printf "12. MATE Desktop (Gnome 2 derivative)\n"
-    printf "13. WindowMaker Lightweight Window Manager\n"
-    printf "14. XFCE4 Lightweight Desktop\n"
-    printf "15. Custom (enter your own category/port and session command)\n"
+    if [ $Use_wayland = yes ]; then
+	cat << EOM
+1.. No desktop software (I'll install my own later)
+2.. KDE Desktop (Feature-rich and resource-intensive)
+3.. Sway
+4.. Wayfire
+5.. Custom (enter your own category/port and session command)
+EOM
+	custom=5
+    else
+	printf "\n"
+	line
+	cat << EOM
+1.. No desktop software (I'll install my own later)
+2.. CDE (Retro 1990's)
+3.. Cinnamon Desktop (Gnome 3 derivative)
+4.. Fluxbox Lightweight Window Manager
+5.. Gnome Desktop (Feature-rich and resource-intensive)
+6.. Gnome Lite Desktop
+7.. IceWM Lightweight Window Manager
+8.. KDE Desktop (Feature-rich and resource-intensive)
+9.. Lumina Lightweight Desktop
+10. LXDE Lightweight Desktop (Replaced by LXQT, but still maintained)
+11. LXQT Lightweight Desktop
+12. MATE Desktop (Gnome 2 derivative)
+13. WindowMaker Lightweight Window Manager
+14. XFCE4 Lightweight Desktop
+15. Custom (enter your own category/port and session command)
+EOM
+	custom=15
+    fi
     line
-    
-    # Check dmesg.boot for cpu speed and memory size, and check df
-    # for disk space to make a recommendation.
     
     # Get user selection
     valid_selection=1       # Assume, and correct if wrong
     desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
-       [ $desktop_selection -gt 15 ]; then
+       [ $desktop_selection -gt $custom ]; then
 	valid_selection=0
     fi
     
-    if [ $desktop_selection = 15 ]; then
+    if [ $desktop_selection = $custom ]; then
     cat << EOM
 
 ===========================================================================
@@ -2871,86 +3028,112 @@ auto-detect-laptops
 cat << EOM
 
 ===========================================================================
-Installation of Xorg and your chosen desktop will now begin.  This can be a
-very long process, depending on the speed of your Internet connection and disk.
-On a modern machine, using binary packages (not installing from source), this
-may take less than 15 minutes.  Installing from source on a slow machine could
-take a day or more.
+Installation of Wayland or Xorg and your chosen desktop will now begin.
+This can be a very long process, depending on the speed of your Internet
+connection and disk.  On a modern machine, using binary packages
+(not installing from source), this may take less than 15 minutes.
+Installing from source on a slow machine could take a day or more.
 ===========================================================================
 
 EOM
 
 pause
 
-install_xorg
-
-case $desktop_selection in
-1)
-    DESKTOP=none
-    ;;
-2)
-    DESKTOP=cde
-    cde_config
-    ;;
-3)
-    DESKTOP=cinnamon
-    cinnamon_config
-    ;;
-4)
-    DESKTOP=fluxbox
-    fluxbox_config
-    ;;
-5)
-    DESKTOP=gnome
-    gnome_config full
-    ;;
-6)
-    DESKTOP=gnome
-    gnome_config lite
-    ;;
-7)
-    DESKTOP=icewm
-    icewm_config
-    ;;
-8)
-    DESKTOP=kde
-    kde_config
-    ;;
-#9)
-#    DESKTOP=kodi
-#    kodi_config
-#    ;;
-9)
-    DESKTOP=lumina
-    lumina_config
-    ;;
-10)
-    DESKTOP=lxde
-    lxde_config
-    ;;
-11)
-    DESKTOP=lxqt
-    lxqt_config
-    ;;
-12)
-    DESKTOP=mate
-    mate_config
-    ;;
-13)
-    DESKTOP=wmaker
-    wmaker_config
-    ;;
-14)
-    DESKTOP=xfce4
-    xfce4_config
-    ;;
-15)
-    DESKTOP=other
-    other_config
-    ;;
-*)
-    printf "Invalid desktop selection.\n\n"
-esac
+if [ $Use_wayland = yes ]; then
+    install_wayland
+    case $desktop_selection in
+    1)
+	DESKTOP=none
+	;;
+    2)
+	DESKTOP=kde_wayland
+	kde_wayland_config
+	;;
+    3)
+	DESKTOP=sway
+	sway_config
+	;;
+    4)
+	DESKTOP=wayfire
+	wayfire_config
+	;;
+    5)
+	DESKTOP=other
+	other_config
+	;;
+    *)
+	printf "Invalid desktop selection.\n\n"
+    esac
+else
+    
+    case $desktop_selection in
+    1)
+	DESKTOP=none
+	;;
+    2)
+	DESKTOP=cde
+	cde_config
+	;;
+    3)
+	DESKTOP=cinnamon
+	cinnamon_config
+	;;
+    4)
+	DESKTOP=fluxbox
+	fluxbox_config
+	;;
+    5)
+	DESKTOP=gnome
+	gnome_config full
+	;;
+    6)
+	DESKTOP=gnome
+	gnome_config lite
+	;;
+    7)
+	DESKTOP=icewm
+	icewm_config
+	;;
+    8)
+	DESKTOP=kde
+	kde_config
+	;;
+    #9)
+    #    DESKTOP=kodi
+    #    kodi_config
+    #    ;;
+    9)
+	DESKTOP=lumina
+	lumina_config
+	;;
+    10)
+	DESKTOP=lxde
+	lxde_config
+	;;
+    11)
+	DESKTOP=lxqt
+	lxqt_config
+	;;
+    12)
+	DESKTOP=mate
+	mate_config
+	;;
+    13)
+	DESKTOP=wmaker
+	wmaker_config
+	;;
+    14)
+	DESKTOP=xfce4
+	xfce4_config
+	;;
+    15)
+	DESKTOP=other
+	other_config
+	;;
+    *)
+	printf "Invalid desktop selection.\n\n"
+    esac
+fi
 
 # Must come after desktop installation.  Configures gamin.
 # Depends on sudo, which has major security issues
@@ -2980,6 +3163,7 @@ else
 fi
 
 # After network_config
+# FIXME: Split off for Waland?
 install_common_ports
 
 # Additional package installs may have added fonts, etc.
@@ -3073,4 +3257,3 @@ read resp
 if [ 0"$resp" = 0'y' ]; then
     shutdown -r now
 fi
-
