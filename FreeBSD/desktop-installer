@@ -125,14 +125,32 @@ vm_guest()
 #       
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 sway_config()
 {
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y sway swayidle swaylock-effects alacritty \
-		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
+		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler wmenu
+    auto-mark-package-critical sway swaylock-effects alacritty
+    wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Configure the hyprland compositor
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  J Bacon     Begin
+##########################################################################
+
+hyprland_config()
+{
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
+    pkg install -y hyprland alacritty
+    auto-mark-package-critical hyprland alacritty
     wayland_config
 }
 
@@ -142,7 +160,7 @@ sway_config()
 #       
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 hikari_config()
@@ -150,6 +168,7 @@ hikari_config()
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y hikari alacritty \
 		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
+    auto-mark-package-critical hikary alacritty
     wayland_config
 }
 
@@ -159,7 +178,7 @@ hikari_config()
 #       
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 wayfire_config()
@@ -167,7 +186,26 @@ wayfire_config()
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y wayfire wf-shell alacritty swaylock-effects \
 		   swayidle wlogout kanshi mako wlsunset
+    auto-mark-package-critical wayfire alacritty
     wayland_config
+}
+
+##########################################################################
+#   Function description:
+#       Configure the XFCE desktop for Wayland
+#       
+#   History:
+#   Date        Name        Modification
+#   2026-01-27  J Bacon     Begin
+##########################################################################
+
+xfce_wayland_config()
+{
+    # Don't use install_packages: Wayland ports are currently under X11, which may change
+    pkg install -y xfce labwc
+    auto-mark-package-critical xfce labwc
+    wayland_config
+    xfce_packages
 }
 
 ##########################################################################
@@ -176,13 +214,14 @@ wayfire_config()
 #       
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 kde_wayland_config()
 {
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install plasma6-plasma konsole
+    auto-mark-package-critical plasma6-plasma konsole
     wayland_config
 }
 
@@ -192,16 +231,18 @@ kde_wayland_config()
 #
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 install_wayland()
 {
     install_packages sysutils/seatd
+    auto-mark-package-critical seatd
     auto-enable-service seatd $0
 
     # Without webfonts, print to PDF will look awful
     install_packages x11-fonts/webfonts
+    auto-mark-package-critical webfonts
 
     dbus_config
 }
@@ -374,7 +415,7 @@ EOM
 #       
 #   History:
 #   Date        Name        Modification
-#   2026-01-27  Charlie &   Begin
+#   2026-01-27  J Bacon     Begin
 ##########################################################################
 
 wayland_config()
@@ -421,6 +462,51 @@ EOM
     
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y pavucontrol waybar
+    
+    while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
+	cat << EOM
+
+===========================================================================
+Choose a display manager:
+
+1.. Ly
+
+    Simple, text-based login screen on ttyv1.
+    May reveal user names on login screen, which is not secure on public
+    computers.  See documentation and adjust configuration if necessary.
+    Supports multiple desktop environments.
+    
+2.. SDDM
+
+    Graphical login manager on ttyv8.
+    May reveal user names on login screen, which is not secure on public
+    computers.  See documentation and adjust configuration if necessary.
+    Supports multiple desktop environments.
+    
+    * SDDM has known stability issues under Wayland.  Use at your own risk.
+
+3.. No display manager.
+
+    I will start my Wayland sessions from the command line.
+===========================================================================
+
+EOM
+	selection=$(auto-ask ly-sddm "Display manager selection? " 1)
+	case $selection in
+	1)
+	    dm_msg
+	    auto-ly-enable
+	    ;;
+	2)
+	    dm_msg
+	    auto-enable-service sddm $0
+	    ;;
+	3)
+	    ;;
+	*)
+	    printf "Invalid selection: $selection\n"
+	esac
+    done
 }
 
 ##########################################################################
@@ -1616,7 +1702,7 @@ cdrecord_perms()
 #   alternatives under KDE and Gnome.
 ##########################################################################
 
-xfce4_packages()
+xfce_packages()
 {
     # Packages specific to xfce4
     install_packages math/galculator sysutils/xfburn \
@@ -1916,7 +2002,7 @@ EOM
 #   Configure the system to run the XFCE4 lightweight desktop.
 ##########################################################################
 
-xfce4_config()
+xfce_config()
 {
     # From x11-wm/xfce4-session/pkg-message:
     install_packages x11-wm/xfce4
@@ -1927,7 +2013,7 @@ xfce4_config()
     enable_user_shutdown
     startup_scripts XFCE4
     xorg_config xdm_sddm
-    xfce4_packages
+    xfce_packages
     auto-automount-setup || true
 }
 
@@ -2586,12 +2672,12 @@ if [ `whoami` != 'root' ]; then
 fi
 
 if [ 0$1 = 0--wayland ]; then
-    Use_wayland=yes
+    Graphics=Wayland
     cat << EOM
 
-Warning: Wayland support is experimental.  Do not expect the Wayland desktop
-to work out-of-the box.  You will likely need to do some manual configuration
-in order to achieve results usable for daily use.
+Caution: Wayland support is experimental.  Do not expect Wayland desktops to
+work well out-of-the box.  You may need to do some manual configuration
+in order to achieve results usable for daily computing.
 
 EOM
     pause
@@ -2611,7 +2697,7 @@ EOM
 	fi
     fi
 else
-    Use_wayland=no
+    Graphics=X11
 fi
 
 # Causes missing pkg-descr errors!
@@ -2703,12 +2789,13 @@ direct root login, rather than through su or sudo.  This will ensure a
 proper environment for X11 testing.
 
 By default, there are 8 text consoles, ttyv0 to ttyv7.  X11 uses ttyv9.
+The Wayland "Ly" login manager uses ttyv1.
 
 The syslog facility sends log messages to ttyv0 by default.
 This is the default text console when FreeBSD is first booted.
 To avoid noise from syslog messages, you may want to use a console other
-than ttyv0.  E.g., press Ctrl+Alt+F2 (or Hostkey+F2 under VirtualBox) to
-use ttyv1.  To return to ttyv0, press Ctrl+Alt+F1 or Hostkey+Alt+F1.
+than ttyv0.  E.g., press Ctrl+Alt+F3 (or Hostkey+F2 under VirtualBox) to
+use ttyv2.  To return to ttyv0, press Ctrl+Alt+F1 or Hostkey+Alt+F1.
 ===========================================================================
 
 EOM
@@ -2934,16 +3021,18 @@ valid_selection=0
 while [ $valid_selection = 0 ]; do
     printf "\n"
     line
-    if [ $Use_wayland = yes ]; then
+    if [ $Graphics = Wayland ]; then
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. Hikari
-3.. KDE Desktop (Feature-rich and resource-intensive)
-4.. Sway
-5.. Wayfire
-6.. Custom (enter your own category/port and session command)
+2.. Hikari (Simplisitic: Users must memorize key bindings)
+3.. Hyprland (Simplisitic: Users must memorize key bindings)
+4.. KDE Desktop (Feature-rich and resource-intensive)
+5.. Sway (Simplisitic: Users must memorize key bindings)
+6.. Wayfire
+7.. XFCE
+8.. Custom (enter your own category/port and session command)
 EOM
-	custom=6
+	custom=8
     else
 	printf "\n"
 	line
@@ -2970,7 +3059,7 @@ EOM
     
     # Get user selection
     valid_selection=1       # Assume, and correct if wrong
-    desktop_selection=`auto-ask desktop-selection "\nSelection?" 'no-selection'`
+    desktop_selection=`auto-ask desktop-selection "\n$Graphics Desktop Environment?" 'no-selection'`
     if [ "$desktop_selection" = 'no-selection' ] || \
        [ $desktop_selection -lt 1 ] || \
        [ $desktop_selection -gt $custom ]; then
@@ -3059,7 +3148,7 @@ auto-detect-laptops
 cat << EOM
 
 ===========================================================================
-Installation of Wayland or Xorg and your chosen desktop will now begin.
+Installation of $Graphics and your chosen desktop will now begin.
 This can be a very long process, depending on the speed of your Internet
 connection and disk.  On a modern machine, using binary packages
 (not installing from source), this may take less than 15 minutes.
@@ -3070,7 +3159,7 @@ EOM
 
 pause
 
-if [ $Use_wayland = yes ]; then
+if [ $Graphics = Wayland ]; then
     install_wayland
     case $desktop_selection in
     1)
@@ -3081,18 +3170,26 @@ if [ $Use_wayland = yes ]; then
 	hikari_config
 	;;
     3)
+	DESKTOP=hyprland
+	hyprland_config
+	;;
+    4)
 	DESKTOP=kde_wayland
 	kde_wayland_config
 	;;
-    4)
+    5)
 	DESKTOP=sway
 	sway_config
 	;;
-    5)
+    6)
 	DESKTOP=wayfire
 	wayfire_config
 	;;
-    6)
+    7)
+	DESKTOP=xfce
+	xfce_wayland_config
+	;;
+    8)
 	DESKTOP=other
 	other_config
 	;;
@@ -3159,7 +3256,7 @@ else
 	;;
     14)
 	DESKTOP=xfce4
-	xfce4_config
+	xfce_config
 	;;
     15)
 	DESKTOP=other
