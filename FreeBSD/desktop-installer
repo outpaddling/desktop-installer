@@ -421,13 +421,18 @@ EOM
 wayland_config()
 {
     # Don't mess with drivers if Wayland already running
-    if ps axw | fgrep 'seatd' | fgrep -qv grep; then
+    if pkg info | fgrep -q drm-kmod; then
 	cat << EOM
 
 ===========================================================================
-Wayland already running, so we won't mess with the graphics drivers.  If
-you want desktop-installer to help you change them, shut down seatd and
-run desktop-installer from a text console.
+The drm-kmod package is already installed, so we won't mess with the
+graphics drivers.  If you want desktop-installer to help you change them,
+run 
+
+    pkg remove drm-kmod
+    pkg autoremove
+
+and run desktop-installer from a text console.
 ===========================================================================
 
 EOM
@@ -499,6 +504,7 @@ EOM
 	    ;;
 	2)
 	    dm_msg
+	    pkg install -y sddm
 	    auto-enable-service sddm $0
 	    ;;
 	3)
