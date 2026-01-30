@@ -3009,7 +3009,6 @@ and was developed on FreeBSD.
 ===========================================================================
 
 EOM
-line
 pause
 
 # FIXME
@@ -3197,7 +3196,7 @@ if [ $Graphics = Wayland ]; then
 	printf "Invalid desktop selection.\n\n"
     esac
 else
-    
+    install_xorg
     case $desktop_selection in
     1)
 	DESKTOP=none
