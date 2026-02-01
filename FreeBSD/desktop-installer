@@ -131,10 +131,12 @@ vm_guest()
 sway_config()
 {
     # Don't use install_packages: Wayland ports are currently under X11, which may change
-    pkg install -y sway swayidle swaylock-effects alacritty \
-		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler wmenu
+    pkg install -y sway swayidle swaylock-effects swaysettings \
+		   alacritty dmenu-wayland dmenu foot fuzzel zathura \
+		   zathura-pdf-poppler wmenu pcmanfm-qt
     auto-mark-package-critical sway swaylock-effects alacritty
     wayland_config
+    auto-automount-setup || true
 }
 
 ##########################################################################
@@ -152,6 +154,7 @@ hyprland_config()
     pkg install -y hyprland alacritty
     auto-mark-package-critical hyprland alacritty
     wayland_config
+    auto-automount-setup || true
 }
 
 ##########################################################################
@@ -170,6 +173,7 @@ hikari_config()
 		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
     auto-mark-package-critical hikary alacritty
     wayland_config
+    auto-automount-setup || true
 }
 
 ##########################################################################
@@ -184,10 +188,13 @@ hikari_config()
 wayfire_config()
 {
     # Don't use install_packages: Wayland ports are currently under X11, which may change
-    pkg install -y wayfire wf-shell alacritty swaylock-effects \
-		   swayidle wlogout kanshi mako wlsunset
+    pkg install -y wayfire wayfire-plugins-extra wf-shell wf-config wf-recorder \
+		   alacritty swaylock-effects \
+		   swayidle wlogout kanshi mako wlsunset \
+		   pcmanfm-qt
     auto-mark-package-critical wayfire alacritty
     wayland_config
+    auto-automount-setup || true
 }
 
 ##########################################################################
@@ -206,6 +213,7 @@ xfce_wayland_config()
     auto-mark-package-critical xfce labwc
     wayland_config
     xfce_packages
+    auto-automount-setup || true
 }
 
 ##########################################################################
@@ -244,6 +252,8 @@ install_wayland()
     install_packages x11-fonts/webfonts
     auto-mark-package-critical webfonts
 
+    # FIXME: Is there more we can do here to improve usability?
+    # Fonts?
     dbus_config
 }
 
@@ -2324,6 +2334,50 @@ EOM
 }
 
 
+##########################################################################
+#   Configure the system to run a custom-selected DE or WM
+##########################################################################
+
+other_wayland_config()
+{
+    local de_port
+    cat << EOM
+
+============================================================================
+We now need to know which port installs your desktop environment or
+compositor.  Most reside under $PORTSDIR/x11-wm, though some may
+also be under $PORTSDIR/x11.  Be sure to enter the category and port
+name separated by a /.
+
+Note also that not everything in x11-wm is a window manager or
+desktop-environment.  Be sure to do your homework before choosing a
+port.
+============================================================================
+
+EOM
+    de_port=""
+    while ! echo $de_port | fgrep -q '/'; do
+	printf "Enter category/name (e.g. x11-wm/sway): "
+	read de_port
+    done
+    
+    # From x11-wm/xfce4-session/pkg-message:
+    install_packages $de_port
+    auto-mark-package-critical $(auto-print-make-variable $de_port PKGBASE)
+
+    # Allow members of operator group to shut down and restart from
+    # XFCE4 logout panel
+    # FIXME: Implement this for wayland
+    # enable_wayland_user_shutdown
+    
+    # Generate a custom script instead
+    # FIXME: See if anything needs to be done for Wayland here
+    # startup_scripts OTHER $de_port
+    wayland_config
+    auto-automount-setup || true
+}
+
+
 atapicam_config()
 {
     # FreeBSD 9 uses options ATA_CAM, which is in the GENERIC kernel
@@ -3029,15 +3083,12 @@ while [ $valid_selection = 0 ]; do
     if [ $Graphics = Wayland ]; then
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. Hikari (Simplisitic: Users must memorize key bindings)
-3.. Hyprland (Simplisitic: Users must memorize key bindings)
-4.. KDE Desktop (Feature-rich and resource-intensive)
-5.. Sway (Simplisitic: Users must memorize key bindings)
-6.. Wayfire
-7.. XFCE
-8.. Custom (enter your own category/port and session command)
+2.. KDE Desktop (Feature-rich and resource-intensive)
+3.. Wayfire
+4.. XFCE
+5.. Custom (enter your own category/port and session command)
 EOM
-	custom=8
+	custom=5
     else
 	printf "\n"
 	line
@@ -3171,32 +3222,20 @@ if [ $Graphics = Wayland ]; then
 	DESKTOP=none
 	;;
     2)
-	DESKTOP=hikari
-	hikari_config
-	;;
-    3)
-	DESKTOP=hyprland
-	hyprland_config
-	;;
-    4)
 	DESKTOP=kde_wayland
 	kde_wayland_config
 	;;
-    5)
-	DESKTOP=sway
-	sway_config
-	;;
-    6)
+    3)
 	DESKTOP=wayfire
 	wayfire_config
 	;;
-    7)
+    4)
 	DESKTOP=xfce
 	xfce_wayland_config
 	;;
-    8)
+    5)
 	DESKTOP=other
-	other_config
+	other_wayland_config
 	;;
     *)
 	printf "Invalid desktop selection.\n\n"
