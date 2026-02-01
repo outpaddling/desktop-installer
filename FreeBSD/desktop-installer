@@ -3083,7 +3083,7 @@ while [ $valid_selection = 0 ]; do
     if [ $Graphics = Wayland ]; then
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. KDE Plasma desktop (Feature-rich and resource-intensive)
+2.. KDE Plasma desktop (feature-rich and resource-intensive)
 3.. Wayfire lightweight compositor
 4.. XFCE lightweight desktop
 5.. Custom (enter your own category/port and session command)
@@ -3094,7 +3094,7 @@ EOM
 	line
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. CDE (Retro 1990's)
+2.. CDE (retro 1990's)
 3.. Cinnamon desktop (Gnome 3 derivative in Gnome2 style)
 4.. Fluxbox lightweight window manager
 5.. Gnome desktop (feature-rich and resource-intensive)
@@ -3102,7 +3102,7 @@ EOM
 7.. IceWM lightweight window manager
 8.. KDE Plasma desktop (feature-rich and resource-intensive)
 9.. Lumina lightweight desktop (developed on BSD)
-10. LXDE lightweight desktop (Replaced by LXQT, but still maintained)
+10. LXDE lightweight desktop (replaced by LXQT, but still maintained)
 11. LXQT lightweight desktop
 12. MATE desktop (Gnome 2 derivative)
 13. WindowMaker lightweight window manager
