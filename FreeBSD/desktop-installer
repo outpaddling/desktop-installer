@@ -228,7 +228,7 @@ xfce_wayland_config()
 kde_wayland_config()
 {
     # Don't use install_packages: Wayland ports are currently under X11, which may change
-    pkg install plasma6-plasma konsole
+    pkg install -y plasma6-plasma konsole
     auto-mark-package-critical plasma6-plasma konsole
     wayland_config
 }
