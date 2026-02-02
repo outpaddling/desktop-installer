@@ -1653,6 +1653,52 @@ EOM
 	done
     fi
 
+    line
+    cat << EOM
+
+FreeBSD supports using the Linux widevine plugin within a native chromium
+browser.  This allows streaming DRM-protected content from sites such as
+Netflix, Hulu, Disney, etc.
+
+However, this requires building both the widevine plugin and the chromium
+browser from source, which takes 12 hours on a 4-core Ryzen system,
+possible much longer on older or lower-end hardware.  You can choose to
+do this now, or do it at a later time by simply running:
+
+    auto-chromium+widevine-install
+
+EOM
+pause
+
+    line
+    cat << EOM
+
+A faster alternative is to use the Google Chrome binary with Linux
+compatibility:
+
+    # Fully configure Linux compatibility
+    auto-install-linux_base rl9
+    # Download and installs prebuilt Chrome for Linux from Google
+    pkg install linux-chrome
+
+While this installation takes a small fraction of the time required to
+build chromium from source, many people do not trust pre-compiled
+binaries from 3rd parties such as Google to respect their privacy.
+
+EOM
+    printf "Install chromium + widevine now? y/[n] "
+    read widevine
+    if [ 0"$widevine" = 0y ]; then
+	auto-chromium+widevine-install
+    fi
+    
+    printf "Install Google Chrome for Linux? y/[n] "
+    read google
+    if [ 0"$google" = 0y ]; then
+	auto-install-linux_base rl9
+	pkg install -y linux-chrome
+    fi
+    
     # In case someone installs chromium later
     auto-set-sysctl kern.ipc.shm_allow_removed 1 desktop-installer
 }
