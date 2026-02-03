@@ -491,16 +491,7 @@ Choose a display manager:
     computers.  See documentation and adjust configuration if necessary.
     Supports multiple desktop environments.
     
-2.. SDDM
-
-    Graphical login manager on ttyv8.
-    May reveal user names on login screen, which is not secure on public
-    computers.  See documentation and adjust configuration if necessary.
-    Supports multiple desktop environments.
-    
-    * SDDM has known stability issues under Wayland.  Use at your own risk.
-
-3.. No display manager.
+2.. No display manager.
 
     I will start my Wayland sessions from the command line.
 ===========================================================================
@@ -513,11 +504,6 @@ EOM
 	    auto-ly-enable
 	    ;;
 	2)
-	    dm_msg
-	    pkg install -y sddm
-	    auto-enable-service sddm $0
-	    ;;
-	3)
 	    ;;
 	*)
 	    printf "Invalid selection: $selection\n"
@@ -2777,30 +2763,84 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
-if [ 0$1 = 0--wayland ]; then
-    Graphics=Wayland
+printf "Are you interested in trying experimental Wayland graphics? y/[n] "
+read wayland
+if [ 0"$wayland" = 0y ]; then
     cat << EOM
 
-Caution: Wayland support is experimental.  Do not expect Wayland desktops to
-work well out-of-the box.  You may need to do some manual configuration
-in order to achieve results usable for daily computing.
+======================================================================
+   XWindows (traditional graphics) or Wayland (newer replacement)?
+======================================================================
+
+The X Window System (A.K.A. XWindows) is the traditional graphical
+subsystem for Unix-like systems.  It was originally developed in the
+1980s and has been continuously developed and improved ever since.
+XWindows was designed from the beginning as a networked graphics
+system, meaning that graphical programs may be run on different
+computer than the one where their output is displayed.  This is not
+to be confused with remote desktop systems, which give a remote
+computer access to the entire local display: With XWindows, many
+programs running on many different computers can open individual
+windows on the same display.
+
+Wayland is meant to be a replacement for XWindows.  It is not a
+drop-in replacement, so it is incompatible with the X Window System.
+Rather, it is meant to be a simpler and faster graphical subsystem
+designed for modern hardware and modern usage patterns.  It is not
+designed as a networked graphics system, but geared more toward
+maximizing performance on the local display.  Wayland does include
+XWayland, a compatibility layer allowing XWindows programs to run
+under Wayland, albeit with a performance penalty.
 
 EOM
+
     pause
-    if vm_guest; then
-	cat << EOM
+    
+    cat << EOM
 
-Warning: You appear to be running a Virtual Machine, and Wayland requires a
-DRM (direct rendering module) to function.  If you have a way to enable DRM
-in your guest installation, do it manually before running desktop-installer.
-Otherwise, restart desktop-installer and do not select Wayland.
+As of February 2026, Wayland has reached a usable state on many
+systems, but much work remains to be done.  Replacing decades of
+software development for the X Window System is a massive
+undertaking.  Most XWindows desktop environments have only partial
+support for Wayland at this time.
+
+Many people believe that Wayland is the future of Unix graphics.
+Some Linux distributions have announced that XWindows support will
+be discontinued in the near future.  Others (including a growing
+team of over 500 developers of XLibre, a project aimed at
+modernizing the X Window System), might beg to differ.
 
 EOM
-	printf "Continue? y/[n] "
-	read continue
-	if [ 0$continue != 0y ]; then
-	    exit
-	fi
+
+    pause
+    
+    cat << EOM
+
+Both systems will undoubtedly continue to grow and improve for
+the foreseeable future.  For now, XWindows support is very mature
+and reliable, while Wayland is still rather experimental.  The
+desktop environments that do work with Wayland generally don't
+yet offer all of the same features that they do under XWindows.
+
+Desktop-installer now includes limited support for Wayland-enabled
+desktop environents.  Direct support is limited to desktop
+environments and features that work intuitively and reliably.
+Improvements will be made periodically as more Wayland features
+become production-ready.
+
+Note that at this time, Wayland requires a DRM (direct rendering
+module) to function.  Because of this, it cannot be usd under
+most virtual machine monitors.  If you have a way to enable a DRM
+in your VM guest installation, do it manually before running
+desktop-installer.  Otherwise, use XWindows for now.
+
+EOM
+    printf "Would you liek to try experimental Wayland support? y/[n] "
+    read wayland
+    if [ 0"$wayland" = 0y ]; then
+	Graphics=Wayland
+    else
+	Graphics=X11
     fi
 else
     Graphics=X11
