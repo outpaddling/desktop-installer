@@ -2076,7 +2076,7 @@ wmaker_config()
     install_packages x11-wm/windowmaker x11-wm/wmakerconf
     auto-mark-package-critical windomaker wmakerconf
     startup_scripts WMAKER
-    xorg_config xdm
+    xorg_config xdm_sddm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
     auto-automount-setup || true
 }
@@ -2108,7 +2108,7 @@ icewm_config()
     install_packages x11-wm/icewm
     auto-mark-package-critical icewm
     startup_scripts ICEWM
-    xorg_config xdm
+    xorg_config xdm_sddm
     install_packages math/galculator x11/xlockmore x11/xscreensaver
     auto-automount-setup || true
 }
