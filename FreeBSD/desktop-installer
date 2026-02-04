@@ -1642,9 +1642,12 @@ EOM
     line
     cat << EOM
 
-FreeBSD supports using the Linux widevine plugin within the FreeBSD
-native chromium browser.  This allows streaming DRM-protected content
-from sites such as Netflix, Hulu, Disney, etc.  You can install this now,
+The Widevine digital rights management (DRM) module is a closed-source
+plugin used by web browsers to stream protected content from from sites
+such as Netflix, Hulu, Disney, etc.  A FreeBSD native DRM module is not
+available at this time, though it could be in the future if enough people
+request it.  For now, FreeBSD supports using the Linux widevine plugin
+within the FreeBSD native chromium browser.  You can install this now,
 or at any time later simply by running
 
     auto-chromium+widevine-install
