@@ -1642,34 +1642,32 @@ EOM
     line
     cat << EOM
 
-FreeBSD supports using the Linux widevine plugin within a native chromium
-browser.  This allows streaming DRM-protected content from sites such as
-Netflix, Hulu, Disney, etc.
-
-However, this requires building both the widevine plugin and the chromium
-browser from source, which takes 12 hours on a 4-core Ryzen system,
-possible much longer on older or lower-end hardware.  You can choose to
-do this now, or do it at a later time by simply running:
+FreeBSD supports using the Linux widevine plugin within the FreeBSD
+native chromium browser.  This allows streaming DRM-protected content
+from sites such as Netflix, Hulu, Disney, etc.  You can install this now,
+or at any time later simply by running
 
     auto-chromium+widevine-install
+
+Have a look at /usr/local/sbin/auto-chromium+widevine-install if you're
+interested in knowing the details.
 
 EOM
 pause
 
-    line
-    cat << EOM
+cat << EOM
 
-A faster alternative is to use the Google Chrome binary with Linux
-compatibility:
+Another alternative is to use the Google Chrome binary with Linux
+compatibility, which can be installed later using
 
     # Fully configure Linux compatibility
     auto-install-linux_base rl9
     # Download and installs prebuilt Chrome for Linux from Google
     pkg install linux-chrome
 
-While this installation takes a small fraction of the time required to
-build chromium from source, many people do not trust pre-compiled
-binaries from 3rd parties such as Google to respect their privacy.
+Note that many people do not trust pre-compiled binaries from 3rd parties
+such as Google to respect their privacy.  If you are concerned about this,
+use the native chromium option instead.
 
 EOM
     printf "Install chromium + widevine now? y/[n] "
@@ -2835,7 +2833,7 @@ in your VM guest installation, do it manually before running
 desktop-installer.  Otherwise, use XWindows for now.
 
 EOM
-    printf "Would you liek to try experimental Wayland support? y/[n] "
+    printf "Use Wayland? y/[n] "
     read wayland
     if [ 0"$wayland" = 0y ]; then
 	Graphics=Wayland
