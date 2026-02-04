@@ -73,8 +73,9 @@ EOM
 	if [ $install = yes ]; then
 	    if ! auto-install-packages -l -U $pkg 2>&1 \
 		| tee $LOG_DIR/auto-install-packages.log; then
+		status=$?
 		printf "Install failed.\n"
-		exit $?
+		exit $status
 	    fi
 	fi
     done
@@ -314,12 +315,18 @@ EOM
 	    pkg search virtualbox-ose-additions \
 		| awk '$0 !~ "nox11" { print $1 }'
 	    printf "\nYou can leave off the version (everything after the last '-').\n"
-	    printf "Guest additions port to install? [virtualbox-ose-additions] "
-	    read ga_port
-	    if [ -z "$ga_port" ]; then
-		ga_port=virtualbox-ose-additions
-	    fi
-	    install_packages emulators/$ga_port
+	    success=false
+	    while [ $success != true ]; do
+		printf "Guest additions port to install? [virtualbox-ose-additions] "
+		read ga_port
+		if [ -z "$ga_port" ]; then
+		    ga_port=virtualbox-ose-additions
+		fi
+		# FIXME: Either use install_packages everywhere or ditch it
+		if auto-install-packages emulators/$ga_port; then
+		    success=true
+		fi
+	    done
 	    auto-enable-service vboxguest desktop-installer
 	    auto-enable-service vboxservice desktop-installer
 	    cat << EOM
