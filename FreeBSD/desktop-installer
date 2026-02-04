@@ -2774,15 +2774,15 @@ The X Window System (A.K.A. XWindows) is the traditional graphical
 subsystem for Unix-like systems.  It was originally developed in the
 1980s and has been continuously developed and improved ever since.
 XWindows was designed from the beginning as a networked graphics
-system, meaning that graphical programs may be run on different
+system, meaning that graphical programs may be run on a different
 computer than the one where their output is displayed.  This is not
 to be confused with remote desktop systems, which give a remote
 computer access to the entire local display: With XWindows, many
 programs running on many different computers can open individual
 windows on the same display.
 
-Wayland is meant to be a replacement for XWindows.  It is not a
-drop-in replacement, so it is incompatible with the X Window System.
+Wayland is meant to be a replacement for XWindows.  It is not a drop-in
+replacement, however, so it is incompatible with the X Window System.
 Rather, it is meant to be a simpler and faster graphical subsystem
 designed for modern hardware and modern usage patterns.  It is not
 designed as a networked graphics system, but geared more toward
@@ -2796,17 +2796,18 @@ EOM
     
     cat << EOM
 
-As of February 2026, Wayland has reached a usable state on many
-systems, but much work remains to be done.  Replacing decades of
-software development for the X Window System is a massive
-undertaking.  Most XWindows desktop environments have only partial
-support for Wayland at this time.
+As of February 2026, Wayland has reached a usable state on many systems,
+but a great deal of work remains to be done.  Updating decades worth of
+software developed for the X Window System is a massive undertaking.
+Most XWindows desktop environments have only partial support for Wayland
+at this time, and the few Wayland-native desktop environments are very
+simplistic.
 
 Many people believe that Wayland is the future of Unix graphics.
 Some Linux distributions have announced that XWindows support will
-be discontinued in the near future.  Others (including a growing
-team of over 500 developers of XLibre, a project aimed at
-modernizing the X Window System), might beg to differ.
+be discontinued in the near future.  Others might beg to differ.
+The XLibre project is aimed at modernizing the X Window System, and
+already has a growing team of over 500 developers.
 
 EOM
 
@@ -2815,22 +2816,24 @@ EOM
     cat << EOM
 
 Both systems will undoubtedly continue to grow and improve for
-the foreseeable future.  For now, XWindows support is very mature
-and reliable, while Wayland is still rather experimental.  The
-desktop environments that do work with Wayland generally don't
-yet offer all of the same features that they do under XWindows.
+the foreseeable future, and the competition will be good for both
+of them.  For now, XWindows support is very mature and reliable,
+while Wayland support is still incomplete.  The desktop environments
+that do work with Wayland generally don't yet offer all of the same
+features that they do under XWindows.
 
 Desktop-installer now includes limited support for Wayland-enabled
-desktop environents.  Direct support is limited to desktop
-environments and features that work intuitively and reliably.
-Improvements will be made periodically as more Wayland features
-become production-ready.
+desktop environents.  Direct support is limited to DEs (desktop
+environments) and features that work intuitively and reliably.
+Other DEs and simple compositors can be installed using the "Custom"
+option in the DE menu.  Updates will occur periodically as more
+Wayland features become production-ready.
 
-Note that at this time, Wayland requires a DRM (direct rendering
-module) to function.  Because of this, it cannot be usd under
+Note also that at this time, Wayland requires a DRM (direct rendering
+module) to function.  Because of this, it cannot be run under
 most virtual machine monitors.  If you have a way to enable a DRM
 in your VM guest installation, do it manually before running
-desktop-installer.  Otherwise, use XWindows for now.
+desktop-installer.  Otherwise, use XWindows for VM guests for now.
 
 EOM
     printf "Use Wayland? y/[n] "
