@@ -2935,7 +2935,7 @@ Desktop-installer should generally be run from a text console using a
 direct root login, rather than through su or sudo.  This will ensure a
 proper environment for X11 testing.
 
-By default, there are 8 text consoles, ttyv0 to ttyv7.  X11 uses ttyv9.
+By default, there are 8 text consoles, ttyv0 to ttyv7.  X11 uses ttyv8.
 The Wayland "Ly" login manager uses ttyv1.
 
 The syslog facility sends log messages to ttyv0 by default.
