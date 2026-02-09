@@ -1,25 +1,31 @@
 # desktop-installer
 
-## Summary
+## Background
 
-The core purpose of desktop-installer is to help you quickly and
-easily create the most reliable and secure desktop system available,
-so you can spend your time on productive work rather than tedious
-systems management.
+The purpose of desktop-installer is to help you quickly and
+easily set up the most reliable and secure desktop system available,
+so you can spend your time on creative work rather than repetitive
+and tedious systems management.
 
-FreeBSD, NetBSD, and OpenBSD provide the vast majority of the features
+FreeBSD, NetBSD, and OpenBSD provide all the features
 necessary to make a great desktop system for
 WEB browsing, editing documents, playing music and videos, developing
 software, and much more.  They also offers solid support for most popular PC
-hardware.  However, fully configuring a stock BSD desktop system by hand
-is a bit like assembling a 1,000-piece jigsaw puzzle.  Unless your goal is
-to learn how to integrate the components of a Unix desktop environment, manual
-configuration would not be a good use of your valuable time.
+hardware.
 
-There are some important issues that new BSD users are unlikely to know
+However, fully configuring a stock BSD desktop system by hand
+is a bit like assembling a 1,000-piece jigsaw puzzle.  It's a great thing
+to do once for the learning experience, but beyond that, it's probably
+not a good use of your valuable time.
+
+There is much more to configuring a complete desktop system than
+installing a desktop environment.
+There are many important issues that new BSD users are unlikely to know
 about, such as ensuring that your ports/pkgsrc tree and packages are
-in sync, how to correctly configure device daemons, sound devices
-and graphics drivers, to name a few.
+in sync, how to correctly configure device daemons, D-Bus for process
+communication, sound and graphics drivers, to name a few.
+
+## What it is
 
 Desktop-installer is a post-install script that embodies the extensive
 knowledge needed to configure a clean, reliable BSD desktop system.
@@ -28,17 +34,16 @@ the process of configuring a BSD workstation or laptop computer, allowing
 typical users to set up a fully functional desktop environment in
 about 15 minutes on modern hardware with a fast Internet connection.
 
-The end result is a fully functional
-graphical environment comparable to GUI-based systems such as
-GhostBSD, or Debian or Ubuntu GNU/Linux.
+The end result is a fully functional graphical environment comparable
+to GUI-based systems such as GhostBSD, or Debian or Ubuntu GNU/Linux.
 However, unlike those systems, desktop-installer
-supports every desktop environment or window manager provided by the
-native package manager, every supported version of the operating system,
-and every hardware platform supported by the operating system.
+supports *every* desktop environment or window manager provided by the
+native package manager, *every* supported version of the operating system,
+and *every* hardware platform supported by the operating system.
 
-Most popular desktop environments and window managers are
+The most popular desktop environments and window managers are
 explicitly supported, and any other can be configured with relative ease
-using the "Custom" option.
+using the "Custom" menu option.
 
 Desktop-installer installs and configures desktop-independent tools
 and features, such as
@@ -68,7 +73,28 @@ work with the underlying operating system, not around it, integrating the many
 features already provided by BSDs to create a fast, stable, and secure
 desktop experience.
 
-Note that FreeBSD, NetBSD, and OpenBSD are operating systems primarily
+## Why post-install?
+
+Desktop-installer is implemented as a post-install script, rather than
+integrated into the OS installer for the following reasons:
+
+1. The BSD installers work fine, and are very fast.  With a little
+   practice, a basic BSD system can be installed in under five minutes.
+   
+2. Many server systems need not and should not have a graphical
+   user interface.  Adding one would would be of little use in a
+   data center, and would just mean a lot more packages to upgrade
+   during normal maintenance.  This would be a waste of time and
+   bandwidth.
+   
+3. As a post-install script, you can simply run desktop-installer again
+   if you want to try a different desktop environment.  The rest of
+   your system can remain unaffected, and need not even be rebooted
+   in most cases.
+
+## Audience
+
+FreeBSD, NetBSD, and OpenBSD are operating systems primarily
 used by somewhat advanced Unix users such as professional software
 developers and systems managers.  They are used in many hard-core
 behind-the-scenes settings, such as the Netflix content delivery network,
