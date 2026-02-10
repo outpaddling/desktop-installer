@@ -111,9 +111,10 @@ Paramount, etc.
 
 Not much commercial software is intended to run directly on BSD systems,
 but BSD systems support numerous high-quality, free virtual machine
-monitors, Windows or other systems can be run as a guest under BSD.
+monitors, so Windows or other systems can be run as a guest under BSD
+or vice-versa.
 Some software can also be run directly under BSD using the Linux
-compatibility or the Wine Windows API emulator.
+compatibility module or the Wine Windows API emulator.
 
 ## Why post-install?
 
