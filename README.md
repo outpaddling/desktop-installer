@@ -104,11 +104,16 @@ in the math and science categories of FreeBSD ports:
 
 On FreeBSD, at least, it's easy to set up the chromium browser for
 streaming proprietary content from services like Disney, Hulu,
-Netflix (which runs FreeBSD on their content delivery network),
+Netflix (which also runs FreeBSD on their content delivery network),
 Paramount, etc.
 
 ![Disney and Hulu](disney+hulu.png)
 
+Not much commercial software is intended to run directly on BSD systems,
+but BSD systems support numerous high-quality, free virtual machine
+monitors, Windows or other systems can be run as a guest under BSD.
+Some software can also be run directly under BSD using the Linux
+compatibility or the Wine Windows API emulator.
 
 ## Why post-install?
 
