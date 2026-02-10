@@ -7,8 +7,8 @@ easily set up the most reliable and secure desktop system available,
 so you can spend your time on creative work rather than repetitive
 and tedious systems management.
 
-FreeBSD, NetBSD, and OpenBSD provide all the features
-necessary to make a great desktop system for
+FreeBSD, NetBSD, and OpenBSD are highly-evolved, free operating systems,
+that provide all the features necessary to make a great desktop system for
 WEB browsing, editing documents, playing music and videos, developing
 software, and much more.  They also offers solid support for most popular PC
 hardware.
@@ -72,6 +72,43 @@ duplicate components of or add components to the base system. Our goal is to
 work with the underlying operating system, not around it, integrating the many
 features already provided by BSDs to create a fast, stable, and secure
 desktop experience.
+
+## Uses
+
+BSD operating systems are fabulous for running open source software, due
+to their unparalleled reliability and security, and convenient software
+management.
+FreeBSD, in particular, has the second largest curated package collection
+(called FreeBSD ports) of any operating system, not too far behind Debian
+packages.  Furthermore, FreeBSD ports tend to be more up-to-date,
+as tracked by [https://repology.org/](https://repology.org/).  BSD
+systems + open source software provide everything most people need for
+their daily computer use, including office suites, multimedia, scientific
+computer, and much more.  You have your choice of dozens of desktop
+environments to choose from.
+
+The Lumina desktop environment, one of dozens of choices:
+
+![Lumina Desktop](lumina.png)
+
+Manage your music with Strawberry, one of over 800 audio packages in
+the FreeBSD ports system:
+
+![Music](strawberry.png)
+
+BSD is great for science and engineering, as well, with over 2,400 packages
+in the math and science categories of FreeBSD ports:
+
+![Bioinformatics](bioinformatics.png)
+![Octave](octave.png)
+
+On FreeBSD, at least, it's easy to set up the chromium browser for
+streaming proprietary content from services like Disney, Hulu,
+Netflix (which runs FreeBSD on their content delivery network),
+Paramount, etc.
+
+![Disney and Hulu](disney+hulu.png)
+
 
 ## Why post-install?
 
