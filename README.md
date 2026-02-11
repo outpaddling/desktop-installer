@@ -67,7 +67,7 @@ virtualization system.
 
 Desktop-installer is strictly a configuration tool, i.e. a convenient user
 interface for integrating standard BSD tools and ports/packages. Unlike most
-desktop distributions built on FreeBSD and Linux, desktop-installer does not
+desktop distributions built on BSD and Linux, desktop-installer does not
 duplicate components of or add components to the base system. Our goal is to
 work with the underlying operating system, not around it, integrating the many
 features already provided by BSDs to create a fast, stable, and secure
@@ -87,7 +87,7 @@ their daily computer use, including office suites, multimedia, scientific
 computing, and much more.  You have your choice of dozens of desktop
 environments to choose from.
 
-The Lumina desktop environment, one of dozens of choices:
+The Lumina desktop environment, just one of many of choices:
 
 ![Lumina Desktop](lumina.png)
 
@@ -109,12 +109,15 @@ Paramount, etc.
 
 ![Disney and Hulu](disney+hulu.png)
 
-Not much commercial software is intended to run directly on BSD systems,
-but BSD systems support numerous high-quality, free virtual machine
+Not many proprietary applications are built to run directly on BSD systems,
+but there are high quality open source alternatives for most of them
+anyway.  If you really need to run proprietary software,
+BSD systems support numerous high-quality, free virtual machine
 monitors, so Windows or other systems can be run as a guest under BSD
 or vice-versa.
-Some software can also be run directly under BSD using the Linux
-compatibility module or the Wine Windows API emulator.
+Some closed-source software can also be run directly under BSD using
+the Linux compatibility module (with no performance penalty) or the
+Wine Windows API emulator.
 
 ## Why post-install?
 
@@ -131,14 +134,15 @@ integrated into the OS installer for the following reasons:
    bandwidth.
    
 3. As a post-install script, you can simply run desktop-installer again
-   if you want to try a different desktop environment.  The rest of
-   your system can remain unaffected, and need not even be rebooted
-   in most cases.
+   if you want to try a different desktop environment, rather than
+   figure out how to configure another DE manually, or reinstall the
+   whole operating system.  The rest of your installation is unaffected,
+   and need not even be rebooted in most cases.
 
 ## Audience
 
 FreeBSD, NetBSD, and OpenBSD are operating systems primarily
-used by somewhat advanced Unix users such as professional software
+used by somewhat knowledgeable Unix users, such as professional software
 developers and systems managers.  They are used in many hard-core
 behind-the-scenes settings, such as the Netflix content delivery network,
 many popular storage and networking appliances, etc.  They can, however,
@@ -153,13 +157,11 @@ about, you may want to first try a system with a simple graphical
 installer first, such as [GhostBSD](https://ghostbsd.org) or
 [Debian GNU/Linux](https://debian.org).
 
-For more information, see http://acadix.biz/desktop-installer.php.
-
 ## Design principles
 
 Desktop-installer is strictly a configuration tool, i.e. a convenient user
 interface for integrating standard BSD tools and ports/packages. Unlike most
-desktop distributions built on FreeBSD and Linux, desktop-installer does not
+desktop distributions built on BSD and Linux, desktop-installer does not
 duplicate components of or add components to the base system. Our goal is to
 work with the underlying operating system, not around it, integrating the many
 features already provided by BSDs to create a fast, stable, and secure
@@ -167,20 +169,20 @@ desktop experience.
 
 Any general enhancements for the sake of desktop-installer
 will be desktop-independent and available via the ports/pkgsrc
-collection for use with or without desktop-installer.
+collections for use with or without desktop-installer.
 
 One of the primary objectives
 of desktop-installer is long-term sustainability.  Since man-hours are costly,
 efforts are focused on
 improving the functionality of the end-result, not the appearance of the tool.
 
-Desktop-installer does not try to compensate for FreeBSD's shortcomings.
+Desktop-installer does not try to compensate for BSD's shortcomings.
 We prefer to leave them exposed so that there is motivation to fix them in
-the FreeBSD base or ports system.
+the BSD base or ports system.
 
 Desktop-installer will not impose any arbitrary limitations.
 While the GUI distributions tend to support only AMD64 systems running the
-latest FreeBSD release, desktop-installer allows you to use any supported
+latest BSD release, desktop-installer allows you to use any supported
 version of BSD on any supported CPU architecture.  ARM, PowerPC,
 RISC-V and Sparc are treated no differently than x86.  Desktop-installer has
 been tested on an iMac G5 and a Rock 64, in addition to numerous x86 PCs and
