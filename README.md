@@ -46,8 +46,8 @@ explicitly supported, and any other can be configured with relative ease
 using the "Custom" menu option.
 
 Desktop-installer installs and configures desktop-independent tools
-and features, such as
-[QMediaManager](https://github.com/outpaddling/qmediamanager).
+and features, such as automatic updates notification, battery monitoring,
+and [QMediaManager](https://github.com/outpaddling/qmediamanager).
 
 The [VirtualBox](https://virtualbox.org) guest
 environment is automatically detected and configured with the VirtualBox
@@ -84,7 +84,7 @@ packages.  Furthermore, FreeBSD ports tend to be more up-to-date,
 as tracked by [https://repology.org/](https://repology.org/).  BSD
 systems + open source software provide everything most people need for
 their daily computer use, including office suites, multimedia, scientific
-computer, and much more.  You have your choice of dozens of desktop
+computing, and much more.  You have your choice of dozens of desktop
 environments to choose from.
 
 The Lumina desktop environment, one of dozens of choices:
