@@ -1,4 +1,4 @@
-# desktop-installer
+# Desktop-installer
 
 ## Background
 
