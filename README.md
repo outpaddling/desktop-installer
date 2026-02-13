@@ -97,7 +97,9 @@ the FreeBSD ports system:
 ![Music](strawberry.png)
 
 BSD is great for science and engineering, as well, with over 2,400 packages
-in the math and science categories of FreeBSD ports:
+in the math and science categories of FreeBSD ports.  Below are screen shots
+of an RNA-Seq differential expression analysis, and GNU Octave, and excellent
+open source alternative to Matlab.
 
 ![Bioinformatics](bioinformatics.png)
 ![Octave](octave.png)
@@ -105,7 +107,7 @@ in the math and science categories of FreeBSD ports:
 On FreeBSD, at least, it's easy to set up the chromium browser for
 streaming proprietary content from services like Disney, Hulu,
 Netflix (which also runs FreeBSD on their content delivery network),
-Paramount, etc.
+Paramount, etc.  Desktop-installer will do this for you if you like.
 
 ![Disney and Hulu](disney+hulu.png)
 
