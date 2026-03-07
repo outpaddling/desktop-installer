@@ -314,16 +314,19 @@ an older guest additions should generally work under a newer VirtualBox.
 EOM
 	    pkg search virtualbox-ose-additions \
 		| awk '$0 !~ "nox11" { print $1 }'
-	    printf "\nYou can leave off the version (everything after the last '-').\n"
+	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-70-x.y.z)\n"
+	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
 	    success=false
 	    while [ $success != true ]; do
-		printf "Guest additions port to install? [virtualbox-ose-additions] "
-		read ga_port
-		if [ -z "$ga_port" ]; then
+		printf "Guest additions version to install? "
+		read ga_vers
+		if [ -z "$ga_vers" ]; then
 		    ga_port=virtualbox-ose-additions
+		else
+		    ga_port=virtualbox-ose-additions-$ga_vers
 		fi
 		# FIXME: Either use install_packages everywhere or ditch it
-		if auto-install-packages emulators/$ga_port; then
+		if install_packages emulators/$ga_port; then
 		    success=true
 		fi
 	    done
