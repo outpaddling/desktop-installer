@@ -159,6 +159,15 @@ about, you may want to first try a system with a simple graphical
 installer first, such as [GhostBSD](https://ghostbsd.org) or
 [Debian GNU/Linux](https://debian.org).
 
+The primary goal of desktop-installer is not to make BSD accessible to Unix
+beginners, but to make deployment much more efficient for experienced
+Unix users.  This makes it feasible for systems managers to run BSD on
+on a large numbers of desktop machines in an office or computer lab, even
+where hardware is variable, and hence cloning is not a good option.
+It also allows users to overcome the limitations of more NOOB-friendly
+systems like GhostBSD, which supports a limited number of desktop environments
+CPU architectures, and Ubuntu, which requires a lot of RAM and disk space.
+
 ## Design principles
 
 Desktop-installer is strictly a configuration tool, i.e. a convenient user
