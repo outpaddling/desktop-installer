@@ -167,6 +167,8 @@ where hardware is variable, and hence cloning is not a good option.
 It also allows users to overcome the limitations of more NOOB-friendly
 systems like GhostBSD, which supports a limited number of desktop environments
 CPU architectures, and Ubuntu, which requires a lot of RAM and disk space.
+BSD systems with a lightweight desktop environment or window manager can
+easily run on 1 GiB RAM and a few GB of disk.
 
 ## Design principles
 
