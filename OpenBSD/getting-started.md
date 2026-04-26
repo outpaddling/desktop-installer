@@ -25,8 +25,8 @@
 
 A request has been made to add desktop-installer to the official openbsd
 ports collection, but this has not yet been completed.  Once the port
-has been created, we can replace steps 1-3 below with
-`pkg_add desktop-installer`.
+has been created, we can replace every below preceding the `desktop-installer`
+command with `pkg_add desktop-installer`.
 
 For now, we install via the work-in-progress ports collection.
 
