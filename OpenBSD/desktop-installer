@@ -66,7 +66,7 @@ EOM
 printf "Update installed packages? [y]/n "
 read update
 if [ 0"$update" != 0n ]; then
-    pkg_add -u 
+    pkg_add -u || true
 fi
 
 # Should have been installed as a dep, but just in case
