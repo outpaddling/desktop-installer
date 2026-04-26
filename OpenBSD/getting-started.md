@@ -1,15 +1,5 @@
 # Getting started on OpenBSD
 
-## To-dos for improving the OpenBSD desktop experience
-
--   Improvements to desktop-environment packages (LXQT, Mate, etc.)
--   Inclusion of auto-media-format from the other BSDs (sysutils/auto-admin)
--   Qmediamanager
--   Openbsd-update-notify (port freebsd-update-notify)
--   Add more configuration options to desktop-installer
--   Binary updates / security patches for the OpenBSD base system
--   Optimization to `sysctl.conf` & other tweaks (maybe?)
-
 ## System requirements
 
 - 1 GiB RAM minimum
@@ -33,20 +23,39 @@
 
 ## Post-installation
 
-When adding new users via adduser(8) or auto-adduser(8), note that
+A request has been made to add desktop-installer to the official openbsd
+ports collection, but this has not yet been completed.  Once the port
+has been created, we can replace steps 1-3 below with
+`pkg_add desktop-installer`.
+
+For now, we install via the work-in-progress ports collection.
+
+Do the following as the root user:
+
+1.  Clone [https://github.com/jasperla/openbsd-wip](https://github.com/jasperla/openbsd-wip)
+    into /usr/ports/openbsd-wip.
+
+2.  `cd /usr/ports/openbsd-wip/desktop-installer`
+3.  `make install`
+4.  `desktop-installer`
+
+Follow the instructions on the screen to set up your desktop system.
+If you do not understand a particular question asked by desktop-installer,
+accepting the default response should be fine in most cases.
+
+Note: When adding new users via adduser(8) or auto-adduser(8), note that
 placing them in the "staff" login class provides higher resource limits.
 See login.conf(5) for details.  Note also that auto-adduser(8) provides
 more guidance on user account parameters than the native adduser(8) command,
 though both provide the opportunity to assign a login class.
 
-Do the following as the root user:
+## To-dos for improving the OpenBSD desktop experience
 
-```
-pkg_add -u
-pkg_add desktop-installer
-desktop-installer
-
-# Follow the instructions on the screen to set up your desktop system.
-# If you do not understand a particular question asked by desktop-installer,
-# accepting the default response should be fine in most cases.
+-   Improvements to desktop-environment packages (LXQT, Mate, etc.)
+-   Inclusion of auto-media-format from the other BSDs (sysutils/auto-admin)
+-   Qmediamanager
+-   Openbsd-update-notify (port freebsd-update-notify)
+-   Add more configuration options to desktop-installer
+-   Binary updates / security patches for the OpenBSD base system
+-   Optimization to `sysctl.conf` & other tweaks (maybe?)
 ```
