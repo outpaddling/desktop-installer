@@ -32,6 +32,8 @@ For now, we install via the work-in-progress ports collection.
 
 Do the following as the root user:
 
+1.  If you don't have the ports tree installed, follow the instructions
+    at [https://www.openbsd.org/faq/ports/ports.html](https://www.openbsd.org/faq/ports/ports.html).
 1.  Clone [https://github.com/jasperla/openbsd-wip](https://github.com/jasperla/openbsd-wip)
     into /usr/ports/openbsd-wip.
     
@@ -40,12 +42,16 @@ Do the following as the root user:
     cd /usr/ports
     git clone https://github.com/jasperla/openbsd-wip
     ```
-
-2.  `cd /usr/ports/openbsd-wip/sysutils/desktop-installer`
-3.  `make install`
-4.  `make clean`
-5.  `cd`
-6.  `desktop-installer`
+    See the Github site for additional info on using WIP ports.
+1.  Add the following to /etc/mk.conf:
+    ```
+    PORTSDIR_PATH=${PORTSDIR}:${PORTSDIR}/openbsd-wip:${PORTSDIR}/mystuff
+    ```
+1.  `cd /usr/ports/openbsd-wip/sysutils/desktop-installer`
+1.  `make install`
+1.  `make clean`
+1.  `cd`
+1.  `desktop-installer`
 
 Follow the instructions on the screen to set up your desktop system.
 If you do not understand a particular question asked by desktop-installer,
