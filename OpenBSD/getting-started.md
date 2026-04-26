@@ -34,10 +34,18 @@ Do the following as the root user:
 
 1.  Clone [https://github.com/jasperla/openbsd-wip](https://github.com/jasperla/openbsd-wip)
     into /usr/ports/openbsd-wip.
+    
+    ```
+    pkg_add git
+    cd /usr/ports
+    git clone https://github.com/jasperla/openbsd-wip
+    ```
 
 2.  `cd /usr/ports/openbsd-wip/sysutils/desktop-installer`
 3.  `make install`
-4.  `desktop-installer`
+4.  `make clean`
+5.  `cd`
+6.  `desktop-installer`
 
 Follow the instructions on the screen to set up your desktop system.
 If you do not understand a particular question asked by desktop-installer,
