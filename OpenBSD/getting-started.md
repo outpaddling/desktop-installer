@@ -35,7 +35,7 @@ Do the following as the root user:
 1.  Clone [https://github.com/jasperla/openbsd-wip](https://github.com/jasperla/openbsd-wip)
     into /usr/ports/openbsd-wip.
 
-2.  `cd /usr/ports/openbsd-wip/desktop-installer`
+2.  `cd /usr/ports/openbsd-wip/sysutils/desktop-installer`
 3.  `make install`
 4.  `desktop-installer`
 
