@@ -16,10 +16,23 @@ usage()
     exit 1
 }
 
+line()
+{
+    cat << EOM
+===========================================================================
+EOM
+}
+
+pause()
+{
+    printf "Press return to continue..."
+    read junk
+}
+
 
 ##########################################################################
 #   Function description:
-#       Create a global Xsession file
+#       Create a global config used by xenodm and enable/start it
 #   Arguments:
 #       
 #   Returns:
@@ -27,23 +40,181 @@ usage()
 #   History:
 #   Date        Name         Modification
 #   2024-06-25  izzy Meyer   Remove COOKIE stuff from NetBSD
+#   2025-04-30  izzy Meyer   Refactor to configure all of xenodm not just
+#                            xsessions
 ##########################################################################
 
-create_xsession()
+xenodm_config()
 {
     if [ $# != 1 ]; then
-	printf "Usage: create_xsession session-command\n"
+	printf "Usage: xenodm_config session-command\n"
 	exit 1
     fi
+    
+    # Enhanced XDM with background and restart/shutdown/restart-x11 buttons
+    auto-replace-file /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
+    auto-replace-file /usr/local/share/desktop-installer/XenoDM/GiveConsole /etc/X11/xenodm/GiveConsole
+
+cat << EOM
+
+Enabling XenoDM will cause the screen to switch to graphics mode.
+
+If you are running desktop-installer on the primary text console,
+you can return to the text console by typing Ctrl+Alt+F1 on most
+systems (or Meta-key + F1 under VirtualBox).
+
+EOM
+
+    # Offer to enable xenodm if not already running
+    if ! pgrep bin/xenodm; then
+        printf "Enable XenoDM graphical login? [y]/n "
+        read xenodm
+        if [ 0"$xenodm" != 0n ]; then
+            auto-enable-service xenodm $0
+        fi
+    fi
+
+    xsession=/etc/X11/xenodm/Xsession
     session_cmd=$1
 
-    cat << EOM > $XSESSION
+    cat << EOM > $xsession
 #!/bin/sh
 
 exec $session_cmd
 EOM
 }
 
+##########################################################################
+#   Function description:
+#       Configure and start GDM service
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name         Modification
+#   2025-04-30  izzy Meyer   Begin
+##########################################################################
+
+gdm_config()
+{
+cat << EOM
+
+Enabling GDM will cause the screen to switch to graphics mode.
+
+If you are running desktop-installer on the primary text console,
+you can return to the text console by typing Ctrl+Alt+F1 on most
+systems (or Meta-key + F1 under VirtualBox).
+
+EOM
+
+    # Offer to enable GDM if not already running
+    if ! pgrep bin/gdm; then
+	printf "Enable GDM graphical login? [y]/n "
+	read gdm
+	if [ 0"$gdm" != 0n ]; then
+	    auto-enable-service gdm $0
+	fi
+    fi
+}
+
+
+##########################################################################
+#   Function descriptions:
+#       Configure desktops
+#   Arguments:
+#       
+#   Returns:
+#       
+#   History:
+#   Date        Name         Modification
+#   2026-04-30  izzy Meyer   Initial revision
+##########################################################################
+
+fvwm_config()
+{
+    pkg_add xscreensaver
+    xenodm_config fvwm
+}
+
+cwm_config()
+{
+    pkg_add xscreensaver
+    xenodm_config cwm
+}
+
+lxqt_config()
+{
+    # Install separately so user sees error messages
+    for pkg in evince--light lxqt lxqt-extras; do
+        pkg_add $pkg
+    done
+    xenodm_config startlxqt
+}
+
+mate_config()
+{
+    # Install separately so user sees error messages
+    for pkg in evince--light mate mate-extras; do
+        pkg_add $pkg
+    done
+    xenodm_config "ck-launch-session mate-session"
+}
+
+xfce_config()
+{
+    # Install separately so user sees error messages
+    for pkg in evince--light xfce xfce-extras; do
+        pkg_add $pkg
+    done
+    xenodm_config "ck-launch-session xfce4-session"
+}
+
+kde_config()
+{
+    # Install separately so user sees error messages
+    for pkg in kde-plasma kde-plasma-extras kde; do
+	pkg_add $pkg
+    done
+    xenodm_config "ck-launch-session startplasma-x11"
+    # from pkg-readme on resource limit section
+    touch /etc/sysctl.conf
+    auto-set-sysctl "kern.maxfiles" 65535 sysctl
+    sysctl kern.maxfiles=65535
+cat << EOM
+
+You may want to add your non-root users to the kde login class.
+
+This will prevent slowdowns and crashing for regular user when logged in.
+
+# usermod -L kde <username>
+
+EOM
+    pause
+}
+
+gnome_config()
+{
+    # Install separately so user sees error messages
+    for pkg in gnome gnome-extras; do
+	pkg_add $pkg
+    done
+    gdm_config
+}
+
+custom_session_config()
+{
+    printf "Package name? (Use pkg_info -aQ to verify) "
+    read package
+    printf "Session command? (Use pkg_info -M & the pkg-readme at /usr/local/share/doc/pkg-readmes to verify) "
+    read session_cmd
+
+    # Install separately so user sees error messages
+    for pkg in xscreensaver $package; do
+	pkg_add $pkg
+    done
+    xenodm_config $session_cmd
+}
 
 ##########################################################################
 #   Main
@@ -53,11 +224,21 @@ if [ $# != 0 ]; then
     usage
 fi
 
+line
+
 cat << EOM
 
 It is best to have all installed packages up-to-date before installing
 more packages, in case not every dependency version is checked
-correctly.
+correctly. The base system will be updated in the next step. All users
+should update their base system to ensure packages function correctly.
+More info in next step.
+
+More information can be found in these places:
+- the packages(7) manual page
+  # man 7 packages
+- faq15, section titled "Package Management"
+  on https://openbsd.org/faq/faq15.html
 
 If you have updated recently using pkg_add -u, then you can skip
 this step now.
@@ -69,8 +250,64 @@ if [ 0"$update" != 0n ]; then
     pkg_add -u || true
 fi
 
+line
+
+cat << EOM
+
+It is best to have the base system up-to-date before installing
+more packages, as every package assumes a fully updated base system.
+OpenBSD's base system ensures no API stability so users must have an
+updated base system along with updated packages. We cannot automate
+this as syspatch(8) requires manual intervention. On unsupported
+architectures, the user must compile the patched components from the
+source tree manually.
+
+You should run syspatch(8) manually outside of this script and
+follow any instructions before continuing.
+
+# syspatch
+
+At this time, only amd64, arm64, and i386 installations of the OpenBSD
+System are supported by this utility. For other architectures, users
+must compile the specific component after patching their source tree.
+
+More information can be found in these places:
+- the syspatch(8) manual page
+  # man 8 syspatch
+- the release(8) manual page
+  # man 8 release
+- faq10, section titled "System Management"
+  on https://openbsd.org/faq/faq10.html
+- faq5, section titled "Building OpenBSD from Source"
+  on https://openbsd.org/faq/faq5.html
+
+EOM
+printf "Exit now to run syspatch(8)? [y]/n "
+read syspatch
+if [ 0"$syspatch" != 0n ]; then
+    exit 1
+fi
+
+line
+
+cat << EOM
+
+We will now install some packages common to all desktop environments.
+
+EOM
+
+pause
+
 # Should have been installed as a dep, but just in case
 pkg_add dbus avahi git gmake xz feh tk--%8.6 consolekit2
+
+line
+
+cat << EOM
+
+You may now select a desktop session.
+
+EOM
 
 cat << EOM
 
@@ -79,60 +316,45 @@ cat << EOM
 3.. LXQT
 4.. MATE
 5.. XFCE
-6.. Custom
+6.. KDE-Plasma
+7.. GNOME
+8.. Custom
 
 EOM
 printf "Selection? "
 read de_num
 
-XSESSION=/etc/X11/xenodm/Xsession
-
-de='unknown'
 case $de_num in
 1)
-    pkg_add xscreensaver
-    create_xsession fvwm
+    fvwm_config
     ;;
 
 2)
-    pkg_add xscreensaver
-    create_xsession cwm
+    cwm_config
     ;;
 
 3)
-    # Install separately so user sees error messages
-    for pkg in evince--light lxqt lxqt-extras; do
-        pkg_add $pkg
-    done
-    create_xsession startlxqt
+    lxqt_config
     ;;
 
 4)
-    # Install separately so user sees error messages
-    for pkg in evince--light mate mate-extras; do
-        pkg_add $pkg
-    done
-    create_xsession "ck-launch-session mate-session"
+    mate_config
     ;;
 
 5)
-    # Install separately so user sees error messages
-    for pkg in evince--light xfce xfce-extras; do
-        pkg_add $pkg
-    done
-    create_xsession xfce4-session
+    xfce_config
     ;;
 
 6)
-    printf "Package name? (Use pkg_info -Q to verify) "
-    read package
-    printf "Session command? (Use pkg_info -M & the pkg-readme at /usr/local/share/doc/pkg-readmes to verify) "
-    read session_cmd
+    kde_config
+    ;;
+    
+7)
+    gnome_config
+    ;;
 
-    for pkg in xscreensaver $package; do
-	pkg_add $pkg
-    done
-    create_xsession $session_cmd
+8)
+    custom_session_config
     ;;
 
 *)
@@ -146,6 +368,18 @@ esac
 #   From Guide
 ##########################################################################
 
+line
+
+cat << EOM
+
+We will now enable some needed services.
+
+Some are optional and we will prompt you when that is so.
+
+EOM
+
+pause
+
 # Enable multicast (cannot be done with auto-enable-service as this is an option, not a service)
 rcctl enable multicast
 # Enable dbus rc service
@@ -155,34 +389,19 @@ auto-enable-service avahi_daemon $0
 # Order them in the right order as avahi_daemon needs dbus running to work
 rcctl order messagebus avahi_daemon
 
-
 printf "Enable apm power manager daemon? (useful on laptops) [y]/n "
 read apm
 if [ 0"apm" != 0n ]; then
     auto-enable-service apmd $0
 fi
 
-# Enhanced XDM with background and restart/shutdown/restart-x11 buttons
-auto-replace-file /usr/local/share/desktop-installer/XenoDM/Xsetup_0 /etc/X11/xenodm/Xsetup_0
-auto-replace-file /usr/local/share/desktop-installer/XenoDM/GiveConsole /etc/X11/xenodm/GiveConsole
-
 cat << EOM
 
-Enabling XenoDM will cause the screen to switch to graphics mode.
-
-If you are running desktop-installer on the primary text console,
-you can return to the text console by typing Ctrl+Alt+F1 on most
-systems (or Meta-key + F1 under VirtualBox).
+We will give the option to install some extra packages you may want.
 
 EOM
-# Offer to enable xenodm if not already running
-if ! pgrep bin/xenodm; then
-    printf "Enable XenoDM graphical login? [y]/n "
-    read xenodm
-    if [ 0"$xenodm" != 0n ]; then
-        auto-enable-service xenodm $0
-    fi
-fi
+
+pause
 
 for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
@@ -193,6 +412,15 @@ for app in firefox thunderbird keepassxc; do
 	fi
     fi
 done
+
 if [ ! -z "$apps" ]; then
     pkg_add $apps
 fi
+
+cat << EOM
+
+Your desktop is ready. Reboot to finish setup.
+
+# reboot
+
+EOM
