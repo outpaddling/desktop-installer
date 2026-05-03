@@ -63,6 +63,12 @@ See login.conf(5) for details.  Note also that auto-adduser(8) provides
 more guidance on user account parameters than the native adduser(8) command,
 though both provide the opportunity to assign a login class.
 
+As an alternative, you can simply download and run the
+`desktop-installer-wip-installer.sh` script from this site.
+WARNING: Downloading and running scripts poses security risks, especially
+when running as root.  Examine the script carefully before running it
+on your system!
+
 ## To-dos for improving the OpenBSD desktop experience
 
 -   Improvements to desktop-environment packages (LXQT, Mate, etc.)
