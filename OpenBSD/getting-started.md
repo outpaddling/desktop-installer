@@ -65,7 +65,10 @@ though both provide the opportunity to assign a login class.
 
 As an alternative, you can simply download and run the
 `desktop-installer-wip-installer.sh` script from this site.
-WARNING: Downloading and running scripts poses security risks, especially
+
+*** WARNING ***
+
+Downloading and running scripts poses security risks, especially
 when running as root.  Examine the script carefully before running it
 on your system!
 
