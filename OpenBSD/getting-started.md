@@ -63,6 +63,8 @@ See login.conf(5) for details.  Note also that auto-adduser(8) provides
 more guidance on user account parameters than the native adduser(8) command,
 though both provide the opportunity to assign a login class.
 
+### Quick-start with openbsd-wip:
+
 As an alternative, you can simply download and run the
 `desktop-installer-wip-installer.sh` script from this site.
 
@@ -71,6 +73,15 @@ As an alternative, you can simply download and run the
 Downloading and running scripts poses security risks, especially
 when running as root.  Examine the script carefully before running it
 on your system!
+
+After examining the script for potential security issues, run the
+following commands as root on your OpenBSD system:
+
+```
+ftp https://github.com/outpaddling/desktop-installer/raw/master/OpenBSD/desktop-installer-wip-installer.sh
+chmod +x ./desktop-installer-wip-installer.sh
+./desktop-installer-wip-installer.sh
+```
 
 ## To-dos for improving the OpenBSD desktop experience
 
