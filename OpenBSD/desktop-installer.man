@@ -106,14 +106,18 @@ installs most packages over the network using "pkg_add".
 
 2. Install desktop-installer:
 
+    Eventually we hope to be able to install by simply running
+    
     pkg_add desktop-installer
+    
+    Until then, follow the instructions at
+    https://github.com/outpaddling/desktop-installer/blob/master/OpenBSD/getting-started.md.
 
 3. Run desktop-installer:
 
     desktop-installer
 
-.SH AUTHOR
+.SH AUTHORS
 .nf
 .na
-J. Bacon
-Acadix Consulting, LLC
+Izzy Meyer, J. Bacon
