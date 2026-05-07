@@ -10,6 +10,8 @@
     - Download the OpenBSD installer ISO image from
       [https://openbsd.org](https://openbsd.org).
     - Set pointing device to USB tablet.
+    - As of OpenBSD 7.8, the VMSVGA video adapter offers far more resolutions
+      than VBOXSVGA
     - Caution: Some OpenBSD users have reported problems when using
       dynamically allocated disk images.
     - Caution: Some users have reported trouble with I/O APIC.
