@@ -3476,6 +3476,23 @@ pkg_count=$(printf "%d" $pkg_count) # Trim leading space
 cat << EOM
 
 ===========================================================================
+FreeBSD supports localization for many different spoken languages.  Some
+are supported much better than others.  Full configuration can be complex,
+involving multiple subsystems and applications.  As a result, localization
+is not (yet) integrated into desktop-installer.
+
+For basic information about configuring for your region, see the FreeBSD
+handbook:
+
+    https://docs.freebsd.org/en/books/handbook/l10n/
+===========================================================================
+
+EOM
+pause
+
+cat << EOM
+
+===========================================================================
 You can spend years exploring the amazing features of FreeBSD, but for now
 you can perform basic systems management like updating your system, adding
 users, or installing from among the $pkg_count free software packages by

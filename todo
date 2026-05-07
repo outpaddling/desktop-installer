@@ -1,6 +1,11 @@
 
 Add Gnome-flashback support?
 
+Automatically configure localization?
+    https://docs.freebsd.org/en/books/handbook/l10n/
+    Develop some experimental shell tools for this and integrate
+    into desktop-installer if/when they are robust enough.
+
 Install libvdpau-va-gl for vlc?
 
 Install runas
