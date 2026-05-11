@@ -275,8 +275,20 @@ install_xlibre()
 	x11/xsm \
 	x11-drivers/xlibre-xf86-video-vesa \
 	x11-drivers/xlibre-xf86-video-mga \
-	x11-drivers/xlibre-xf86-input-wacom
-    auto-mark-package-critical xlibre xdm
+	x11-drivers/xlibre-xf86-input-wacom \
+	x11-drivers/xlibre-xf86-input-libinput \
+	x11-drivers/xlibre-xf86-input-mouse \
+	x11-drivers/xlibre-xf86-input-keyboard
+    auto-mark-package-critical \
+	xlibre \
+	xdm \
+	xsm \
+	xlibre-xf86-video-vesa \
+	xlibre-xf86-video-mga \
+	xlibre-xf86-input-wacom \
+	xlibre-xf86-input-libinput \
+	xlibre-xf86-input-mouse \
+	xlibre-xf86-input-keyboard
 
     # Install additional fonts before Xorg -configure
     # Liberation fonts are good for terminals
@@ -2776,6 +2788,9 @@ fi
 cat << EOM
 
 This script configures FreeBSD with the experimental Xlibre X11 server.
+
+Xlibre will eventually replace Xorg.
+
 Please report any issues via FreeBSD bugzilla:
 
     https://www.freebsd.org/support/bugreports/
