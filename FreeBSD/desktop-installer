@@ -512,8 +512,7 @@ EOM
 	1)
 	    dm_msg
 	    auto-ly-enable
-	    ;;
-	2)
+	    DISPLAY_MANAGER=ly
 	    ;;
 	*)
 	    printf "Invalid selection: $selection\n"
@@ -532,7 +531,7 @@ xorg_config()
 	printf "Usage: xorg_config xdm|slim|xdm_sddm|gdm_sddm|sddm|dtlogin\n"
 	exit 1
     else
-	display_manager=$1
+	DISPLAY_MANAGER=$1
     fi
     
     # Default n if X already running
@@ -549,7 +548,7 @@ xorg_config()
 	fi
     fi
 
-    if [ $display_manager = xdm_sddm ]; then
+    if [ $DISPLAY_MANAGER = xdm_sddm ]; then
 	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
 	    cat << EOM
 
@@ -569,10 +568,10 @@ EOM
 	    selection=$(auto-ask xdm-sddm "Display manager selection? " 1)
 	    case $selection in
 	    1)
-		display_manager=xdm
+		DISPLAY_MANAGER=xdm
 		;;
 	    2)
-		display_manager=sddm
+		DISPLAY_MANAGER=sddm
 		;;
 	    *)
 		printf "Invalid selection: $selection\n"
@@ -580,7 +579,7 @@ EOM
 	done
     fi
 
-    if [ $display_manager = gdm_sddm ]; then
+    if [ $DISPLAY_MANAGER = gdm_sddm ]; then
 	while [ 0$selection != 01 ] && [ 0$selection != 02 ]; do
 	    cat << EOM
 
@@ -600,14 +599,14 @@ EOM
 	    selection=$(auto-ask gdm-sddm "Display manager selection? " 1)
 	    case $selection in
 	    1)
-		display_manager=gdm
+		DISPLAY_MANAGER=gdm
 		# GDM must be installed before startx for X11 test
 		# Can't wait for gdm_config()
 		install_packages x11/gdm
 		auto-mark-package-critical gdm
 		;;
 	    2)
-		display_manager=sddm
+		DISPLAY_MANAGER=sddm
 		;;
 	    *)
 		printf "Invalid selection: $selection\n"
@@ -885,9 +884,9 @@ the following question and rerun desktop-installer from a virtual terminal.
 ===========================================================================
 
 EOM
-    # Debug printf "Running ${display_manager}_config...\n"
+    # Debug printf "Running ${DISPLAY_MANAGER}_config...\n"
     pause
-    ${display_manager}_config
+    ${DISPLAY_MANAGER}_config
 }
 
 
@@ -3519,6 +3518,15 @@ done
 auto_admin=`auto-ask auto_admin "Run auto-admin now to add users or install additional software? (y/n)" y`
 if [ $auto_admin = y ]; then
     auto-admin
+    if [ 0$DISPLAY_MANAGER = 0sddm ] || [ 0$DISPLAY_MANAGER = 0gdm ]; then
+	printf "$DISPLAY_MANAGER will not show new users until restarted.\n"
+	printf "This will terminate any running sessions.\n"
+	printf "Restart $DISPLAY_MANAGER now? [y]/n "
+	read restart_dm
+	if [ 0"$restart_dm" != 0n ]; then
+	    service $DISPLAY_MANAGER restart
+	fi
+    fi
 fi
 
 cat << EOM
