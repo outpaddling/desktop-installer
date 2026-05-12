@@ -324,21 +324,21 @@ best matching guest additions.  If you cannot match them exactly,
 an older guest additions should generally work under a newer VirtualBox.
 
 EOM
-	    pkg search virtualbox-ose-additions \
+	    pkg search virtualbox-ose-additions-xlibre \
 		| awk '$0 !~ "nox11" { print $1 }'
-	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-70-x.y.z)\n"
+	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-xlibre-70-x.y.z)\n"
 	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
 	    success=false
 	    while [ $success != true ]; do
 		printf "Guest additions version to install? "
 		read ga_vers
 		if [ -z "$ga_vers" ]; then
-		    ga_port=virtualbox-ose-additions
+		    ga_pkg=virtualbox-ose-additions-xlibre
 		else
-		    ga_port=virtualbox-ose-additions-$ga_vers
+		    ga_pkg=virtualbox-ose-additions-xlibre-$ga_vers
 		fi
 		# FIXME: Either use install_packages everywhere or ditch it
-		if install_packages emulators/$ga_port; then
+		if pkg install -y $ga_pkg; then
 		    success=true
 		fi
 	    done
