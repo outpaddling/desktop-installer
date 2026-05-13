@@ -307,62 +307,6 @@ install_xlibre()
     # Without webfonts, print to PDF will look awful
     install_packages x11-fonts/webfonts
     
-    # Check for virtualbox guest
-    if vbox_guest; then
-	# VirtualBox defaults to vmware video in some cases
-	# FIXME: Move to auto-gpu-setup
-	install_packages x11-drivers/xlibre-xf86-video-vmware
-	
-	if [ 0$install_guest_additions = 0y ] && \
-		! pkg info | fgrep -q virtualbox-ose-additions; then
-	    cat << EOM
-
-It is best to match the guest additions to the version of VirtualBox
-under which the VM is running.  Below is a list of guest additions
-ports.  Check the version of your VirtualBox host and choose the
-best matching guest additions.  If you cannot match them exactly,
-an older guest additions should generally work under a newer VirtualBox.
-
-EOM
-	    pkg search virtualbox-ose-additions-xlibre \
-		| awk '$0 !~ "nox11" { print $1 }'
-	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-xlibre-70-x.y.z)\n"
-	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
-	    success=false
-	    while [ $success != true ]; do
-		printf "Guest additions version to install? "
-		read ga_vers
-		if [ -z "$ga_vers" ]; then
-		    ga_pkg=virtualbox-ose-additions-xlibre
-		else
-		    ga_pkg=virtualbox-ose-additions-xlibre-$ga_vers
-		fi
-		# FIXME: Either use install_packages everywhere or ditch it
-		if pkg install -y $ga_pkg; then
-		    success=true
-		fi
-	    done
-	    auto-enable-service vboxguest desktop-installer
-	    auto-enable-service vboxservice desktop-installer
-	    cat << EOM
-
-VirtualBox guest additions work best with the VBOXSVGA graphics controller,
-while VirtualBox may default to VMSVGA.  Check the display settings for
-this VM and make sure the Graphics Controller is set to VBOXSVGA.  You can
-change this setting in the VirtualBox settings GUI, or by running
-
-    VBoxManage modifyvm --graphicscontroller vboxsvga
-
-under the host operating system.  This setting cannot be changed while
-the guest is running.
-
-EOM
-	    pause
-	fi
-    else
-	pkg remove -y virtualbox-ose-additions\* || true
-    fi
-    
     # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
     if parallels_guest; then
 	cat << EOM > $XLIBRE_CONF_DIR/10-parallels-scfb.conf
@@ -3312,8 +3256,60 @@ external_drive_config
 
 # Ask the questions before beginning so the installation can run unattended
 if vbox_guest && ! pkg info | fgrep -q virtualbox-ose-additions; then
+    # VirtualBox defaults to vmware video in some cases
+    install_packages x11-drivers/xlibre-xf86-video-vmware
+
     install_guest_additions=`auto-ask guest-additions \
     'Install VirtualBox guest additions? (y/n)' y`
+    
+    if [ 0$install_guest_additions = 0y ] && \
+	    ! pkg info | fgrep -q virtualbox-ose-additions; then
+	cat << EOM
+
+It is best to match the guest additions to the version of VirtualBox
+under which the VM is running.  Below is a list of guest additions
+ports.  Check the version of your VirtualBox host and choose the
+best matching guest additions.  If you cannot match them exactly,
+an older guest additions should generally work under a newer VirtualBox.
+
+EOM
+	pkg search virtualbox-ose-additions-xlibre \
+	    | awk '$0 !~ "nox11" { print $1 }'
+	printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-xlibre-70-x.y.z)\n"
+	printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
+	success=false
+	while [ $success != true ]; do
+	    printf "Guest additions version to install? "
+	    read ga_vers
+	    if [ -z "$ga_vers" ]; then
+		ga_pkg=virtualbox-ose-additions-xlibre
+	    else
+		ga_pkg=virtualbox-ose-additions-xlibre-$ga_vers
+	    fi
+	    # FIXME: Either use install_packages everywhere or ditch it
+	    if pkg install -y $ga_pkg; then
+		success=true
+	    fi
+	done
+	auto-enable-service vboxguest desktop-installer
+	auto-enable-service vboxservice desktop-installer
+	cat << EOM
+
+VirtualBox guest additions work best with the VBOXSVGA graphics controller,
+while VirtualBox may default to VMSVGA.  Check the display settings for
+this VM and make sure the Graphics Controller is set to VBOXSVGA.  You can
+change this setting in the VirtualBox settings GUI, or by running
+
+    VBoxManage modifyvm --graphicscontroller vboxsvga
+
+under the host operating system.  This setting cannot be changed while
+the guest is running.
+
+EOM
+	    pause
+    fi
+else
+    pkg remove -y virtualbox-ose-additions\* || true
 fi
 
 # Add special configs for specific hardware
