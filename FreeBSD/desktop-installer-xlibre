@@ -3063,16 +3063,26 @@ EOM
     fi
 fi
 
-# Enable firewall as early as possible for maximum security
-if [ $SETUP_LEVEL = 2 ]; then
-    freebsd_update_notify=$(auto-ask freebsd-update-notify "Enable desktop notification for base/package/ports updates? (y/n)" y)
-else
-    freebsd_update_notify='y'
-fi
+cat << EOM
+
+===========================================================================
+We can configure the freebsd-update-notify utility to periodically check
+for available FreeBSD base and package updates.  This will open a popup
+window on the desktop whenever updates are available for the FreeBSD base,
+or when the maximum time between updates configured in
+
+    /usr/local/etc/freebsd-update-notify/freebsd-update-notify.conf
+
+has expired.
+===========================================================================
+
+EOM
+freebsd_update_notify=$(auto-ask freebsd-update-notify "Enable popup notification for available system updates? (y/n)" y)
 if [ $freebsd_update_notify = y ]; then
     install_packages deskutils/freebsd-update-notify
 fi
 
+# Enable firewall as early as possible for maximum security
 if [ $SETUP_LEVEL = 2 ]; then
     firewall_config
 fi
