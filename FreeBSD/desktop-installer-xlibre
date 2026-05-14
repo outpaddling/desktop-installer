@@ -3074,6 +3074,9 @@ or when the maximum time between updates configured in
     /usr/local/etc/freebsd-update-notify/freebsd-update-notify.conf
 
 has expired.
+
+Keep in mind that for security reasons, you should never click on anything
+inside a popup window unless you know that it is legitimate.
 ===========================================================================
 
 EOM
