@@ -2731,13 +2731,18 @@ fi
 
 cat << EOM
 
-This script configures FreeBSD with the experimental Xlibre X11 server.
+This script configures FreeBSD with experimental support for the new
+Xlibre X11 server, a replacement for X.org, which is no longer under
+active development.
 
-Xlibre will eventually replace Xorg.
-
-Please report any issues via FreeBSD bugzilla:
+Please report any issues with the port (missing dependencies, installation
+issues, etc) via FreeBSD bugzilla:
 
     https://www.freebsd.org/support/bugreports/
+
+Please report all other issues on Github:
+
+    https://github.com/outpaddling/desktop-installer/issues
 
 EOM
 pause
