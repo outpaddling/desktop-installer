@@ -129,6 +129,7 @@ EOM
 #   History:
 #   Date        Name         Modification
 #   2026-04-30  izzy Meyer   Initial revision
+#   2026-05-20  izzy Meyer   Add Lumina Desktop option
 ##########################################################################
 
 fvwm_config()
@@ -146,10 +147,19 @@ cwm_config()
 lxqt_config()
 {
     # Install separately so user sees error messages
-    for pkg in evince--light lxqt lxqt-extras; do
+    for pkg in evince--light lxqt lxqt-extras galculator; do
         pkg_add $pkg
     done
     xenodm_config startlxqt
+}
+
+lumina_config()
+{
+    # Install separately so user sees error messages
+    for pkg in lumina qterminal qpdfview lximage-qt galculator; do
+        pkg_add $pkg
+    done
+    xenodm_config start-lumina-desktop
 }
 
 mate_config()
@@ -313,14 +323,16 @@ cat << EOM
 
 1.. FVWM (OpenBSD default)
 2.. CWM (OpenBSD alternate)
-3.. LXQT
-4.. MATE
-5.. XFCE
-6.. KDE-Plasma
-7.. GNOME
-8.. Custom
+3.. GNOME
+4.. KDE-Plasma
+5.. LXQT
+6.. Lumina
+7.. MATE
+8.. XFCE
+9.. Custom
 
 EOM
+
 printf "Selection? "
 read de_num
 
@@ -334,26 +346,30 @@ case $de_num in
     ;;
 
 3)
-    lxqt_config
-    ;;
-
-4)
-    mate_config
-    ;;
-
-5)
-    xfce_config
-    ;;
-
-6)
-    kde_config
-    ;;
-    
-7)
     gnome_config
     ;;
 
+4)
+    kde_config
+    ;;
+
+5)
+    lxqt_config
+    ;;
+
+6)
+    lumina_config
+    ;;
+
+7)
+    mate_config
+    ;;
+
 8)
+    xfce_config
+    ;;
+
+9)
     custom_session_config
     ;;
 
