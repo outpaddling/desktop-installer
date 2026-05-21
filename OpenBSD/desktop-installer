@@ -156,7 +156,7 @@ lxqt_config()
 lumina_config()
 {
     # Install separately so user sees error messages
-    for pkg in lumina qterminal; do
+    for pkg in lumina qterminal qpdfview lximage-qt; do
         pkg_add $pkg
     done
     xenodm_config start-lumina-desktop
@@ -323,15 +323,16 @@ cat << EOM
 
 1.. FVWM (OpenBSD default)
 2.. CWM (OpenBSD alternate)
-3.. LXQT
-4.. Lumina
-5.. MATE
-6.. XFCE
-7.. KDE-Plasma
-8.. GNOME
+3.. GNOME
+4.. KDE-Plasma
+5.. LXQT
+6.. Lumina
+7.. MATE
+8.. XFCE
 9.. Custom
 
 EOM
+
 printf "Selection? "
 read de_num
 
@@ -345,27 +346,27 @@ case $de_num in
     ;;
 
 3)
-    lxqt_config
+    gnome_config
     ;;
 
 4)
-    lumina_config
+    kde_config
     ;;
 
 5)
-    mate_config
+    lxqt_config
     ;;
 
 6)
-    xfce_config
+    lumina_config
     ;;
 
 7)
-    kde_config
+    mate_config
     ;;
-    
+
 8)
-    gnome_config
+    xfce_config
     ;;
 
 9)
