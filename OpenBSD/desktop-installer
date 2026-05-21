@@ -147,7 +147,7 @@ cwm_config()
 lxqt_config()
 {
     # Install separately so user sees error messages
-    for pkg in evince--light lxqt lxqt-extras; do
+    for pkg in evince--light lxqt lxqt-extras galculator; do
         pkg_add $pkg
     done
     xenodm_config startlxqt
@@ -156,7 +156,7 @@ lxqt_config()
 lumina_config()
 {
     # Install separately so user sees error messages
-    for pkg in lumina qterminal qpdfview lximage-qt; do
+    for pkg in lumina qterminal qpdfview lximage-qt galculator; do
         pkg_add $pkg
     done
     xenodm_config start-lumina-desktop
