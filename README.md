@@ -163,12 +163,12 @@ The primary goal of desktop-installer is not to make BSD accessible to Unix
 beginners, but to make deployment much more efficient for experienced
 Unix users.  This makes it feasible for systems managers to run BSD on
 on a large numbers of desktop machines in an office or computer lab, even
-where hardware is variable, and hence cloning is not a good option.
+where hardware varies, and hence cloning is not an easy option.
 It also allows users to overcome the limitations of more NOOB-friendly
 systems like GhostBSD, which supports a limited number of desktop environments
 CPU architectures, and Ubuntu, which requires a lot of RAM and disk space.
 BSD systems with a lightweight desktop environment or window manager can
-easily run on 1 GiB RAM and a few GB of disk.
+easily run on 1 GiB RAM or less, and a few GB of disk.
 
 ## Design principles
 
