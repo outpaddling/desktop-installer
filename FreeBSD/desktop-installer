@@ -3115,7 +3115,7 @@ freebsd_update_notify=$(auto-ask freebsd-update-notify "Enable popup notificatio
 if [ $freebsd_update_notify = y ]; then
     install_packages deskutils/freebsd-update-notify
 else
-    pkg remove freebsd-update-notify
+    pkg remove -y freebsd-update-notify || true
 fi
 
 # Enable firewall as early as possible for maximum security
