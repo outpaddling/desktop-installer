@@ -300,6 +300,11 @@ install_xorg()
 	# VirtualBox defaults to vmware video in some cases
 	# FIXME: Move to auto-gpu-setup
 	install_packages x11-drivers/xf86-video-vmware
+
+	if ! pkg info | fgrep -q virtualbox-ose-additions; then
+	    install_guest_additions=`auto-ask guest-additions \
+		'Install VirtualBox guest additions? (y/n)' y`
+	fi
 	
 	if [ 0$install_guest_additions = 0y ] && \
 		! pkg info | fgrep -q virtualbox-ose-additions; then
@@ -3299,12 +3304,6 @@ if [ -e /dev/usb ]; then
     chmod 750 /dev/usb
 fi
 external_drive_config
-
-# Ask the questions before beginning so the installation can run unattended
-if vbox_guest && ! pkg info | fgrep -q virtualbox-ose-additions; then
-    install_guest_additions=`auto-ask guest-additions \
-    'Install VirtualBox guest additions? (y/n)' y`
-fi
 
 # Add special configs for specific hardware
 auto-detect-laptops
