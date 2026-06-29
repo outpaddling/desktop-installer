@@ -147,7 +147,7 @@ cwm_config()
 lxqt_config()
 {
     # Install separately so user sees error messages
-    for pkg in evince--light lxqt lxqt-extras galculator; do
+    for pkg in qpdfview lxqt lxqt-extras galculator; do
         pkg_add $pkg
     done
     xenodm_config startlxqt
@@ -165,7 +165,7 @@ lumina_config()
 mate_config()
 {
     # Install separately so user sees error messages
-    for pkg in evince--light mate mate-extras; do
+    for pkg in atril mate mate-extras; do
         pkg_add $pkg
     done
     xenodm_config "ck-launch-session mate-session"
@@ -174,7 +174,7 @@ mate_config()
 xfce_config()
 {
     # Install separately so user sees error messages
-    for pkg in evince--light xfce xfce-extras; do
+    for pkg in atril xfce xfce-extras; do
         pkg_add $pkg
     done
     xenodm_config "ck-launch-session xfce4-session"
