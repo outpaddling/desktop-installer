@@ -73,11 +73,40 @@ work with the underlying operating system, not around it, integrating the many
 features already provided by BSDs to create a fast, stable, and secure
 desktop experience.
 
+## Audience
+
+FreeBSD, NetBSD, and OpenBSD are operating systems primarily
+used by somewhat knowledgeable Unix users, such as professional software
+developers and systems managers.  They are used in many hard-core
+behind-the-scenes settings, such as the Netflix content delivery network,
+many popular storage and networking appliances, etc.  They can, however,
+also make a great desktop system for typical daily computing, such as
+web browsing, document editing, gaming, etc.
+
+Desktop installer is fairly quick and easy to use, but it does require
+a little bit of Unix command-line knowledge.  If you're new to Unix,
+but somewhat computer-savvy, you should have no trouble using desktop-installer.
+If you prefer to start with the easiest path to seeing what Unix is
+about, you may want to first try a system with a simple graphical
+installer first, such as [GhostBSD](https://ghostbsd.org) or
+[Debian GNU/Linux](https://debian.org).
+
+The primary goal of desktop-installer is not to make BSD accessible to Unix
+beginners, but to make deployment much more efficient for experienced
+Unix users.  This makes it feasible for systems managers to run BSD on
+on a large numbers of desktop machines in an office or computer lab, even
+where hardware varies, and hence cloning is not an easy option.
+It also allows users to overcome the limitations of more NOOB-friendly
+systems like GhostBSD, which supports a limited number of desktop environments
+and CPU architectures, and Ubuntu, which requires a lot of RAM and disk space.
+BSD systems with a lightweight desktop environment or window manager can
+easily run on 1 GiB RAM or less, and a few GB of disk.
+
 ## Uses
 
 BSD operating systems are fabulous for running open source software, due
-to their unparalleled reliability and security, and convenient software
-management.
+to their near-optimal performance, unparalleled reliability and security,
+and convenient software management.
 FreeBSD, in particular, has the second largest curated package collection
 (called FreeBSD ports) of any operating system, not too far behind Debian
 packages.  Furthermore, FreeBSD ports tend to be more up-to-date,
@@ -127,48 +156,20 @@ Desktop-installer is implemented as a post-install script, rather than
 integrated into the OS installer for the following reasons:
 
 1. The BSD installers work fine, and are very fast.  With a little
-   practice, a basic BSD system can be installed in under five minutes.
+   practice, a basic BSD system can be installed from scratch
+   in under five minutes.
    
 2. Many server systems need not and should not have a graphical
    user interface.  Adding one would would be of little use in a
    data center, and would just mean a lot more packages to upgrade
    during normal maintenance.  This would be a waste of time and
-   bandwidth.
+   bandwidth.  More installed services may also mean more security holes.
    
 3. As a post-install script, you can simply run desktop-installer again
-   if you want to try a different desktop environment, rather than
+   if you want to try out a different desktop environment, rather than
    figure out how to configure another DE manually, or reinstall the
    whole operating system.  The rest of your installation is unaffected,
    and need not even be rebooted in most cases.
-
-## Audience
-
-FreeBSD, NetBSD, and OpenBSD are operating systems primarily
-used by somewhat knowledgeable Unix users, such as professional software
-developers and systems managers.  They are used in many hard-core
-behind-the-scenes settings, such as the Netflix content delivery network,
-many popular storage and networking appliances, etc.  They can, however,
-also make a great desktop system for typical daily computing, such as
-web browsing, document editing, gaming, etc.
-
-Desktop installer is fairly quick and easy to use, but it does require
-a little bit of Unix command-line knowledge.  If you're new to Unix,
-but somewhat computer-savvy, you should have no trouble using desktop-installer.
-If you prefer to start with the easiest path to seeing what Unix is
-about, you may want to first try a system with a simple graphical
-installer first, such as [GhostBSD](https://ghostbsd.org) or
-[Debian GNU/Linux](https://debian.org).
-
-The primary goal of desktop-installer is not to make BSD accessible to Unix
-beginners, but to make deployment much more efficient for experienced
-Unix users.  This makes it feasible for systems managers to run BSD on
-on a large numbers of desktop machines in an office or computer lab, even
-where hardware varies, and hence cloning is not an easy option.
-It also allows users to overcome the limitations of more NOOB-friendly
-systems like GhostBSD, which supports a limited number of desktop environments
-CPU architectures, and Ubuntu, which requires a lot of RAM and disk space.
-BSD systems with a lightweight desktop environment or window manager can
-easily run on 1 GiB RAM or less, and a few GB of disk.
 
 ## Design principles
 
@@ -181,33 +182,34 @@ features already provided by BSDs to create a fast, stable, and secure
 desktop experience.
 
 Any general enhancements for the sake of desktop-installer
-will be desktop-independent and available via the ports/pkgsrc
-collections for use with or without desktop-installer.
+should be desktop-independent and available via the ports/pkgsrc
+collections for use with any desktop environment and with or
+without desktop-installer.
 
-One of the primary objectives
-of desktop-installer is long-term sustainability.  Since man-hours are costly,
-efforts are focused on
+One of the primary objectives of desktop-installer is long-term
+sustainability.  Since man-hours are costly, efforts are focused on
 improving the functionality of the end-result, not the appearance of the tool.
 
 Desktop-installer does not try to compensate for BSD's shortcomings.
 We prefer to leave them exposed so that there is motivation to fix them in
 the BSD base or ports system.
 
-Desktop-installer will not impose any arbitrary limitations.
-While the GUI distributions tend to support only AMD64 systems running the
-latest BSD release, desktop-installer allows you to use any supported
+Desktop-installer shall not impose any arbitrary limitations.
+While the GUI OS distributions may support only x86 systems running the
+latest OS release, desktop-installer allows you to use any supported
 version of BSD on any supported CPU architecture.  ARM, PowerPC,
 RISC-V and Sparc are treated no differently than x86.  Desktop-installer has
 been tested on an iMac G5 and a Rock 64, in addition to numerous x86 PCs and
 laptops.  While we can't guarantee that all
 ports/packages will work on all platforms, desktop-installer
-won't stand in your way.
+won't stand in your way if they do.
 
 ## Using desktop-installer
 
-FreeBSD supports two major releases at any given time, e.g. 13.x and 14.x.
-We strongly recommend using the latest major FreeBSD release for desktop
+FreeBSD supports two major releases at any given time, e.g. 14.x and 15.x.
+We strongly recommend using the latest major FreeBSD release for most desktop
 systems.  Legacy releases may be preferred for certain server applications,
+or for very old hardware,
 but they may not have the latest device drivers and base libraries needed
 for some desktop applications.
 
