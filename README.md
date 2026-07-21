@@ -89,7 +89,11 @@ but somewhat computer-savvy, you should have no trouble using desktop-installer.
 If you prefer to start with the easiest path to seeing what Unix is
 about, you may want to first try a system with a simple graphical
 installer first, such as [GhostBSD](https://ghostbsd.org) or
-[Debian GNU/Linux](https://debian.org).
+[Debian GNU/Linux](https://debian.org).  Or, to make things even easier, just
+get a Mac.  MacOS 10 and later are largely based on BSD Unix.  The Apple
+GUI (graphical user interface) is proprietary, so it won't be quite the
+same experience as running an open source BSD or Linux system, but you
+can learn the Unix command-line and Unix software development on a Mac.
 
 The primary goal of desktop-installer is not to make BSD accessible to Unix
 beginners, but to make deployment much more efficient for experienced
