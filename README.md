@@ -10,7 +10,7 @@ and tedious systems management.
 FreeBSD, NetBSD, and OpenBSD are highly-evolved, free operating systems,
 that provide all the features necessary to make a great desktop system for
 WEB browsing, editing documents, playing music and videos, developing
-software, and much more.  They also offers solid support for most popular PC
+software, and much more.  They also offer solid support for most popular PC
 hardware.
 
 However, fully configuring a stock BSD desktop system by hand
