@@ -131,7 +131,7 @@ the FreeBSD ports system:
 
 BSD is great for science and engineering, as well, with over 2,400 packages
 in the math and science categories of FreeBSD ports.  Below are screen shots
-of an RNA-Seq differential expression analysis, and GNU Octave, and excellent
+of an RNA-Seq differential expression analysis, and GNU Octave, an excellent
 open source alternative to Matlab.
 
 ![Bioinformatics](bioinformatics.png)
