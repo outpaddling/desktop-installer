@@ -357,9 +357,14 @@ Many common tasks, including some described below, can be performed via
 the [Auto-admin](https://github.com/outpaddling/auto-admin/) menu.
 Simply run "auto-admin" and select an option.
 
-Subscribe to the [FreeBSD security notifications list](https://lists.freebsd.org/mailman/listinfo/freebsd-security-notifications).
- This is a spam-free, very low-volume
-email list to notify users about important security updates for FreeBSD.
+Subscribe to the
+[FreeBSD security notifications list](https://lists.freebsd.org/mailman/listinfo/freebsd-security-notifications),
+[NetBSD security notifications list](https://www.netbsd.org/mailinglists/#security-announce),
+or
+[OpenBSD security notifications list](https://www.openbsd.org/mail.html).
+
+These are spam-free, very low-volume
+email lists to notify users about important security updates.
 Typically a small group of security fixes are announced once every few
 months.
 
@@ -370,31 +375,34 @@ It is best to periodically back up your files and do a fresh install,
 in order to clean up any corruption that has accumulated due to
 user error, improper shutdowns, and bit rot.
 
-Most software on FreeBSD systems is installed from the FreeBSD ports
-collection.  The ports system allows you to quickly install pre-built
+Almost all software on BSD systems is installed via package managers,
+namely FreeBSD ports, OpenBSD ports, and NetBSD's pkgsrc.
+These package managers allow you to quickly install pre-built
 binary packages, or just as easily (but slowly) build from source with
 alternative
 build options such as additional compiler optimizations or optional
-features.  FreeBSD's ability to automatically install from source also
+features.  The ability to automatically install from source also allows
 you to cleanly and easily install software whose license forbids
 redistribution as a binary package.
 
-FreeBSD has strong default security settings and is immune to most malware,
+BSD systems have strong default security settings and are immune to most malware,
 but even a technically secure system is only as safe as your own habits.
 <a href="password.php">Secure your password</a> and change it
 frequently.
 Be careful about running arbitrary software downloaded from the web
 or from a USB stick.
-Installing all of your software via FreeBSD ports adds a strong layer of
-security, but not a guarantee.
+Installing all of your software via the native package manager
+adds a strong layer of security, but not a guarantee.
 
 Back up your important files regularly, preferably off-site.  It's easy
 to do using rsync
-or one of the backup tools available in the FreeBSD ports collection.
+or one of the backup tools available in the package managers.
 If your disk fails, just install a new disk, quickly rebuild your system
 using desktop installer again, and restore your files.
 
-Use the auto-admin menu to manage user accounts.  Be sure to add new users
+Use the auto-admin menu to manage user accounts.  The auto-adduser script
+offers more options than native tools to ensure that a desktop user is
+properly configured.  E.g., on FreeBSD, it prompts you to add new users
 to the "wheel" group to allow "su" to root, the "operator" group to allow
 use of "shutdown", and the "video" group to ensure optimal graphics
 performance.
