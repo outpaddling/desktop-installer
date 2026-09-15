@@ -165,7 +165,8 @@ integrated into the OS installer for the following reasons:
    
 2. Many server systems need not and should not have a graphical
    user interface.  Adding one would would be of little use in a
-   data center, and would just mean a lot more packages to upgrade
+   data center or in the cloud, and would just mean a lot more packages
+   to upgrade
    during normal maintenance.  This would be a waste of time and
    bandwidth.  More installed services may also mean more security holes.
    
