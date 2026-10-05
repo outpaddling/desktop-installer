@@ -325,7 +325,12 @@ FreeBSD install:
 	    Enable moused (solves problems with various mouse drivers)
 	    Enable ntpdate, ntpd, clear_tmp
 	
-	-   Add users: no (auto-admin does this better)
+	-   Add users: no
+	
+	    The FreeBSD adduser tool does not do everything necessary
+	    to configure graphical desktop users.  The auto-admin package
+	    is installed along with desktop-installer and does a more
+	    thorough user account setup.
     
 	-   If installing under VirtualBox:
 	    It's hard to eject CD fast enough after Reboot
