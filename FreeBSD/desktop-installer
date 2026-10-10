@@ -72,7 +72,7 @@ EOM
 	fi
 	if [ $install = yes ]; then
 	    if ! auto-install-packages -l -U $pkg 2>&1 \
-		| tee $LOG_DIR/auto-install-packages.log; then
+		| tee $LOG_FILE; then
 		status=$?
 		printf "Install failed.\n"
 		exit $status
@@ -2888,8 +2888,15 @@ X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
 CONFIG_DIR='/root/.config/desktop-installer'
 mkdir -p $CONFIG_DIR
+
+# Create a new log file for each run
 LOG_DIR='/root/desktop-installer-log'
 mkdir -p $LOG_DIR
+suffix=1
+while [ -e $LOG_DIR/auto-install-packages.log.$suffix ]; do
+    suffix=$(($suffix + 1))
+done
+LOG_FILE=$LOG_DIR/auto-install-packages.log.$suffix
 
 # Config files
 XORG_CONF='/etc/X11/xorg.conf'
