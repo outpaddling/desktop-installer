@@ -316,16 +316,9 @@ install_x11()
 	install_packages x11-drivers/${X11_DRIVER_PREFIX}xf86-video-vmware
 
 	# FIXME: Guest additions only work with Xorg
-	if [ $X11_PKG = xorg ]; then
-	    if ! pkg info | fgrep -q virtualbox-ose-additions; then
-		install_guest_additions=`auto-ask guest-additions \
-		    'Install VirtualBox guest additions? (y/n)' y`
-	    fi
-	else
-	    cat << EOM
-FIXME: VirtualBox guest additions are not yet supported under xlibre.
-EOM
-	    install_guest_additions=n
+	if ! pkg info | fgrep -q virtualbox-ose-additions; then
+	    install_guest_additions=`auto-ask guest-additions \
+		'Install VirtualBox guest additions? (y/n)' y`
 	fi
 	
 	if [ 0$install_guest_additions = 0y ] && \
@@ -344,16 +337,21 @@ EOM
 	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-70-x.y.z)\n"
 	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
 	    success=false
+	    if [ $X11_PKG = xlibre ]; then
+		vbox_x11_suffix='-xlibre'
+	    else
+		vbox_x11_suffix=''
+	    fi
 	    while [ $success != true ]; do
 		printf "Guest additions version to install? "
 		read ga_vers
 		if [ -z "$ga_vers" ]; then
-		    ga_port=virtualbox-ose-additions
+		    ga_port=virtualbox-ose-additions$vbox_x11_suffix
 		else
-		    ga_port=virtualbox-ose-additions-$ga_vers
+		    ga_port=virtualbox-ose-additions$vbox_x11_suffix-$ga_vers
 		fi
-		# FIXME: Either use install_packages everywhere or ditch it
-		if install_packages emulators/$ga_port; then
+		# FIXME: Use install_packages when it has flavors support
+		if pkg install -y $ga_port; then
 		    success=true
 		fi
 	    done
@@ -3007,34 +3005,38 @@ EOM
     SETUP_LEVEL=`auto-ask setup-level 'Your choice? ' 1`
 done
 
-if [ $SETUP_LEVEL = 2 ]; then
-    cat << EOM
+# Same for xorg and xlibre
+X11_COMMAND=Xorg
+X11_CONF='/etc/X11/xorg.conf'
+X11_CONF_DIR='/etc/X11/xorg.conf.d'
 
-The Xorg project has been deprecated and is being replaced by Wayland.
+# Default for SETUP_LEVEL=1
+X11_PKG=xorg
+X11_DRIVER_PREFIX=''
+
+if [ $SETUP_LEVEL = 2 ]; then
+    while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
+	cat << EOM
+
+The Xorg project is being deprecated and replaced by Wayland.
 
 The Xlibre project is a community-driven continuation of Xorg that is
-actively maintained and aims to continue improving X11 indefinitely.
-Support for Xlibre on FreeBSD is experimental.  Xorg, while no longer
-under active development, is stable.
+being actively developed.
 
-1.. Use the stable Xorg X11 server (default)
+Support for Xlibre on FreeBSD is still experimental.  Xorg, while no longer
+under active development, is stable and well-tested.
+
+1.. Use the stable Xorg X11 server
 2.. Use the experimental Xlibre X11 server
 
 EOM
 
-    read x11_selection
-    if [ 0"$x11_selection" = 02 ]; then
-	X11_PKG=xlibre
-	X11_DRIVER_PREFIX='xlibre-'
-    else
-	X11_PKG=xorg
-	X11_DRIVER_PREFIX=''
-    fi
-    
-    # Same for xorg and xlibre
-    X11_COMMAND=Xorg
-    X11_CONF='/etc/X11/xorg.conf'
-    X11_CONF_DIR='/etc/X11/xorg.conf.d'
+	x11_selection=`auto-ask x11-selection 'Your choice? ' 1`
+	if [ 0"$x11_selection" = 02 ]; then
+	    X11_PKG=xlibre
+	    X11_DRIVER_PREFIX='xlibre-'
+	fi
+    done
 fi
 
 cat << EOM
