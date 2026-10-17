@@ -3010,13 +3010,12 @@ X11_COMMAND=Xorg
 X11_CONF='/etc/X11/xorg.conf'
 X11_CONF_DIR='/etc/X11/xorg.conf.d'
 
-# Default for SETUP_LEVEL=1
+# Default to time-tested xorg
 X11_PKG=xorg
 X11_DRIVER_PREFIX=''
 
-if [ $SETUP_LEVEL = 2 ]; then
-    while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
-	cat << EOM
+while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
+    cat << EOM
 
 The Xorg project is being deprecated and replaced by Wayland.
 
@@ -3031,13 +3030,12 @@ under active development, is stable and well-tested.
 
 EOM
 
-	x11_selection=`auto-ask x11-selection 'Your choice? ' 1`
-	if [ 0"$x11_selection" = 02 ]; then
-	    X11_PKG=xlibre
-	    X11_DRIVER_PREFIX='xlibre-'
-	fi
-    done
-fi
+    x11_selection=`auto-ask x11-selection 'Your choice? ' 1`
+    if [ 0"$x11_selection" = 02 ]; then
+	X11_PKG=xlibre
+	X11_DRIVER_PREFIX='xlibre-'
+    fi
+done
 
 cat << EOM
 
