@@ -2884,6 +2884,40 @@ else
     Graphics=X11
 fi
 
+if [ $Graphics = X11 ]; then
+    # Same for xorg and xlibre
+    X11_COMMAND=Xorg
+    X11_CONF='/etc/X11/xorg.conf'
+    X11_CONF_DIR='/etc/X11/xorg.conf.d'
+    
+    # Default to time-tested xorg
+    X11_PKG=xorg
+    X11_DRIVER_PREFIX=''
+    
+    while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
+	cat << EOM
+
+The Xorg project is being deprecated and replaced by Wayland.
+
+The Xlibre project is a community-driven continuation of Xorg that is
+being actively developed.
+
+Support for Xlibre on FreeBSD is still experimental.  Xorg, while no longer
+under active development, is stable and well-tested.
+
+1.. Use the stable Xorg X11 server
+2.. Use the experimental Xlibre X11 server
+
+EOM
+
+	x11_selection=`auto-ask x11-selection 'Your choice? ' 1`
+	if [ 0"$x11_selection" = 02 ]; then
+	    X11_PKG=xlibre
+	    X11_DRIVER_PREFIX='xlibre-'
+	fi
+    done
+fi
+
 # Causes missing pkg-descr errors!
 # export PKGDIR=$PORTSDIR/packages
 
@@ -3003,38 +3037,6 @@ you full control over all configuration options.
 
 EOM
     SETUP_LEVEL=`auto-ask setup-level 'Your choice? ' 1`
-done
-
-# Same for xorg and xlibre
-X11_COMMAND=Xorg
-X11_CONF='/etc/X11/xorg.conf'
-X11_CONF_DIR='/etc/X11/xorg.conf.d'
-
-# Default to time-tested xorg
-X11_PKG=xorg
-X11_DRIVER_PREFIX=''
-
-while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
-    cat << EOM
-
-The Xorg project is being deprecated and replaced by Wayland.
-
-The Xlibre project is a community-driven continuation of Xorg that is
-being actively developed.
-
-Support for Xlibre on FreeBSD is still experimental.  Xorg, while no longer
-under active development, is stable and well-tested.
-
-1.. Use the stable Xorg X11 server
-2.. Use the experimental Xlibre X11 server
-
-EOM
-
-    x11_selection=`auto-ask x11-selection 'Your choice? ' 1`
-    if [ 0"$x11_selection" = 02 ]; then
-	X11_PKG=xlibre
-	X11_DRIVER_PREFIX='xlibre-'
-    fi
 done
 
 cat << EOM
