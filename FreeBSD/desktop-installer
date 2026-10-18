@@ -315,14 +315,19 @@ install_x11()
 	# FIXME: Move to auto-gpu-setup
 	install_packages x11-drivers/${X11_DRIVER_PREFIX}xf86-video-vmware
 
-	# FIXME: Guest additions only work with Xorg
-	if ! pkg info | fgrep -q virtualbox-ose-additions; then
+	if [ $X11_PKG = xlibre ]; then
+	    vbox_x11_suffix='-xlibre'
+	else
+	    vbox_x11_suffix=''
+	fi
+
+	if ! pkg info | grep -q 'virtualbox-ose-additions'$vbox_x11_suffix'-[0-9l]'; then
 	    install_guest_additions=`auto-ask guest-additions \
 		'Install VirtualBox guest additions? (y/n)' y`
 	fi
 	
 	if [ 0$install_guest_additions = 0y ] && \
-		! pkg info | fgrep -q virtualbox-ose-additions; then
+		! pkg info | fgrep -q virtualbox-ose-additions$vbox_x11_suffix-[0-9]*; then
 	    cat << EOM
 
 It is best to match the guest additions to the version of VirtualBox
@@ -332,16 +337,11 @@ best matching guest additions.  If you cannot match them exactly,
 an older guest additions should generally work under a newer VirtualBox.
 
 EOM
-	    pkg search virtualbox-ose-additions \
+	    pkg search 'virtualbox-ose-additions'$vbox_x11_suffix'-[0-9l].*' \
 		| awk '$0 !~ "nox11" { print $1 }'
 	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-70-x.y.z)\n"
 	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
 	    success=false
-	    if [ $X11_PKG = xlibre ]; then
-		vbox_x11_suffix='-xlibre'
-	    else
-		vbox_x11_suffix=''
-	    fi
 	    while [ $success != true ]; do
 		printf "Guest additions version to install? "
 		read ga_vers
