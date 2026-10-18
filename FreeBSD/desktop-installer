@@ -509,6 +509,11 @@ EOM
 	    touch $CONFIG_DIR/gpu-done
 	fi
     fi
+
+    xdm_disable
+    sddm_disable
+    gdm_disable
+    slim_disable
     
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y pavucontrol waybar
@@ -2798,7 +2803,7 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
-printf "Are you interested in trying experimental Wayland graphics? y/[n] "
+printf "Would you like to know more about Wayland graphics? y/[n] "
 read wayland
 if [ 0"$wayland" = 0y ]; then
     cat << EOM
@@ -3086,6 +3091,7 @@ prepared to stay with it.
 EOM
 pause
 
+
 check_inodes
 if [ ! -e /usr/src/sys ]; then
     printf "Installing src tree...\n"
@@ -3195,8 +3201,6 @@ auto-add-fdesc-mount
 if [ $SETUP_LEVEL = 2 ]; then
     disable_suj
 fi
-
-clear
 
 if [ $SETUP_LEVEL = 2 ]; then
     cat << EOM
@@ -3513,11 +3517,6 @@ fi
 # After network_config
 # FIXME: Split off for Waland?
 install_common_ports
-
-# Additional package installs may have added fonts, etc.
-if [ -e $X11_CONF ]; then
-    auto-update-xorg.conf
-fi
 
 if [ 0$enable_wireless = 0'y' ]; then
     cat << EOM
