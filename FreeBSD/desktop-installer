@@ -3044,6 +3044,13 @@ EOM
     SETUP_LEVEL=`auto-ask setup-level 'Your choice? ' 1`
 done
 
+check_inodes
+
+if [ ! -e /usr/src/sys ]; then
+    printf "Installing src tree...\n"
+    auto-install-base-components src
+fi
+
 cat << EOM
 
 ===========================================================================
@@ -3089,14 +3096,6 @@ prepared to stay with it.
 ===========================================================================
 
 EOM
-pause
-
-
-check_inodes
-if [ ! -e /usr/src/sys ]; then
-    printf "Installing src tree...\n"
-    auto-install-base-components src
-fi
 
 if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
