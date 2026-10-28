@@ -2332,7 +2332,7 @@ lumina_config()
 cde_config()
 {
     # ksh needed for CDE to function, groff needed for man pages
-    install_packages x11/cde shells/ksh93 textproc/groff
+    install_packages x11/cde textproc/groff
     auto-mark-package-critical cde
     # Needed only for calendar
     # auto-enable-service rpcbind desktop-installer
