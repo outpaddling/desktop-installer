@@ -3108,7 +3108,7 @@ pkg update
 
 if [ $latest_packages = y ]; then
     # Runs auto-update-system unconditionally
-    auto-pkg-latest --no-reboot
+    auto-pkg-latest --no-restart
     # If user has not rebooted, restart with possibly newer desktop-installer
     printf "Restarting desktop-installer...\n"
     pause
