@@ -2803,6 +2803,10 @@ if [ `whoami` != 'root' ]; then
     exit 1
 fi
 
+# Make sure log dir is under /root
+# Also avoid potential issues like disappearing CWD
+cd
+
 printf "Would you like to know more about Wayland graphics? y/[n] "
 read wayland
 if [ 0"$wayland" = 0y ]; then

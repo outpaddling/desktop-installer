@@ -84,6 +84,10 @@ if [ $# != 0 ]; then
     usage
 fi
 
+# Make sure log dir is under /root
+# Also avoid potential issues like disappearing CWD
+cd
+
 cat << EOM
 
 It is best to have all installed packages up-to-date before installing

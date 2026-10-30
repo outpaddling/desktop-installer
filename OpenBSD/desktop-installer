@@ -67,11 +67,11 @@ EOM
 
     # Offer to enable xenodm if not already running
     if ! pgrep bin/xenodm; then
-        printf "Enable XenoDM graphical login? [y]/n "
-        read xenodm
-        if [ 0"$xenodm" != 0n ]; then
-            auto-enable-service xenodm $0
-        fi
+	printf "Enable XenoDM graphical login? [y]/n "
+	read xenodm
+	if [ 0"$xenodm" != 0n ]; then
+	    auto-enable-service xenodm $0
+	fi
     fi
 
     xsession=/etc/X11/xenodm/Xsession
@@ -148,7 +148,7 @@ lxqt_config()
 {
     # Install separately so user sees error messages
     for pkg in qpdfview lxqt lxqt-extras galculator; do
-        pkg_add $pkg
+	pkg_add $pkg
     done
     xenodm_config startlxqt
 }
@@ -157,7 +157,7 @@ lumina_config()
 {
     # Install separately so user sees error messages
     for pkg in lumina qterminal qpdfview lximage-qt galculator; do
-        pkg_add $pkg
+	pkg_add $pkg
     done
     xenodm_config start-lumina-desktop
 }
@@ -166,7 +166,7 @@ mate_config()
 {
     # Install separately so user sees error messages
     for pkg in atril mate mate-extras; do
-        pkg_add $pkg
+	pkg_add $pkg
     done
     xenodm_config "ck-launch-session mate-session"
 }
@@ -175,7 +175,7 @@ xfce_config()
 {
     # Install separately so user sees error messages
     for pkg in atril xfce xfce-extras; do
-        pkg_add $pkg
+	pkg_add $pkg
     done
     xenodm_config "ck-launch-session xfce4-session"
 }
@@ -233,6 +233,10 @@ custom_session_config()
 if [ $# != 0 ]; then
     usage
 fi
+
+# Make sure log dir is under /root
+# Also avoid potential issues like disappearing CWD
+cd
 
 line
 
