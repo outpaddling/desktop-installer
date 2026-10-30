@@ -1,4 +1,5 @@
-Make sure zenity popups don't offer anything to click on inside the window
+
+Advise user to use auto-admin 'Add to group' for pre-existing users
 
 Add Gnome-flashback support?
 
@@ -9,9 +10,7 @@ Automatically configure localization?
 
 Install libvdpau-va-gl for vlc?
 
-Explore localization setup
-
-Improve batter monitor
+Improve battery monitor
     Is there a DE-independent way to run minimized?
 
 Improve update notifications
