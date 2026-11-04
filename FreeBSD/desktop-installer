@@ -1715,6 +1715,9 @@ EOM
     printf "Install chromium + widevine now? y/[n] "
     read widevine
     if [ 0"$widevine" = 0y ]; then
+	# Disable prompting for license every time it's installed
+	auto-append-line 'LICENSES_ACCEPTED+=\tProprietary' /etc/make.conf $0
+	auto-mark-install-from-source www/linux-widevine-cdm license always
 	auto-chromium+widevine-install
     fi
     
