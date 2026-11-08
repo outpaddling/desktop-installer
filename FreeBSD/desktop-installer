@@ -137,7 +137,7 @@ sway_config()
 		   zathura-pdf-poppler wmenu pcmanfm-qt
     auto-mark-package-critical sway swaylock-effects alacritty
     wayland_config
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 ##########################################################################
@@ -155,7 +155,7 @@ hyprland_config()
     pkg install -y hyprland alacritty
     auto-mark-package-critical hyprland alacritty
     wayland_config
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 ##########################################################################
@@ -174,7 +174,7 @@ hikari_config()
 		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
     auto-mark-package-critical hikary alacritty
     wayland_config
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 ##########################################################################
@@ -195,7 +195,7 @@ wayfire_config()
 		   pcmanfm-qt
     auto-mark-package-critical wayfire alacritty
     wayland_config
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 ##########################################################################
@@ -214,7 +214,7 @@ xfce_wayland_config()
     auto-mark-package-critical xfce labwc
     wayland_config
     xfce_packages
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 ##########################################################################
@@ -2110,7 +2110,7 @@ xfce_config()
     startup_scripts XFCE4
     x11_config xdm_sddm
     xfce_packages
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2126,7 +2126,7 @@ wmaker_config()
     startup_scripts WMAKER
     x11_config xdm_sddm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2142,7 +2142,7 @@ fluxbox_config()
     startup_scripts FLUXBOX
     x11_config xdm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2158,7 +2158,7 @@ icewm_config()
     startup_scripts ICEWM
     x11_config xdm_sddm
     install_packages math/galculator x11/xlockmore x11/xscreensaver
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2173,7 +2173,7 @@ lxde_config()
     auto-mark-package-critical lxde-meta
     startup_scripts LXDE
     x11_config xdm_sddm
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
     install_packages math/galculator x11/xlockmore x11/coreterminal
 }
 
@@ -2189,7 +2189,7 @@ lxqt_config()
     auto-mark-package-critical lxqt
     startup_scripts LXQT
     x11_config xdm_sddm
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
     install_packages math/galculator x11/xlockmore x11/coreterminal
 }
 
@@ -2288,7 +2288,7 @@ mate_config()
     
     startup_scripts MATE
     x11_config sddm
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2328,7 +2328,7 @@ lumina_config()
     
     startup_scripts LUMINA
     x11_config xdm_sddm
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
     # Make GTK2 apps look nice
     cp $LOCALBASE/share/desktop-installer/LUMINA/gtkrc \
 	$LOCALBASE/etc/gtk-2.0
@@ -2410,7 +2410,7 @@ EOM
     # Generate a custom script instead
     startup_scripts OTHER $de_port
     x11_config xdm
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 
@@ -2454,7 +2454,7 @@ EOM
     # FIXME: See if anything needs to be done for Wayland here
     # startup_scripts OTHER $de_port
     wayland_config
-    auto-automount-setup || true
+    auto-devd-mount-setup || true
 }
 
 

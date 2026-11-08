@@ -288,7 +288,9 @@ fi
 # Enable devpubd-based external media mounting
 # FIXME: Tolerate failure for now, since qmediamagager is
 # difficult to install until a binary package exists
-auto-automount-setup || true
+# FIXME: Make this DE-dependent, since some DEs have their own
+# automount tools.
+auto-devd-mount-setup || true
 
 for app in firefox thunderbird keepassxc; do
     if ! auto-package-installed $app; then
