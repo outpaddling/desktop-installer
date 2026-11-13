@@ -117,8 +117,12 @@ packages.  Furthermore, FreeBSD ports tend to be more up-to-date,
 as tracked by [https://repology.org/](https://repology.org/).  BSD
 systems + open source software provide everything most people need for
 their daily computer use, including office suites, multimedia, scientific
-computing, and much more.  You have your choice of dozens of desktop
-environments to choose from.
+computing, and much more.
+
+On FreeBSD, the ports systems provides dozens
+of desktop environments and simple and window managers to choose from.
+NetBSD and OpenBSD also offer many choices, including the most popular ones.
+Support for Wayland is also present and growing.
 
 The Lumina desktop environment, just one of many of choices:
 
