@@ -1874,28 +1874,6 @@ EOM
 
 
 ##########################################################################
-#   Enable procfs.  This is required by Gnome, and various other
-#   packages.
-##########################################################################
-
-procfs_config()
-{
-    # procfs
-    # proc                    /proc           procfs  rw              0       0
-    auto-append-line procfs "proc\t\t\t/proc\t\tprocfs\trw\t\t0\t0" $FSTAB desktop-installer
-    # FIXME: Is it a FreeBSD 15 bug to have /proc missing?
-    mkdir -p /proc
-    
-    # Mount if not already mounted
-    if ! df | fgrep -qw /proc; then
-	mount proc
-    else
-	printf "/proc is already mounted.\n"
-    fi
-}
-
-
-##########################################################################
 #   Configure the Network Time Protocol daemon.
 ##########################################################################
 
@@ -3363,7 +3341,7 @@ network_config
 # Configure devices and services
 atapicam_config
 sound_config
-procfs_config
+auto-add-proc-mount
 ntp_config
 nfs_client_config
 nfs_server_config
