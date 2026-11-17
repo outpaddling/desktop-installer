@@ -84,25 +84,25 @@ EOM
 
 vbox_guest()
 {
-    sysctl kern.vm_guest | fgrep -iq vbox
+    sysctl kern.vmm_guest | fgrep -iq vbox
     return $?
 }
 
 parallels_guest()
 {
-    sysctl kern.vm_guest | fgrep -iq parallels
+    sysctl kern.vmm_guest | fgrep -iq parallels
     return $?
 }
 
 vmware_guest()
 {
-    sysctl kern.vm_guest | fgrep -iq vmware
+    sysctl kern.vmm_guest | fgrep -iq vmware
     return $?
 }
 
 hyper_v_guest()
 {
-    test $(sysctl -n kern.vm_guest) = hv
+    test $(sysctl -n kern.vmm_guest) = hv
 }
 
 qemu_guest()
@@ -112,7 +112,7 @@ qemu_guest()
     return $?
 }
 
-vm_guest()
+vmm_guest()
 {
     # FIXME: Add support for other hypervisors and emulators
     vbox_guest || parallels_guest || vmware_guest || hyper_v_guest || qemu_guest
@@ -314,66 +314,6 @@ install_x11()
 	# VirtualBox defaults to vmware video in some cases
 	# FIXME: Move to auto-gpu-setup
 	install_packages x11-drivers/${X11_DRIVER_PREFIX}xf86-video-vmware
-
-	if [ $X11_PKG = xlibre ]; then
-	    vbox_x11_suffix='-xlibre'
-	else
-	    vbox_x11_suffix=''
-	fi
-
-	if ! pkg info | grep -q 'virtualbox-ose-additions'$vbox_x11_suffix'-[0-9l]'; then
-	    install_guest_additions=`auto-ask guest-additions \
-		'Install VirtualBox guest additions? (y/n)' y`
-	fi
-	
-	if [ 0$install_guest_additions = 0y ] && \
-		! pkg info | fgrep -q virtualbox-ose-additions$vbox_x11_suffix-[0-9]*; then
-	    cat << EOM
-
-It is best to match the guest additions to the version of VirtualBox
-under which the VM is running.  Below is a list of guest additions
-ports.  Check the version of your VirtualBox host and choose the
-best matching guest additions.  If you cannot match them exactly,
-an older guest additions should generally work under a newer VirtualBox.
-
-EOM
-	    pkg search 'virtualbox-ose-additions'$vbox_x11_suffix'-[0-9l].*' \
-		| awk '$0 !~ "nox11" { print $1 }'
-	    printf "\nGuest additions version? (e.g. '70' for virtualbox-ose-additions-70-x.y.z)\n"
-	    printf "Just press enter to use the default 'virtualbox-ose-additions-x.y.z.\n"
-	    success=false
-	    while [ $success != true ]; do
-		printf "Guest additions version to install? "
-		read ga_vers
-		if [ -z "$ga_vers" ]; then
-		    ga_port=virtualbox-ose-additions$vbox_x11_suffix
-		else
-		    ga_port=virtualbox-ose-additions$vbox_x11_suffix-$ga_vers
-		fi
-		# FIXME: Use install_packages when it has flavors support
-		if pkg install -y $ga_port; then
-		    success=true
-		fi
-	    done
-	    auto-enable-service vboxguest desktop-installer
-	    auto-enable-service vboxservice desktop-installer
-	    cat << EOM
-
-VirtualBox guest additions work best with the VBOXSVGA graphics controller,
-while VirtualBox may default to VMSVGA.  Check the display settings for
-this VM and make sure the Graphics Controller is set to VBOXSVGA.  You can
-change this setting in the VirtualBox settings GUI, or by running
-
-    VBoxManage modifyvm --graphicscontroller vboxsvga
-
-under the host operating system.  This setting cannot be changed while
-the guest is running.
-
-EOM
-	    pause
-	fi
-    else
-	pkg remove -y virtualbox-ose-additions\* || true
     fi
     
     # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
@@ -465,50 +405,7 @@ EOM
 
 wayland_config()
 {
-    # Don't mess with drivers if Wayland already running
-    if pkg info | fgrep -q drm-kmod; then
-	cat << EOM
-
-===========================================================================
-The drm-kmod package is already installed, so we won't mess with the
-graphics drivers.  If you want desktop-installer to help you change them,
-run 
-
-    pkg remove drm-kmod
-    pkg autoremove
-
-and run desktop-installer from a text console.
-===========================================================================
-
-EOM
-	pause
-    else
-	cat << EOM
-
-===========================================================================
-Graphics drivers must be configured once, followed by a reboot to properly
-test them before attempting to start Wayland.  If you guess wrong which
-graphics driver/DRM combination to use, you may need to repeat this
-process and try again.
-
-Answer 'y' if you want to to use the guided driver configurator or 'n' if
-you want to fall back on the generic SCFB or VESA drivers or configure
-your graphics manually later.
-===========================================================================
-
-EOM
-	
-	if [ -e $CONFIG_DIR/gpu-done ]; then
-	    default_response=n
-	else
-	    default_response=y
-	fi
-	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" $default_response`
-	if [ 0$configure_graphics != 0n ]; then
-	    auto-gpu-setup
-	    touch $CONFIG_DIR/gpu-done
-	fi
-    fi
+    # FIXME: No drm-kmod on DragonFly at this time
 
     xdm_disable
     sddm_disable
@@ -657,29 +554,7 @@ desktop-installer from a text console.
 EOM
 	pause
     else
-	cat << EOM
-
-===========================================================================
-Graphics drivers must be configured once, followed by a reboot to properly
-test them before attempting to start X11.  If you guess wrong which graphics
-driver/DRM combination to use, you may need to repeat this process and try
-again.  Answer 'y' if you want to to use the guided driver configurator or
-'n' if you want to fall back on the generic SCFB or VESA drivers or configure
-your graphics manually later.
-===========================================================================
-
-EOM
-	
-	if [ -e $CONFIG_DIR/gpu-done ]; then
-	    default_response=n
-	else
-	    default_response=y
-	fi
-	configure_graphics=`auto-ask gpu-setup "Run guided graphics driver selection? (y/n)" $default_response`
-	if [ 0$configure_graphics != 0n ]; then
-	    auto-gpu-setup
-	    touch $CONFIG_DIR/gpu-done
-	fi
+	# FIXNE: No drm-kmod on DragonFly at this time
     fi
     
     # Create and install an X11 conf file.  This isn't necessary, but it's
@@ -846,39 +721,8 @@ EOM
 		pause
 		$MORE /var/log/$X11_COMMAND.0.log
 		line
-		cat << EOM
-
-===========================================================================
-Your chipset is
-
-$(grep Chipset /var/log/$X11_COMMAND.0.log)
-
-If you are using a newer video chipset, you may want to try installing
-graphics/drm-kmod, which supports newer devices than th base DRM..
-
-If you are using an older video chipset (as many server motherboards do),
-you may need an X11 video driver that is not installed by default.
-===========================================================================
-
-EOM
-
-		drm_kmod=`auto-ask drm-kmod "Install drm-kmod? (y/n)" y`
-		if [ $drm_kmod != n ]; then
-		    pkg remove -y drm-\*-kmod || true
-		    install_packages graphics/drm-kmod
-		    printf "Update $RC_CONF as described above, reboot, and run desktop-installer again.\n"
-		    exit
-		fi
-
-		more_drivers=`auto-ask more-drivers \
-		    "Would you like to try installing additional drivers? (y/n)" n`
-		if [ $more_drivers = 'y' ]; then
-		    save_cwd=`pwd`
-		    cd $PORTSDIR/x11-drivers/$X11_PKG-drivers
-		    make config
-		    make deinstall clean reinstall
-		    cd $save_cwd
-		fi
+		
+		# FIXME: No drm-kmod on DragonFly at this time
 	    fi
 	    clear   # Switch back to VT might leave a mess
 	else
@@ -1880,7 +1724,7 @@ EOM
 ntp_config()
 {
     # Let the host manage the clock
-    if vm_guest; then
+    if vmm_guest; then
 	printf "Skipping NTP configuration for guest OS.\n"
 	return
     fi
@@ -2565,7 +2409,7 @@ $LOCALBASE/sbin/auto-network-restart \&\& $LOCALBASE/sbin/auto-fix-date\\
 exit 0|g" $RC_RESUME
     fi
 
-    if ! vm_guest; then
+    if ! vmm_guest; then
 	if sysctl dev.acpi_lid.0; then  # laptop
 	    default_wireless='y'
 	else
@@ -2932,7 +2776,7 @@ umask 022
 ARCH=`uname -m`
 START_DIR=`pwd`
 DATADIR="$LOCALBASE/share/desktop-installer"
-PORTSDIR="/usr/ports"
+PORTSDIR="/usr/dports"
 X11BASE="$LOCALBASE"
 SSHDIR='/etc/ssh'
 CONFIG_DIR='/root/.config/desktop-installer'
@@ -3184,7 +3028,8 @@ fi
 auto-enable-passwdqc
 
 # Needed by openjdk, bash, etc.
-auto-add-fdesc-mount
+# FIXME: See if there is a way to support this
+# auto-add-fdesc-mount
 
 # Ensure disk is clean after a power outage
 if [ $SETUP_LEVEL = 2 ]; then
@@ -3310,9 +3155,10 @@ done
 
 # Do this early: dmidecode used by config functions for hardware detection
 # gmake used for wifi driver builds
+# FIXME: Why isn't runas building on DragonFly?
 install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
     devel/cmake devel/ninja devel/autoconf devel/automake \
-    ports-mgmt/portconfig sysutils/runas
+    ports-mgmt/portconfig
 
 power_config
 if vbox_guest; then
