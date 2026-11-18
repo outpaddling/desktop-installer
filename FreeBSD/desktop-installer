@@ -279,6 +279,7 @@ install_x11()
 	x11-drivers/${X11_DRIVER_PREFIX}xf86-video-mga \
 	x11-drivers/${X11_DRIVER_PREFIX}xf86-input-wacom \
 	x11-drivers/${X11_DRIVER_PREFIX}xf86-input-libinput \
+	x11-drivers/${X11_DRIVER_PREFIX}xf86-input-evdev \
 	x11-drivers/${X11_DRIVER_PREFIX}xf86-input-mouse \
 	x11-drivers/${X11_DRIVER_PREFIX}xf86-input-keyboard
     auto-mark-package-critical \
