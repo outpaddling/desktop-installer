@@ -1,4 +1,8 @@
 
+lxqt: "Leave" doesn't work during X11 test
+    Buttons are also blank text
+    Something else needs to be installed or enabled?
+
 Copy script to temporary location and run from there
     If script is updating while running, odd things can happen
 	The shell might not have read all of it, so if it's overwritten,
