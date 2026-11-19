@@ -1755,10 +1755,6 @@ ntp_config()
 
 nfs_client_config()
 {
-    # rpc statd and lockd
-    # Needed for some applications (like OpenOffice) to access files on
-    # NFS servers.
-    auto-nfs-client-setup
     auto-autofs-nfs-setup || true
     cat << EOM
 
