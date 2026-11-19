@@ -1914,9 +1914,7 @@ nfs_client_config()
     # rpc statd and lockd
     # Needed for some applications (like OpenOffice) to access files on
     # NFS servers.
-    auto-enable-service nfs_client desktop-installer
-    auto-enable-service -s statd rpc_statd desktop-installer
-    auto-enable-service -s lockd rpc_lockd desktop-installer
+    auto-nfs-client-setup
     auto-autofs-nfs-setup || true
     cat << EOM
 
