@@ -1,4 +1,10 @@
 
+Copy script to temporary location and run from there
+    If script is updating while running, odd things can happen
+	The shell might not have read all of it, so if it's overwritten,
+	the next read could be out of alignment
+    Do not use /tmp, which might be mounted noexec
+
 Advise user to use auto-admin 'Add to group' for pre-existing users
 
 Add Gnome-flashback support?
