@@ -44,7 +44,7 @@ install_packages()
     
     for pkg in $@; do
 	# FIXME: auto-install-packages should exit non-zero in this case
-	if [ ! -e $PORTSDIR/$pkg ]; then
+	if [ ! -e "$PORTSDIR/$pkg" ]; then
 	    cat << EOM
 
 ===========================================================================
@@ -60,7 +60,7 @@ EOM
 	fi
 	
 	install=no
-	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile 2> /dev/null; then
+	if grep -q '^ONLY_FOR_ARCHS' "$PORTSDIR/$pkg/Makefile" 2> /dev/null; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
 		if [ 0$(uname -p) = 0$arch ]; then
@@ -71,8 +71,11 @@ EOM
 	    install=yes
 	fi
 	if [ $install = yes ]; then
-	    if ! auto-install-packages -l -U $pkg 2>&1 \
-		| tee $LOG_FILE; then
+	    if ( set -o pipefail
+		auto-install-packages -l -U "$pkg" 2>&1 | tee -a "$LOG_FILE"
+	    ); then
+		:
+	    else
 		status=$?
 		printf "Install failed.\n"
 		exit $status
@@ -172,7 +175,7 @@ hikari_config()
     # Don't use install_packages: Wayland ports are currently under X11, which may change
     pkg install -y hikari alacritty \
 		   dmenu-wayland dmenu foot fuzzel zathura zathura-pdf-poppler
-    auto-mark-package-critical hikary alacritty
+    auto-mark-package-critical hikari alacritty
     wayland_config
     auto-devd-mount-setup || true
 }
@@ -545,8 +548,12 @@ EOM
 	    auto-ly-enable
 	    DISPLAY_MANAGER=ly
 	    ;;
+	2)
+	    DISPLAY_MANAGER=none
+	    ;;
 	*)
 	    printf "Invalid selection: $selection\n"
+	    ;;
 	esac
     done
 }
@@ -1791,6 +1798,7 @@ cdrecord_perms()
 {
     # /dev/cd* and /dev/xpt* should be set by other code
     # chmod 6755 $LOCALBASE/bin/cdrecord $LOCALBASE/bin/cdrdao
+    :
 }
 
 
@@ -1930,6 +1938,7 @@ EOM
 nfs_server_config()
 {
     # TBD
+    :
 }
 
 
@@ -2095,7 +2104,7 @@ wmaker_config()
 {
     enable_user_shutdown
     install_packages x11-wm/windowmaker x11-wm/wmakerconf
-    auto-mark-package-critical windomaker wmakerconf
+    auto-mark-package-critical windowmaker wmakerconf
     startup_scripts WMAKER
     x11_config xdm_sddm
     install_packages math/galculator x11/xlockmore x11/xscreensaver 
