@@ -1253,9 +1253,9 @@ xdm_config()
     # Pretty up the login
     install_packages graphics/feh   # Display stretched background image
     cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
-    cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
+    cp ${DATADIR}/XDM/logo.xpm $LOCALBASE/share/pixmaps
     # Put FreeBSD logo on login window
-    sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
+    sed -i '.bak' 's|xorg.xpm|logo.xpm|g' $xdm_base/Xresources
     sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
     # Login window is too big on SVGA screens
     sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
