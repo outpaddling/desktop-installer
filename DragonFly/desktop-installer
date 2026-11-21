@@ -1090,9 +1090,9 @@ xdm_config()
     # Pretty up the login
     install_packages graphics/feh   # Display stretched background image
     cp ${DATADIR}/XDM/bsd_background.jpg $LOCALBASE/share/pixmaps
-    cp ${DATADIR}/XDM/beastie.xpm $LOCALBASE/share/pixmaps
+    cp ${DATADIR}/XDM/logo.xpm $LOCALBASE/share/pixmaps
     # Put FreeBSD logo on login window
-    sed -i '.bak' 's|xorg.xpm|beastie.xpm|g' $xdm_base/Xresources
+    sed -i '.bak' 's|xorg.xpm|logo.xpm|g' $xdm_base/Xresources
     sed -i '' 's|greetColor: Blue3|greetColor: #200080|g' $xdm_base/Xresources
     # Login window is too big on SVGA screens
     sed -i '' 's|WIDTH > 800|WIDTH > 1024|g' $xdm_base/Xresources
@@ -1514,68 +1514,13 @@ EOM
 	fi
     done
 
-    shells="shells/bash shells/zsh shells/fish shells/dash shells/pdksh shells/xonsh"
+    shells="shells/bash shells/zsh shells/fish shells/dash shells/pdksh"
     pkgs=$(printf "$shells" | sed -e 's|shells/||g')
     install_shells=`auto-ask install-shells "Install popular shells ($pkgs) (y/n)" y`
     if [ $install_shells = 'y' ]; then
 	for shell in $shells; do
 	    install_packages $shell
 	done
-    fi
-
-    line
-    cat << EOM
-
-The Widevine digital rights management (DRM) module is a closed-source
-plugin used by web browsers to stream protected content from from sites
-such as Netflix, Hulu, Disney, etc.  A FreeBSD native DRM module is not
-available at this time, though it could be in the future if enough people
-request it.  For now, FreeBSD supports using the Linux widevine plugin
-within the FreeBSD native chromium browser.  You can install this now,
-or at any time later simply by running
-
-    auto-chromium+widevine-install
-
-Have a look at /usr/local/sbin/auto-chromium+widevine-install if you're
-interested in knowing the details.
-
-EOM
-pause
-
-cat << EOM
-
-Another alternative is to use the Google Chrome binary with Linux
-compatibility, which can be installed later using
-
-    # Fully configure Linux compatibility
-    auto-install-linux_base rl9
-    # Download and installs prebuilt Chrome for Linux from Google
-    pkg install linux-chrome
-
-Note that many people do not trust pre-compiled binaries from 3rd parties
-such as Google to respect their privacy.  If you are concerned about this,
-use the native chromium option instead.
-
-EOM
-    printf "Install chromium + widevine now? y/[n] "
-    read widevine
-    if [ 0"$widevine" = 0y ]; then
-	auto-install-linux_base rl9
-	
-	# Disable prompting for license every time it's installed
-	auto-append-line 'LICENSES_ACCEPTED+=\tProprietary' /etc/make.conf $0
-	auto-mark-install-from-source www/linux-widevine-cdm license always
-	auto-chromium+widevine-install
-    fi
-    
-    printf "Install Google Chrome for Linux? y/[n] "
-    read google
-    if [ 0"$google" = 0y ]; then
-	# Already installed linux_base?
-	if [ 0"$widevine" != 0y ]; then
-	    auto-install-linux_base rl9
-	fi
-	pkg install -y linux-chrome
     fi
     
     # In case someone installs chromium later
@@ -3153,7 +3098,7 @@ done
 # FIXME: Why isn't runas building on DragonFly?
 install_packages sysutils/dmidecode devel/gmake archivers/unzip net/rsync \
     devel/cmake devel/ninja devel/autoconf devel/automake \
-    ports-mgmt/portconfig
+    ports-mgmt/portconfig sysutils/sysrc
 
 power_config
 if vbox_guest; then
