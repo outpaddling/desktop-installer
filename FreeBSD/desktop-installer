@@ -1594,16 +1594,19 @@ install_common_ports()
 	java_config
     fi
 
-    # Common packages for desktop systems
-    
-    # bsdstats.org is an expired domain as of 2019-08-17. Is the idea dead?
-    # bsdstats should be last, since it has an interactive
-    # post-install script and we want the installs to run unattended
-    # as much as possible.  Also, it reports installed software, so
-    # we want everything else installed first.
-    
     # FIXME: Problem with auto-package-installed: graphics/gtkam
+
+    shells="shells/bash shells/zsh shells/fish shells/dash shells/pdksh shells/xonsh"
+    pkgs=$(printf "$shells" | sed -e 's|shells/||g')
+    line
+    install_shells=`auto-ask install-shells "Install popular shells ($pkgs) (y/n)" y`
+    if [ $install_shells = 'y' ]; then
+	for shell in $shells; do
+	    install_packages $shell
+	done
+    fi
     
+    # Common packages for desktop systems
     common_ports="security/keepassxc www/firefox \
 	mail/thunderbird editors/libreoffice multimedia/vlc"
     
@@ -1676,15 +1679,6 @@ EOM
 	    install_packages $port
 	fi
     done
-
-    shells="shells/bash shells/zsh shells/fish shells/dash shells/pdksh shells/xonsh"
-    pkgs=$(printf "$shells" | sed -e 's|shells/||g')
-    install_shells=`auto-ask install-shells "Install popular shells ($pkgs) (y/n)" y`
-    if [ $install_shells = 'y' ]; then
-	for shell in $shells; do
-	    install_packages $shell
-	done
-    fi
 
     line
     cat << EOM
@@ -3045,7 +3039,8 @@ if [ ! -e /usr/src/sys ]; then
     auto-install-base-components src
 fi
 
-cat << EOM
+if [ $(auto-pkg-branch) != latest ]; then
+    cat << EOM
 
 ===========================================================================
 FreeBSD by default installs packages from quarterly snapshots, which
@@ -3062,9 +3057,9 @@ https://pkg.freebsd.org/.
 ===========================================================================
 
 EOM
-pause
 
-cat << EOM
+    pause
+    cat << EOM
 
 ===========================================================================
 When using latest packages, updates to some packages may become available
@@ -3090,10 +3085,11 @@ prepared to stay with it.
 ===========================================================================
 
 EOM
-
-if [ $(auto-pkg-branch) != latest ]; then
     latest_packages=`auto-ask latest-packages 'Switch to latest binary packages instead of quarterly snapshot? (y/n)' n`
 else
+    line
+    printf "You are already using latest packages.\n"
+    pause
     latest_packages=n
 fi
 
@@ -3508,7 +3504,7 @@ else
 fi
 
 # After network_config
-# FIXME: Split off for Waland?
+# FIXME: Split off for Wayland?
 install_common_ports
 
 if [ 0$enable_wireless = 0'y' ]; then
@@ -3562,7 +3558,7 @@ you can perform basic systems management like updating your system, adding
 users, or installing from among the $pkg_count free software packages by
 running
 
-    su -m root -c auto-admin
+    asroot auto-admin
 
 NOTE:
 
