@@ -3040,8 +3040,7 @@ while [ $valid_selection = 0 ]; do
 1.. No desktop software (I'll install my own later)
 2.. KDE Plasma desktop (feature-rich and resource-intensive, 2 GiB RAM min)
 3.. Wayfire lightweight compositor
-4.. XFCE lightweight desktop
-5.. Custom (enter your own category/port and session command)
+4.. Custom (enter your own category/port and session command)
 EOM
 	custom=5
     else
@@ -3049,20 +3048,12 @@ EOM
 	line
 	cat << EOM
 1.. No desktop software (I'll install my own later)
-2.. CDE (retro 1990's)
-3.. Cinnamon desktop (Gnome 3 derivative in Gnome2 style, 2 GiB RAM min)
-4.. Fluxbox lightweight window manager
-5.. Gnome desktop (feature-rich and resource-intensive, 4 GiB RAM min)
-6.. Gnome-Lite desktop (4 GiB RAM min)
-7.. IceWM lightweight window manager
-8.. KDE Plasma desktop (feature-rich and resource-intensive, 2 GiB RAM min)
-9.. Lumina lightweight desktop (very fast, developed on BSD)
-10. LXDE lightweight desktop (replaced by LXQT, but still maintained)
-11. LXQT lightweight desktop
-12. MATE desktop (Gnome 2 derivative, 2 GiB RAM min)
-13. WindowMaker lightweight window manager
-14. XFCE4 lightweight desktop
-15. Custom (enter your own category/port and session command)
+2.. Fluxbox lightweight window manager
+3.. IceWM lightweight window manager
+4.. KDE Plasma desktop (feature-rich and resource-intensive, 2 GiB RAM min)
+5.. Lumina lightweight desktop (very fast, developed on BSD)
+6.. WindowMaker lightweight window manager
+7.. Custom (enter your own category/port and session command)
 EOM
 	custom=15
     fi
@@ -3181,10 +3172,6 @@ if [ $Graphics = Wayland ]; then
 	wayfire_config
 	;;
     4)
-	DESKTOP=xfce
-	xfce_wayland_config
-	;;
-    5)
 	DESKTOP=other
 	other_wayland_config
 	;;
@@ -3198,62 +3185,26 @@ else
 	DESKTOP=none
 	;;
     2)
-	DESKTOP=cde
-	cde_config
-	;;
-    3)
-	DESKTOP=cinnamon
-	cinnamon_config
-	;;
-    4)
 	DESKTOP=fluxbox
 	fluxbox_config
 	;;
-    5)
-	DESKTOP=gnome
-	gnome_config full
-	;;
-    6)
-	DESKTOP=gnome
-	gnome_config lite
-	;;
-    7)
+    3)
 	DESKTOP=icewm
 	icewm_config
 	;;
-    8)
+    4)
 	DESKTOP=kde
 	kde_config
 	;;
-    #9)
-    #    DESKTOP=kodi
-    #    kodi_config
-    #    ;;
-    9)
+    5)
 	DESKTOP=lumina
 	lumina_config
 	;;
-    10)
-	DESKTOP=lxde
-	lxde_config
-	;;
-    11)
-	DESKTOP=lxqt
-	lxqt_config
-	;;
-    12)
-	DESKTOP=mate
-	mate_config
-	;;
-    13)
+    6)
 	DESKTOP=wmaker
 	wmaker_config
 	;;
-    14)
-	DESKTOP=xfce4
-	xfce_config
-	;;
-    15)
+    7)
 	DESKTOP=other
 	other_config
 	;;
