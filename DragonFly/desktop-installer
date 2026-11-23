@@ -63,7 +63,11 @@ EOM
 	if grep -q ^ONLY_FOR_ARCHS $PORTSDIR/$pkg/Makefile 2> /dev/null; then
 	    archs=$(auto-print-make-variable $pkg ONLY_FOR_ARCHS)
 	    for arch in $archs; do
-		if [ 0$(uname -p) = 0$arch ]; then
+		# DragonFly uname reports x86_64, but dports lists amd64
+		# in ONLY_FOR_ARCHS
+		if [ $(uname -p) = x86_64 ] && [ $arch = amd64 ]; then
+		    install=yes
+		elif [ 0$(uname -p) = 0$arch ]; then
 		    install=yes
 		fi
 	    done
@@ -314,7 +318,10 @@ install_x11()
     if vbox_guest; then
 	# VirtualBox defaults to vmware video in some cases
 	# FIXME: Move to auto-gpu-setup
-	install_packages x11-drivers/${X11_DRIVER_PREFIX}xf86-video-vmware
+	# FIXME: Installing xf86-video-vmware causes reduced screen
+	#        size and login failure on 2026-11-21 snapshot
+	# install_packages x11-drivers/${X11_DRIVER_PREFIX}xf86-video-vmware
+	:
     fi
     
     # https://forums.freebsd.org/threads/parallels-compatible-display-driver.73378/
