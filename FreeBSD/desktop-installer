@@ -2835,9 +2835,9 @@ simplistic.
 
 Many people believe that Wayland is the future of Unix graphics.
 Some Linux distributions have announced that XWindows support will
-be discontinued in the near future.  Others might beg to differ.
+be discontinued in the near future.  Many others beg to differ.
 The XLibre project is aimed at modernizing the X Window System, and
-already has a growing team of over 500 developers.
+has a growing team of over 500 developers.
 
 EOM
 
@@ -2890,13 +2890,14 @@ if [ $Graphics = X11 ]; then
     while [ 0$x11_selection != 01 ] && [ 0$x11_selection != 02 ]; do
 	cat << EOM
 
-The Xorg project is being deprecated and replaced by Wayland.
+The Xorg project is being deprecated and new development is now minimal.
 
-The Xlibre project is a community-driven continuation of Xorg that is
-being actively developed.
+The Xlibre project is a community-driven fork of Xorg that is being
+actively developed, with new features, fixes, and other improvements being
+added regularly.
 
-Support for Xlibre on FreeBSD is still experimental.  Xorg, while no longer
-under active development, is stable and well-tested.
+Support for Xlibre on FreeBSD is young, but very few known issues remain.
+Xorg, while no longer under active development, is stable and well-tested.
 
 1.. Use the stable Xorg X11 server
 2.. Use the experimental Xlibre X11 server
